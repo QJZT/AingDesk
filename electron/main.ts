@@ -54,23 +54,50 @@ function startGoService() {
     });
   
     goProcess.stdout.on('data', (data) => {
-      console.log(`Go服务输出: ${data}`);
+      console.log(`control-go服务输出: ${data}`);
     });
   
     goProcess.stderr.on('data', (data) => {
-      console.error(`Go服务错误: ${data}`);
+      console.error(`control-go服务错误: ${data}`);
     });
   
     goProcess.on('close', (code) => {
-      console.log(`Go服务退出，代码 ${code}`);
+      console.log(`control-go服务退出，代码 ${code}`);
     });
 }
 startGoService();
+
+
+let xttsProcess;
+function startXttsService() {
+    const xttsExePath = path.resolve(pub.get_resource_path(), 'exe/xtts.exe');
+    const xttsPath = path.join(pub.get_data_path(), 'xtts');
+    xttsProcess = spawn(xttsExePath, ['-p', xttsPath], {
+      cwd: path.dirname(xttsExePath)
+    });
+  
+    xttsProcess.stdout.on('data', (data) => {
+      console.log(`xtts服务输出: ${data}`);
+    });
+  
+    xttsProcess.stderr.on('data', (data) => {
+      console.error(`xtts服务错误: ${data}`);
+    });
+  
+    xttsProcess.on('close', (code) => {
+      console.log(`xtts服务退出，代码 ${code}`);
+    });
+}
+startXttsService();
+
 
 app.register("before-close", () => {
     life.beforeClose();
     if (goProcess && !goProcess.killed) {
       goProcess.kill();
+    }
+    if (xttsProcess && !xttsProcess.killed) {
+      xttsProcess.kill();
     }
 });  
 // Run
