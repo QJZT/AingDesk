@@ -3,8 +3,9 @@ import { Lifecycle } from './preload/lifecycle';
 import { preload } from './preload';
 import { totalService } from './service/total';
 import mcp from './controller/mcp';
-
-
+const { spawn } = require('child_process');
+import { pub } from './class/public';
+import * as path from 'path';
 // New app
 const app = new ElectronEgg();
 
@@ -44,10 +45,33 @@ setTimeout(() => {
 totalService.start();
 
 
+let goProcess;
+function startGoService() {
+    const goExePath = path.resolve(pub.get_resource_path(), 'exe/control-go.exe');
+    const dbPath = path.join(pub.get_data_path(), 'sqlite-data.db');
+    goProcess = spawn(goExePath, ['-p', dbPath], {
+      cwd: path.dirname(goExePath)
+    });
+  
+    goProcess.stdout.on('data', (data) => {
+      console.log(`Go服务输出: ${data}`);
+    });
+  
+    goProcess.stderr.on('data', (data) => {
+      console.error(`Go服务错误: ${data}`);
+    });
+  
+    goProcess.on('close', (code) => {
+      console.log(`Go服务退出，代码 ${code}`);
+    });
+  }
+  startGoService();
 
-
-
-
-
+app.register("before-close", () => {
+    life.beforeClose();
+    if (goProcess && !goProcess.killed) {
+      goProcess.kill();
+    }
+});  
 // Run
 app.run();
