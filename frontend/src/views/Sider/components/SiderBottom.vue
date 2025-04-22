@@ -18,6 +18,12 @@
                 <span>{{ $t("本地模型") }}</span>
             </div>
         </li>
+        <li @click="openModelManage">
+            <div class="flex items-center justify-start">
+                <i class="i-tdesign:desktop-1 w-16 h-16 ml-8 mr-10 text-[var(--bt-tit-color-secondary)]"></i>
+                <span>音频模型</span>
+            </div>
+        </li>
         <li @click="openSoftSettings">
             <div class="flex items-center justify-start">
                 <i class="i-tdesign:setting-1 w-16 h-16 ml-8 mr-10 text-[var(--bt-tit-color-secondary)]"></i>

@@ -38,6 +38,21 @@
             </n-scrollbar>
             <div class="sider-divider"></div>
         </div>
+        
+        <!-- <div class="recent-header">
+            <span class=" text-[var(--bt-notice-text-color)] flex justify-start items-center ml-10">{{ $t("知识库")
+                }}</span>
+        </div> -->
+
+        <!-- 知识库 -->
+        <!-- <div class="sider-wrapper" style="overflow: hidden; gap:10px">
+            <n-scrollbar :style="{ height: '100%' }">
+                <div class="sider-top">
+                    <KnowledgeList />
+                </div>
+            </n-scrollbar>
+            <div class="sider-divider"></div>
+        </div> -->
 
         <div class="recent-header">
             <span class=" text-[var(--bt-notice-text-color)] flex justify-start items-center ml-10">{{ $t("知识库")
@@ -119,7 +134,7 @@ get_chat_list()
 .layout-sider-wrapper {
     display: grid;
     // grid-template-rows: 50px 22px 2fr 22px 1fr 140px;
-    grid-template-rows: 50px 64px 22px 2fr 22px 1fr 140px;
+    grid-template-rows: 50px 64px 22px 2fr 22px 1fr 170px;
     height: 100%;
     box-sizing: border-box;
     padding: var(--bt-pd-small);
