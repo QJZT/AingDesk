@@ -18,7 +18,7 @@
                 <span>{{ $t("本地模型") }}</span>
             </div>
         </li>
-        <li @click="openModelManage">
+        <li @click="openModelTts">
             <div class="flex items-center justify-start">
                 <i class="i-tdesign:desktop-1 w-16 h-16 ml-8 mr-10 text-[var(--bt-tit-color-secondary)]"></i>
                 <span>音频模型</span>
@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 import { openAgent } from "@/views/Agent/controller/index"
-import { openModelManage } from "@/views/Settings/controller/index"
+import { openModelManage,openModelTts } from "@/views/Settings/controller/index"
 import { openSoftSettings } from "@/views/SoftSettings/controller"
 import { openThirdPartyModel } from "../controller"
 import { useI18n } from "vue-i18n";

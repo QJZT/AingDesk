@@ -6,6 +6,8 @@ import type { InstallProgress } from "@/views/Home/dto";
 const useSettingsStore = defineStore("settings", () => {
     // 设置弹窗
     const settingsShow = ref(false)
+
+    const settingsTtsShow = ref(false)
     // 机器配置信息
     const pcInfo = ref<Record<string, any>>({})
     // 可用模型列表
@@ -84,6 +86,7 @@ const useSettingsStore = defineStore("settings", () => {
     })
     return {
         settingsShow,
+        settingsTtsShow,
         pcInfo,
         visibleModelList,
         modeType,
