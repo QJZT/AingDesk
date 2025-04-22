@@ -64,8 +64,8 @@ function startGoService() {
     goProcess.on('close', (code) => {
       console.log(`Go服务退出，代码 ${code}`);
     });
-  }
-  startGoService();
+}
+startGoService();
 
 app.register("before-close", () => {
     life.beforeClose();
