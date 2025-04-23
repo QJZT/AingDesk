@@ -23,6 +23,7 @@
             <n-layout-content class="layout-content" style="padding:0">
                 <ChatContent v-if="currentView === 'ChatContent'" />
                 <LiveConsole v-show="currentView === 'LiveConsole'" />
+                <ModuleConfig v-show="currentView === 'ModuleConfig'" />
             </n-layout-content>
 
         </n-layout>
@@ -66,6 +67,7 @@ import SoftSettings from "@/views/SoftSettings/index.vue";
 import Sider from "../Sider/index.vue";
 import Header from "@/views/Header/index.vue";
 import ChatContent from "@/views/ChatContent/index.vue";
+import ModuleConfig from '@/views/moduleConfig/index.vue'
 import LiveConsole from '@/views/LiveConsole/index.vue'
 import KnowledgeStore from "@/views/KnowleadgeStore/index.vue";
 import Welcome from "./components/Welcome.vue";

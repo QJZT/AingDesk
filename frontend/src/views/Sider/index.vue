@@ -23,7 +23,7 @@
 
          <!-- 新建对话按钮 -->
          <div class="flex justify-center items-center">
-            <n-button type="primary" ghost style="width:100%" @click="currentView='ChatContent'">
+            <n-button type="primary" ghost style="width:100%" @click="currentView='ModuleConfig'">
                 <!-- <template #icon>
                     <i class="i-tdesign:chat-add w-16 h-16"></i>
                 </template> -->
