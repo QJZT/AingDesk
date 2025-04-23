@@ -33,24 +33,32 @@
             </div>
         </n-card>
     </n-modal>
+    <!-- TTS模态框部分 -->
     <n-modal v-model:show="settingsTtsShow" :close-on-esc="false" :closable="false" :mask-closable="false">
-        <n-card style="width: 49%;min-width: 920px;max-width: 1000px;" :title="$t('设置1111')">
+        <n-card style="width: 49%;min-width: 920px;max-width: 1000px;" :title="$t('音频模型设置')">
             <template #header-extra>
                 <i class="i-tdesign:close-circle w-24 h-24 cursor-pointer text-[#909399]"
                     @click="settingsTtsShow = false"></i>
             </template>
+
             <div class="ollama-url">
                 <n-input-group class="w-45%">
                     <n-button>{{ $t("Ollama接口地址") }}</n-button>
-                    <n-input placeholder="请填写ollama接入地址" v-model:value="ollamaUrl" />
+                    <!-- 这里使用的是 ollamaUrl，应该改为 ollamaUrlTts -->
+                    <n-input placeholder="请填写ollama接入地址" v-model:value="ollamaUrlTts" />
                     <n-button type="primary" @click="setOllamaUrl">{{ $t("保存") }}</n-button>
                 </n-input-group>
-                <div class="notice" v-if="!isInstalledManager">{{ $t("当前ollama地址不可用") }}</div>
+                <!-- 这里使用的是 isInstalledManager，应该改为 isInstalledManagerTts -->
+                <div class="notice" v-if="!isInstalledManagerTts">{{ $t("当前ollama地址不可用") }}</div>
             </div>
+
+            <!-- 这里使用的是 modelList，需要使用对应的 TTS 列表 -->
             <div class="mt-20" v-if="modelList.length == 0">{{ $t("首次使用，请选择要安装的模型") }}</div>
 
-            <div class="mt-20" :class="{ mask: !ollamaUrl }">
+            <!-- 这里使用的是 ollamaUrl，应该改为 ollamaUrlTts -->
+            <div class="mt-20" :class="{ mask: !ollamaUrlTts }">
                 <div class="flex justify-between items-center mb-10">
+
                     <n-input-group>
                         <n-input v-model:value="search" @keydown.enter.native="handleSearch" :style="{ width: '220px' }"
                             :placeholder='`${$t("如:")} deepseek-r1`' />
@@ -58,13 +66,16 @@
                             {{ $t("搜索") }}
                         </n-button>
                     </n-input-group>
+
                     <n-radio-group v-model:value="modeType" @update:value="handleSearch">
-                        <n-radio-button v-for="tl in toolsList" :key="tl.value" :value="tl.value" :label="tl.label" />
+                        <n-radio-button v-for="tl in toolsListTts" :key="tl.value" :value="tl.value" :label="tl.label" />
                     </n-radio-group>
+                    
                 </div>
                 <n-data-table :columns="modelColumns" :data="filterList" :pagination="pagination" style="height: 400px;"
                     flex-height />
             </div>
+
         </n-card>
     </n-modal>
     <!-- 安装进度 -->
@@ -89,6 +100,7 @@ import ModelInstallProgress from "./components/ModelInstallProgress.vue";
 import InstallModelManagerConfirm from "./components/InstallModelManagerConfirm.vue";
 import DelModelProgress from "./components/DelModelProgress.vue";
 import { getSettingsStoreData } from "./store";
+import { getSettingsStoreDataTts } from "./store/tts";
 import { getSoftSettingsStoreData } from "../SoftSettings/store";
 import { getHeaderStoreData } from "../Header/store";
 
@@ -109,7 +121,6 @@ import type { DataTableColumns } from "naive-ui";
 const { t: $t } = useI18n()
 const {
     settingsShow,
-    settingsTtsShow,
     visibleModelList,
     isResetModelList,
     isInstalledManager,
@@ -119,6 +130,17 @@ const {
     search,
     pagination
 } = getSettingsStoreData()
+const {
+    settingsTtsShow,
+    visibleModelListTts,
+    isResetModelListTts,
+    isInstalledManagerTts,
+    ollamaUrlTts,
+    modeTypeTts,
+    filterListTts,
+    searchTts,
+    paginationTts
+} = getSettingsStoreDataTts()
 const {
     modelList,
 } = getHeaderStoreData()
@@ -187,6 +209,12 @@ const toolsList = ref([
     { label: "Vision", value: "vision" },
     { label: "Embedding", value: "embedding" },
     { label: "Tools", value: "tools" },
+    { label: $t("已安装"), value: "installed" }
+])
+
+const toolsListTts = ref([
+    { label: $t("所有"), value: "all" },
+
     { label: $t("已安装"), value: "installed" }
 ])
 watch(currentLanguage, () => {
