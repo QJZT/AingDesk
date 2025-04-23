@@ -9,6 +9,7 @@ import SoftSettings from '../index.vue';
 import { NButton } from 'naive-ui';
 import i18n, { setLang } from '@/lang';
 import { getSoftSettingsStoreData } from '../store';
+import { getSiderStoreData } from "@/views/Sider/store"
 import { getMcpServerListForChat } from '@/views/ChatTools/controller';
 const $t = i18n.global.t;
 
@@ -16,6 +17,8 @@ const $t = i18n.global.t;
  * @description 打开软件设置弹窗
  */
 export function openSoftSettings() {
+	 const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
 	const { softSettingsShow } = getSoftSettingsStoreData();
 	softSettingsShow.value = true;
 	/* const dialog = useDialog({

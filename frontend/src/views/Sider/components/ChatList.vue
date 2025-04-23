@@ -2,6 +2,13 @@
     <div class="recent-comunication">
         <!-- 最近对话列表 -->
         <ul class="recent-list">
+            <li class="create-comunication" @click="makeNewChat">
+                <div class="flex items-center" style="height: 100%;">
+                    <i class="i-tdesign:chat-add w-16 h-16 mr-10 ml-8 text-[var(--bt-tit-color-secondary)]"></i>
+                    <div class="comu-title">{{ $t("新建对话") }}</div>
+                </div>
+            </li>
+
             <li :class="{ active: currentContextId == item.context_id }" @click.stop="handleChoose($event, item)"
                 v-for="item in chatList" :key="item.context_id">
                 <div class="flex items-center" style="height: 100%;" v-if="!item.agent_info">
@@ -30,6 +37,7 @@
 
 <script setup lang="ts">
 import { handleChoose, doChatOperateSelect } from "../controller"
+import { get_chat_list, makeNewChat, doFold,cleanAllChats } from "@/views/Sider/controller"
 import { getSiderStoreData } from '../store';
 import { useI18n } from "vue-i18n";
 const { t:$t } = useI18n();

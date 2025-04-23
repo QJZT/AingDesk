@@ -1,20 +1,30 @@
 <template>
     <n-layout :has-sider="true" class="layout-wrapper">
+
+        <!-- 侧边栏 -->
         <n-layout-sider :width="siderWidth" class="layout-sider">
-            <Sider />
+            <Sider/>
         </n-layout-sider>
+
+
         <n-layout-sider :class="['layout-sider', { 'no-border': knowledgeSiderWidth == 0 }]"
             :width="knowledgeSiderWidth">
             <KnowledgeStore />
         </n-layout-sider>
+
+        
         <n-layout>
-            <n-layout-header class="layout-header">
+            <!-- 页面A -->
+             <!-- {{ currentView }} -->
+             <!-- {{ currentView == 'LiveConsole' }} -->
+            <n-layout-header class="layout-header" v-show="currentView == 'ChatContent'">
                 <Header />
             </n-layout-header>
             <n-layout-content class="layout-content" style="padding:0">
-                <ChatContent />
-                <!-- <WelcomeContent /> -->
+                <ChatContent v-if="currentView === 'ChatContent'" />
+                <LiveConsole v-show="currentView === 'LiveConsole'" />
             </n-layout-content>
+
         </n-layout>
     </n-layout>
 
@@ -56,6 +66,7 @@ import SoftSettings from "@/views/SoftSettings/index.vue";
 import Sider from "../Sider/index.vue";
 import Header from "@/views/Header/index.vue";
 import ChatContent from "@/views/ChatContent/index.vue";
+import LiveConsole from '@/views/LiveConsole/index.vue'
 import KnowledgeStore from "@/views/KnowleadgeStore/index.vue";
 import Welcome from "./components/Welcome.vue";
 import ThirdPartyApi from "@/views/ThirdPartyApi/index.vue";
@@ -66,8 +77,9 @@ import { getByteUnit } from "@/utils/tools"
 import { getSiderStoreData } from "../Sider/store/index.ts";
 import { getKnowledgeStoreData } from "../KnowleadgeStore/store/index.ts";
 import { getSoftSettingsStoreData } from "../SoftSettings/store/index.ts";
+import { nextTick } from 'vue';
 
-const { siderWidth, } = getSiderStoreData()
+const { siderWidth,currentView } = getSiderStoreData()
 const { knowledgeSiderWidth, } = getKnowledgeStoreData()
 const { dataPathChangeCheckShow, dataPathChangeStatusValues } = getSoftSettingsStoreData()
 const { t: $t } = useI18n()
@@ -84,6 +96,14 @@ const pathChangeNotice = computed(() => {
         return $t("迁移数据中")
     }
 })
+
+
+// const currentView = ref('ChatContent') // 默认显示聊天内容
+const switchView = async (viewName: string) => {
+    currentView.value = '';
+    await nextTick();
+    currentView.value = viewName;
+}
 </script>
 
 <style scoped lang="scss">

@@ -6,7 +6,7 @@ import { message, useDialog } from "@/utils/naive-tools"
 import type { AgentItemDto } from "@/views/Home/dto"
 import { NButton, type DataTableColumns } from "naive-ui"
 import i18n from "@/lang";
-
+import { getSiderStoreData } from "@/views/Sider/store"
 import { knowledgeIsClose } from "@/views/KnowleadgeStore/controller"
 import { getSettingsStoreData } from "../store"
 import { getHeaderStoreData } from "@/views/Header/store"
@@ -20,6 +20,8 @@ const $t = i18n.global.t
  * @description 打开模型管理
  */
 export async function openModelManage() {
+     const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     const { settingsShow } = getSettingsStoreData()
     try {
         await getVisibleModelList()
@@ -33,6 +35,8 @@ export async function openModelManage() {
  * @description 打开模型管理
  */
 export async function openModelTts() {
+     const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     const { settingsTtsShow } = getSettingsStoreData()
     try {
         // await getVisibleModelList()

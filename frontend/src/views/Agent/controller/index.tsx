@@ -3,6 +3,7 @@ import { getAgentStoreData } from "../store"
 import { sendLog } from "@/views/Home/controller"
 import { message, useDialog } from "@/utils/naive-tools"
 import type { AgentItemDto } from "@/views/Home/dto"
+import { getSiderStoreData } from "@/views/Sider/store"
 import i18n from "@/lang";
 
 import { createNewComu } from "@/views/Sider/controller"
@@ -78,6 +79,8 @@ export function chooseAgentForChat(agent: AgentItemDto) {
  * @description 打开智能体
  */
 export function openAgent() {
+    const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     const { agentShow } = getAgentStoreData()
     agentShow.value = true
 }

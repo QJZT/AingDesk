@@ -131,6 +131,7 @@ export async function getChatInfo(context_id: string) {
 
 // 拼接对话记录
 function generateObject(arr: any) {
+    
     const result: ChatInfo = new Map();
     for (let i = 0; i < arr.length; i += 2) {
         // const key = arr[i].content;
@@ -156,6 +157,8 @@ function generateObject(arr: any) {
  * @description 删除对话
  */
 export async function removeChat(context_id: string) {
+    const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     const { chatRemoveConfirm } = getSiderStoreData()
     try {
         const res = await post("/chat/remove_chat", { context_id })
@@ -176,6 +179,8 @@ export async function removeChat(context_id: string) {
  * @description 修改指定对话标题
  */
 export async function modifyChatTitle(params: { context_id: string, title: string }) {
+    const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     const { chatModifyConfirm } = getSiderStoreData()
     try {
         const res = await post("/chat/modify_chat_title", params)
@@ -197,6 +202,8 @@ export async function modifyChatTitle(params: { context_id: string, title: strin
  * @description 选择已有对话
  */
 export async function handleChoose(e: MouseEvent, chat: ChatItemInfo) {
+    const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     const { currentContextId, currentChatTitle } = getSiderStoreData()
     const { currentChatAgent } = getAgentStoreData()
     const { userScrollSelf, } = getChatContentStoreData()
@@ -238,7 +245,8 @@ export async function handleChoose(e: MouseEvent, chat: ChatItemInfo) {
  * @description 对话操作
  */
 export function doChatOperateSelect(val: string, context_id: string) {
-    const { contextIdForDel, chatRemoveConfirm, contextIdForModify, newChatTitle, chatModifyConfirm } = getSiderStoreData()
+    const { contextIdForDel, chatRemoveConfirm, contextIdForModify, newChatTitle, chatModifyConfirm,currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     if (val == "delChat") {
         contextIdForDel.value = context_id
         chatRemoveConfirm.value = true
@@ -254,6 +262,8 @@ export function doChatOperateSelect(val: string, context_id: string) {
  */
 export function makeNewChat() {
     const { currentChatAgent } = getAgentStoreData()
+    const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     currentChatAgent.value = null
     createNewComu()
 }
@@ -280,6 +290,8 @@ export function doChatDel(contextId: string) {
  * @description 知识库操作
  */
 export function dealPopOperation(val: string, knowledge: any) {
+    const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     const { isEditKnowledge, createKnowledgeFormData } = getKnowledgeStoreData()
     if (val == "delChat") {
         removeRagConfirm(knowledge.ragName)
@@ -303,6 +315,8 @@ export function dealPopOperation(val: string, knowledge: any) {
  * @description 打开第三方模型弹窗
  */
 export function openThirdPartyModel() {
+     const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
     const { thirdPartyApiShow } = getThirdPartyApiStoreData()
     thirdPartyApiShow.value = true
     getSupplierList()
@@ -314,6 +328,9 @@ export function openThirdPartyModel() {
  * @description 清空对话
  */
 export async function cleanAllChats() {
+    const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
+// 假设 eventBUS 可用于触发事件，使用它来替代 $emit
     const { chatHistory } = getChatContentStoreData()
     const { chatList } = getSiderStoreData()
     try {

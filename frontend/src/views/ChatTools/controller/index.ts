@@ -31,13 +31,13 @@ type ChatParams = {
 }
 export async function sendChat(params: ChatParams) {
     const { currentModel, } = getHeaderStoreData()
-    const { currentContextId, } = getSiderStoreData()
+    const { currentContextId,currentView } = getSiderStoreData()
     const { targetNet, } = getSoftSettingsStoreData()
     const { currentTalkingChatId, isInChat, chatHistory, } = getChatContentStoreData()
     const { activeKnowledgeForChat, } = getKnowledgeStoreData()
     const { netActive, temp_chat, mcpListChoosed } = getChatToolsStoreData()
     const { currentSupplierName } = getThirdPartyApiStoreData()
-
+    currentView.value = "ChatContent"
 
     let model, parameters;
     if (currentSupplierName.value == "ollama") {

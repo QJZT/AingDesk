@@ -23,6 +23,8 @@ const $t = i18n.global.t;
  * @description 打开知识库侧边栏界面
  */
 export async function openKnowledgeStore(ragDto: ActiveKnowledgeDto) {
+	const { currentView } = getSiderStoreData()
+    currentView.value = "ChatContent"
 	const { knowledgeSiderWidth, activeKnowledgeDto, activeKnowledge, activeKnowledgeForChat } = getKnowledgeStoreData();
 	try {
 		handleSwitchKnowledge(ragDto);

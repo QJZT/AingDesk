@@ -4,24 +4,55 @@
         <div class="logo">
             <div class=logo-left>
                 <n-image :src="logo" object-fit="cover" class="h-30" preview-disabled />
-                <span class="text-[var(--bt-tit-color-secondary)]">AingDesk</span>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 font-bold text-xl drop-shadow-lg">AI 无人直播</span>
             </div>
-            <div>
+            <!-- <div>
                 <i class="i-common:fold w-18 h-18  cursor-pointer" @click="doFold"></i>
-            </div>
+            </div> -->
         </div>
+
         <!-- 新建对话按钮 -->
         <div class="flex justify-center items-center">
-            <n-button type="primary" ghost style="width:100%" @click="makeNewChat">
-                <template #icon>
+            <n-button type="primary" ghost style="width:100%"  @click="currentView='LiveConsole'">
+                <!-- <template #icon>
                     <i class="i-tdesign:chat-add w-16 h-16"></i>
-                </template>
-                {{ $t("新建对话") }}
+                </template> -->
+                直播控制台
             </n-button>
         </div>
 
+         <!-- 新建对话按钮 -->
+         <div class="flex justify-center items-center">
+            <n-button type="primary" ghost style="width:100%" @click="currentView='ChatContent'">
+                <!-- <template #icon>
+                    <i class="i-tdesign:chat-add w-16 h-16"></i>
+                </template> -->
+               模块配置
+            </n-button>
+        </div>
+
+        <!-- 新建对话按钮 -->
+        <div class="flex justify-center items-center">
+            <n-button type="primary" ghost style="width:100%" @click="makeNewChat">
+                <!-- <template #icon>
+                    <i class="i-tdesign:chat-add w-16 h-16"></i>
+                </template> -->
+                数据面板
+            </n-button>
+        </div>
+        <div class="flex justify-center items-center">
+            <n-button type="primary" ghost style="width:100%" @click="makeNewChat">
+                <!-- <template #icon>
+                    <i class="i-tdesign:chat-add w-16 h-16"></i>
+                </template> -->
+                教程文档
+            </n-button>
+        </div>
+         <div class="sider-divider"></div>
+
         <div class="recent-header">
-            <span class="ml-8 text-[var(--bt-notice-text-color)]">{{ $t("对话") }}</span>
+            <span class="ml-8 text-[var(--bt-notice-text-color)]"> LLM模型测试
+            </span>
             <n-popover trigger="hover">
                 <template #trigger>
                     <i class="i-ci:bar-top w-14 h-14 cursor-pointer" @click="cleanAllChats"></i>
@@ -30,7 +61,7 @@
             </n-popover>
         </div>
 
-        <div class="sider-wrapper" style="overflow: hidden;">
+        <div class="sider-wrapper" style="overflow: hidden;" >
             <n-scrollbar :style="{ height: '100%' }">
                 <div class="sider-top">
                     <ChatList />
@@ -101,6 +132,7 @@ import { getSoftSettingsStoreData } from "../SoftSettings/store";
 import Agent from "@/views/Agent/index.vue";
 import logoImage from "@/assets/images/logo.png"
 import logoDark from "@/assets/images/logo-dark.png"
+import { getSiderStoreData } from "../Sider/store/index.ts";
 import { useI18n } from "vue-i18n";
 const { t: $t } = useI18n()
 
@@ -108,7 +140,7 @@ const { siderBg } = getGlobalStore()
 const {
     themeMode,
 } = getSoftSettingsStoreData()
-
+const { currentView } = getSiderStoreData()
 /**
  * @description 计算不同模式下logo的图片
  */
@@ -134,7 +166,7 @@ get_chat_list()
 .layout-sider-wrapper {
     display: grid;
     // grid-template-rows: 50px 22px 2fr 22px 1fr 140px;
-    grid-template-rows: 50px 64px 22px 2fr 22px 1fr 170px;
+    grid-template-rows: 50px 50px 50px 50px 50px 25px 22px 2fr 22px 1fr 170px;
     height: 100%;
     box-sizing: border-box;
     padding: var(--bt-pd-small);

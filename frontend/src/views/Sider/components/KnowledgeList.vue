@@ -2,6 +2,12 @@
     <div class="recent-comunication">
         <!-- 列表 -->
         <ul class="recent-list">
+            <li @click.stop="createNewKnowledgeStore" :class="{ 'add-knowledge': addingKnowledge }">
+                <div class="flex items-center" style="height: 100%;">
+                    <i class="i-tdesign:folder-add w-16 h-16 mr-10 ml-8 text-[var(--bt-tit-color-secondary)]"></i>
+                    <div class="comu-title">{{ $t("新建知识库") }}</div>
+                </div>
+            </li>
             <li :class="[{ active: item.ragName == activeKnowledge }]" @click="openKnowledgeStore(item)"
                 v-for="item in knowledgeList">
                 <div class="flex items-center" style="height: 100%;">
@@ -15,13 +21,6 @@
                         <i class="i-common:more-operation w-16 h-16"></i>
                     </div>
                 </n-popselect>
-            </li>
-
-            <li @click.stop="createNewKnowledgeStore" :class="{ 'add-knowledge': addingKnowledge }">
-                <div class="flex items-center" style="height: 100%;">
-                    <i class="i-tdesign:folder-add w-16 h-16 mr-10 ml-8 text-[var(--bt-tit-color-secondary)]"></i>
-                    <div class="comu-title">{{ $t("新建知识库") }}</div>
-                </div>
             </li>
         </ul>
 

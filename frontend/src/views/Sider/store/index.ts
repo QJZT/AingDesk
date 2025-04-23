@@ -5,6 +5,8 @@ import { ref } from "vue";
 const useSiderStore = defineStore("siderStore", () => {
     // 侧边栏宽度
     const siderWidth = ref(220)
+    // 页码
+    const currentView = ref("ChatContent")
     // 是否关闭侧边栏
     const isFold = ref(false)
     // 对话列表
@@ -25,6 +27,7 @@ const useSiderStore = defineStore("siderStore", () => {
     const currentChatTitle = ref("")
     return {
         siderWidth,
+        currentView,
         isFold,
         chatList,
         currentContextId,
