@@ -29,18 +29,7 @@ export async function openModelManage() {
     }
 }
 
-/**
- * @description 打开模型管理
- */
-export async function openModelTts() {
-    const { settingsTtsShow } = getSettingsStoreData()
-    try {
-        // await getVisibleModelList()
-        settingsTtsShow.value = true
-    } catch (error) {
-        sendLog(error as Error)
-    }
-}
+
 
 
 /**
