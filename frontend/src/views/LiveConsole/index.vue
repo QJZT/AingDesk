@@ -1,72 +1,177 @@
 <template>
   <div class="live-console">
-    <!-- 直播状态和控制区域 -->
-    <div class="control-panel">
-      <n-card title="直播控制台">
-        <div class="status-row">
-          <n-tag :type="isLive ? 'success' : 'error'" round>
-            {{ isLive ? '直播中' : '未开播' }}
-          </n-tag>
+    <!-- 设置区域 -->
+    <div class="settings-bar">
+      <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">时区设置</n-text>
+        <n-select 
+          v-model:value="selectedTimezone"
+          :options="timezoneOptions"
+          placeholder="选择时区"
+          style="width: 150px;"
+        />
+      </div>
+      
+      <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">语言设置</n-text>
+        <n-select 
+          v-model:value="selectedLanguage"
+          :options="languageOptions"
+          placeholder="选择语种"
+          style="width: 100px;"
+        />
+      </div>
+      
+      <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">音频驱动</n-text>
+        <n-select 
+          v-model:value="selectedAudioDriver"
+          :options="audioDriverOptions"
+          placeholder="选择驱动"
+          style="width: 100px;"
+        />
+      </div>
+      
+      <!-- 新增直播链接输入和启动按钮 -->
+      <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">直播弹幕接入</n-text>
+        <n-input 
+          v-model:value="streamUrl"
+          placeholder="输入直播间链接"
+        >
+          <template #suffix>
+            <n-button 
+              type="primary" 
+              @click="toggleLive"
+              :loading="loading"
+              text
+            >
+              {{ isLive ? '停止接入' : '接入弹幕' }}
+            </n-button>
+          </template>
+        </n-input>
+      </div>
+       <!-- 新增直播链接输入和启动按钮 -->
+       <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">确认启动</n-text>
+        <n-input-group>
+          <!-- <n-input 
+            v-model:value="streamUrl"
+            placeholder="输入RTMP直播链接"
+            style="width: 300px;"
+          /> -->
           <n-button 
             type="primary" 
             @click="toggleLive"
             :loading="loading"
           >
-            {{ isLive ? '结束直播' : '开始直播' }}
+            {{ isLive ? '停止音频直播' : '启动音频直播' }}
           </n-button>
-        </div>
-        
-        <!-- 直播设置 -->
-        <div class="settings-row">
-          <n-input-group>
-            <n-input v-model:value="streamUrl" placeholder="推流地址" />
-            <n-button type="info" @click="copyStreamUrl">复制</n-button>
-          </n-input-group>
-        </div>
-      </n-card>
+        </n-input-group>
+      </div>
     </div>
 
-    <!-- 数据统计面板 -->
-    <div class="stats-panel">
-      <n-card title="直播数据">
-        <div class="stats-grid">
-          <n-statistic label="观看人数" :value="viewerCount" />
-          <n-statistic label="点赞数" :value="likeCount" />
-          <n-statistic label="评论数" :value="commentCount" />
-          <n-statistic label="直播时长" :value="duration" />
+    <!-- 三列布局 -->
+    <div class="three-column-layout" style="height: calc(100% - 30px); overflow: hidden;">
+      <n-card title="直播控制台" style="height: 100%; overflow: hidden;">
+        <div class="control-blocks">
+          <div class="control-block" v-for="(block, index) in controlBlocks" :key="index">
+            <div class="block-header">
+              <h4>{{ block.title }}</h4>
+              <n-switch v-model:value="block.isActive" />
+            </div>
+            <div class="block-content" v-if="block.isActive">
+              <n-select 
+                v-model:value="block.selectedVoice"
+                :options="block.voiceOptions.map(opt => ({ label: opt, value: opt }))"
+                style="margin-bottom: 8px;"
+                placeholder="选择人声"
+                clearable
+              />
+              <!-- 这里放置每个功能方块的具体内容 -->
+              <!-- <n-input v-if="block.type === 'input'" v-model:value="block.value" :placeholder="block.placeholder" /> -->
+              <!-- 其他类型的功能组件 -->
+            </div>
+          </div>
         </div>
       </n-card>
-    </div>
 
-    <!-- 互动消息区域 -->
-    <div class="interaction-panel">
-      <n-card title="观众互动">
-        <n-scrollbar style="height: 300px">
+      <!-- 观众互动 -->
+      <n-card title="观众互动" style="height: 100%; overflow: hidden;">
+        <n-scrollbar>
           <div 
             v-for="(msg, index) in messages" 
             :key="index" 
             class="message-item"
+            style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
           >
             <span class="username">{{ msg.user }}:</span>
             <span class="content">{{ msg.content }}</span>
           </div>
         </n-scrollbar>
-        
         <div class="message-input">
-          <n-input 
-            v-model:value="newMessage" 
-            placeholder="发送公告..."
-            @keyup.enter="sendAnnouncement"
-          >
-            <template #suffix>
-              <n-button text @click="sendAnnouncement">
-                <i class="i-common:send w-20 h-20"></i>
-              </n-button>
-            </template>
-          </n-input>
+          <n-input-group>
+            <n-button text @click="toggleInputMode" class="mode-switch">
+                <template #icon>
+                  <i :class="isVoiceMode ? 'i-tdesign:keyboard w-20 h-20' : 'i-tdesign:microphone-1 w-20 h-20'"></i>
+                </template>
+            </n-button>
+            
+            <n-input 
+              v-if="!isVoiceMode"
+              v-model:value="newMessage" 
+              placeholder="发送消息..."
+              @keyup.enter="sendAnnouncement"
+            />
+            
+            <n-button 
+              v-else
+              type="primary" 
+              round
+              class="voice-button"
+            >
+                <template #icon>
+                  <i class="i-tdesign:microphone-1 w-20 h-20"></i>
+                </template>
+              <span>按住说话</span>
+            </n-button>
+            
+            <n-button 
+              type="primary" 
+              @click="sendAnnouncement"
+              :disabled="isVoiceMode"
+            >
+              <template #icon>
+                  <i class="i-tdesign:send w-20 h-20"></i>
+              </template>
+            </n-button>
+          </n-input-group>
         </div>
       </n-card>
+
+      <!-- 直播数据 -->
+      <n-card title="直播数据" style="height: 100%; overflow: hidden;">
+        <div class="audio-blocks">
+          <div class="audio-block" v-for="(audio, index) in audioFiles" :key="index">
+            <div class="audio-info">
+              <h4>{{ audio.title }}</h4>
+              <p>{{ audio.description }}</p>
+            </div>
+            <audio controls :src="audio.url"></audio>
+          </div>
+        </div>
+      </n-card>
+        <!-- <div class="stats-grid">
+          <n-statistic label="观看人数" :value="viewerCount" />
+          <n-statistic label="点赞数" :value="likeCount" />
+          <n-statistic label="评论数" :value="commentCount" />
+          <n-statistic label="直播时长" :value="duration" />
+        </div>
+      </n-card> -->
     </div>
+
+    <!-- 互动消息区域 -->
+    
   </div>
 </template>
 
@@ -81,7 +186,33 @@ import {
   NStatistic,
   NScrollbar
 } from 'naive-ui'
+import { NIcon } from 'naive-ui'
 
+const controlBlocks = ref([
+  {
+    title: '推流控制',
+    type: 'switch',
+    isActive: true,
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '画质调节',
+    type: 'select',
+    isActive: false,
+    options: ['高清', '标清', '流畅'],
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  }
+])
 const isLive = ref(false)
 const loading = ref(false)
 const streamUrl = ref('rtmp://your-stream-url.com/live')
@@ -94,7 +225,19 @@ const messages = ref([
   { user: '用户2', content: '什么时候开始？' }
 ])
 const newMessage = ref('')
-
+const isVoiceMode = ref(false)
+const audioFiles = ref([
+  {
+    title: '背景音乐1',
+    description: '轻松愉轻松愉快的背景音乐轻松愉快的背景音乐轻松愉快的背景音乐轻松愉快的背景音乐轻松愉快的背景音乐轻松愉快的背景音乐快的背景音乐',
+    url: '/audio/bgm1.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  }
+])
 function toggleLive() {
   loading.value = true
   setTimeout(() => {
@@ -116,16 +259,64 @@ function sendAnnouncement() {
     newMessage.value = ''
   }
 }
+
+function toggleInputMode() {
+  isVoiceMode.value = !isVoiceMode.value
+}
+
+// 新增状态
+const selectedTimezone = ref('')
+const selectedLanguage = ref('')
+const selectedAudioDriver = ref('')
+
+const timezoneOptions = [
+  { label: 'GMT+8 北京时间', value: 'GMT+8' },
+  { label: 'GMT+0 伦敦时间', value: 'GMT+0' },
+  { label: 'GMT-5 纽约时间', value: 'GMT-5' }
+]
+
+const languageOptions = [
+  { label: '简体中文', value: 'zh-CN' },
+  { label: 'English', value: 'en-US' },
+  { label: '日本語', value: 'ja-JP' }
+]
+
+const audioDriverOptions = [
+  { label: '默认驱动', value: 'default' },
+  { label: 'ASIO', value: 'asio' },
+  { label: 'WASAPI', value: 'wasapi' }
+]
 </script>
 
 <style scoped lang="scss">
 .live-console {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr;
-  gap: 20px;
-//   padding: 20px;
-  height: 100%;
+  height: calc(100% - 130px);
+  
+  .three-column-layout {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    height: 100%;
+    
+    .n-card {
+      padding: 12px 0px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      
+      &-header {
+        flex-shrink: 0;
+        padding: 8px 12px;  
+      }
+      
+      &-content {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+    }
+  }
   
   .control-panel {
     grid-column: 1 / 3;
@@ -134,18 +325,18 @@ function sendAnnouncement() {
   .status-row {
     display: flex;
     align-items: center;
-    gap: 20px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 10px;
   }
   
   .settings-row {
-    margin-top: 20px;
+    margin-top: 10px;
   }
   
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 10px;
   }
   
   .message-item {
@@ -160,7 +351,120 @@ function sendAnnouncement() {
   }
   
   .message-input {
-    margin-top: 20px;
+    padding: 5px;
+    background: #f8fafc;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    
+    .n-input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      .n-input {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      .n-button {
+        flex-shrink: 0;
+        margin: 0;
+      }
+    }
+    
+    .mode-switch {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .voice-button {
+      flex: 1;
+      padding: 0 16px;
+      min-width: 0;
+      
+      span {
+        margin-left: 8px;
+        white-space: nowrap;
+      }
+    }
+  }
+  margin-top: 20px;
+}
+
+.control-blocks {
+  display: grid;
+  gap: 8px;  // 减小间距
+}
+
+.control-block {
+  padding: 8px;  // 减小内边距
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  
+  .block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;  // 减小间距
+    
+    h4 {
+      font-size: 14px;  // 减小标题字号
+      margin: 0;
+    }
+  }
+  
+  .block-content {
+    padding-top: 4px;  // 减小间距
+  }
+}
+
+.audio-blocks {
+  display: grid;
+  gap: 12px;
+}
+
+.audio-block {
+  padding: 12px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  
+  .audio-info {
+    margin-bottom: 8px;
+    
+    h4 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+    }
+    
+    p {
+      margin: 0;
+      font-size: 12px;
+      color: #666;
+    }
+  }
+  
+  audio {
+    width: 100%;
+    height: 24px;
+  }
+}
+.settings-bar {
+  display: flex;
+  flex-wrap: wrap;  // 允许换行
+  align-items: center;
+  gap: 10px;  // 统一间距
+  padding: 12px;
+  background: var(--n-color-embedded);
+  border-radius: var(--n-border-radius);
+  margin-bottom: 12px;
+  
+  .n-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 }
 </style>
