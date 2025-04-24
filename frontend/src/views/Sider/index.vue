@@ -3,7 +3,7 @@
         <!-- logo部分 -->
         <div class="logo">
             <div class=logo-left>
-                <n-image :src="logo" object-fit="cover" class="h-30" preview-disabled />
+                <!-- <n-image :src="logo" object-fit="cover" class="h-30" preview-disabled /> -->
                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 font-bold text-xl drop-shadow-lg">AI 无人直播</span>
             </div>
             <!-- <div>

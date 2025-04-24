@@ -17,15 +17,14 @@
             <!-- 页面A -->
              <!-- {{ currentView }} -->
              <!-- {{ currentView == 'LiveConsole' }} -->
-            <n-layout-header class="layout-header" v-show="currentView == 'ChatContent'">
+            <n-layout-header class="layout-header" v-if="currentView == 'ChatContent'">
                 <Header />
             </n-layout-header>
-            <n-layout-content class="layout-content" style="padding:0">
+            <n-layout-content v-if="currentView === 'ChatContent'" class="layout-content" style="padding:0">
                 <ChatContent v-if="currentView === 'ChatContent'" />
-                <LiveConsole v-show="currentView === 'LiveConsole'" />
-                <ModuleConfig v-show="currentView === 'ModuleConfig'" />
             </n-layout-content>
-
+            <LiveConsole v-show="currentView === 'LiveConsole'" />
+            <ModuleConfig v-show="currentView === 'ModuleConfig'" />
         </n-layout>
     </n-layout>
 
