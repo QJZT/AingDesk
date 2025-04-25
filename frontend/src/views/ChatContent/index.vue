@@ -19,7 +19,7 @@
     <ChatTools />
 
     <!-- 模型管理弹窗 -->
-    <Settings />
+    <!-- <Settings /> -->
     <!-- 分享弹窗 -->
     <Share />
 

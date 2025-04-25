@@ -164,7 +164,7 @@ function handleAudioModuleClick() {
 // 处理基础模块弹窗提交的数据
 function handleModuleSubmit(formData: any) {
   if (editingModule.value) {
-    const index = modules.value.findIndex(m => m.id === editingModule.value.id);
+    const index = modules.value.findIndex(m => m.id === editingModule.value?.id);
     if (index !== -1) {
       modules.value[index] = {
         ...modules.value[index],
@@ -194,7 +194,7 @@ function handleModuleSubmit(formData: any) {
 // 处理音频交互模块弹窗提交的数据
 function handleAudioModuleSubmit(formData: any) {
   if (editingAudioModule.value) {
-    const index = modules.value.findIndex(m => m.id === editingAudioModule.value.id);
+    const index = modules.value.findIndex(m => m.id === editingAudioModule.value?.id);
     if (index !== -1) {
       modules.value[index] = {
         ...modules.value[index],
@@ -279,6 +279,14 @@ eventBUS.$on('moduleDeleted', (module: Module) => {
 
 eventBUS.$on('executeAudioOnce', (formData: any) => {
   console.log('执行音频一次:', formData);
+});
+
+onMounted(() => {
+    console.log('ModuleConfig mounted');
+});
+
+onBeforeUnmount(() => {
+    console.log('ModuleConfig beforeUnmount');
 });
 </script>
 

@@ -20,8 +20,8 @@ const $t = i18n.global.t
  * @description 打开模型管理
  */
 export async function openModelManage() {
-     const { currentView } = getSiderStoreData()
-    currentView.value = "ChatContent"
+    //  const { currentView } = getSiderStoreData()
+    // currentView.value = "ChatContent"
     const { settingsShow } = getSettingsStoreData()
     try {
         await getVisibleModelList()

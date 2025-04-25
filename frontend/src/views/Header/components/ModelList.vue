@@ -1,9 +1,9 @@
 <template>
     <!-- <n-modal v-model:show="chooseModelVisible"> -->
     <n-card :title="$t('模型选择')" segmented class="w-600">
-        <n-input-group class="mb-10">
+        <!-- <n-input-group class="mb-10">
             <n-input :placeholder="$t('搜索模型')" v-model:value="modelListFilterKey"></n-input>
-        </n-input-group>
+        </n-input-group> -->
         <n-scrollbar style="max-height: 350px;">
         <!-- 常用模型 -->
         <template v-if="modelListSource['commonModelList'] && modelListSource['commonModelList'].length && !modelListFilterKey">

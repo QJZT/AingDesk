@@ -20,11 +20,11 @@
             <n-layout-header class="layout-header" v-if="currentView == 'ChatContent'">
                 <Header />
             </n-layout-header>
-            <n-layout-content v-if="currentView === 'ChatContent'" class="layout-content" style="padding:0">
+            <n-layout-content v-if="currentView === 'ChatContent'"  class="layout-content" style="padding:0">
                 <ChatContent v-if="currentView === 'ChatContent'" />
             </n-layout-content>
-            <LiveConsole v-show="currentView === 'LiveConsole'" />
-            <ModuleConfig v-show="currentView === 'ModuleConfig'" />
+            <LiveConsole v-show="currentView == 'LiveConsole'" />
+            <ModuleConfig v-if="currentView == 'ModuleConfig'" />
         </n-layout>
     </n-layout>
 
@@ -32,6 +32,8 @@
     <Welcome />
     <!-- 第三方api弹窗 -->
     <ThirdPartyApi />
+
+    <Settings />
 
     <!-- 更换目录时数据迁移进度 -->
     <n-modal v-model:show="dataPathChangeCheckShow">
@@ -63,6 +65,7 @@
 
 <script setup lang="ts">
 import SoftSettings from "@/views/SoftSettings/index.vue";
+import Settings from '@/views/Settings/index.vue';
 import Sider from "../Sider/index.vue";
 import Header from "@/views/Header/index.vue";
 import ChatContent from "@/views/ChatContent/index.vue";
@@ -100,11 +103,31 @@ const pathChangeNotice = computed(() => {
 
 
 // const currentView = ref('ChatContent') // 默认显示聊天内容
-const switchView = async (viewName: string) => {
-    currentView.value = '';
-    await nextTick();
-    currentView.value = viewName;
-}
+// const switchView = async (viewName: string) => {
+//     currentView.value = '';
+//     await nextTick();
+//     currentView.value = viewName;
+// }
+// const checkService = async () => {
+//   try {
+//     const response = await fetch('http://127.0.0.1:7072/ping')
+//     if (!response.ok) {
+//       throw new Error('服务未正常启动')
+//     }
+//     console.log('服务已正常启动')
+//   } catch (error) {
+//     console.error('服务检查失败:', error)
+//   }
+// }
+// checkService();
+
+// const switchView = async (viewName: string) => {
+//   await checkService()
+//   currentView.value = ''
+//   await nextTick()
+//   currentView.value = viewName
+// }
+
 </script>
 
 <style scoped lang="scss">

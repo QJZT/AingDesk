@@ -4,9 +4,9 @@ yarn.lock
 node_modules
 package-lock.json
 
-api\control-go\go.sum
-api\control-go\control-go.exe
+api/control-go/go.sum
+api/control-go/control-go.exe
 logs
 data
 
-public\electron
+public/electron
