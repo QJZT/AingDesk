@@ -49,7 +49,8 @@ let goProcess;
 function startGoService() {
     const goExePath = path.resolve(pub.get_resource_path(), 'exe/control-go.exe');
     const dbPath = path.join(pub.get_data_path(), 'sqlite-data.db');
-    goProcess = spawn(goExePath, ['-p', dbPath], {
+    const goDataPath = path.join(pub.get_data_path(), 'control-go-file');
+    goProcess = spawn(goExePath, ['-p', dbPath,'-p1', goDataPath], {
       cwd: path.dirname(goExePath)
     });
   
