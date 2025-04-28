@@ -1,12 +1,27 @@
+# 系统文件
 .DS_Store
-lang.py
+Thumbs.db
+
+# 依赖文件
+node_modules/
 yarn.lock
-node_modules
 package-lock.json
 
-api\control-go\go.sum
-api\control-go\control-go.exe
-logs
-data
+# 日志文件
+logs/
+*.log
 
-public\electron
+# 数据文件
+data/
+
+# 编译文件
+api/control-go/go.sum
+api/control-go/control-go.exe
+
+# 其他
+lang.py
+public/electron
+
+api/control-go/control-go.exe
+api/control-go/control-go
+api/control-go/test.db

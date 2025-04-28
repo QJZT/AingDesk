@@ -72,43 +72,72 @@
     </div>
 
     <!-- 三列布局 -->
-    <div class="three-column-layout" style="height: calc(100% - 30px); overflow: hidden;">
-      <n-card title="直播控制台" style="height: 100%; overflow: hidden;">
-        <div class="control-blocks">
-          <div class="control-block" v-for="(block, index) in controlBlocks" :key="index">
+    <div class="three-column-layout">
+      <n-card title="模块">
+        <n-infinite-scroll style="height: calc(100vh - 260px);padding-right: 15px;" :distance="10">
+          <div class="control-blocks">
+          <div class="control-block" v-for="(block, index) in controlBlocks" :key="index" style=" background-color: #f8fafc;">
             <div class="block-header">
               <h4>{{ block.title }}</h4>
-              <n-switch v-model:value="block.isActive" />
-            </div>
-            <div class="block-content" v-if="block.isActive">
+              <div style="display: flex; align-items: center; gap: 8px;">
               <n-select 
+                v-model:value="block.selectedVoice"
+                :options="block.voiceOptions.map(opt => ({ label: opt, value: opt }))"
+                style="width: 90px;"
+                placeholder="选择人声"
+                clearable
+                 size="small"
+              />
+              <n-switch v-model:value="block.isActive"  size="small" />
+              </div>
+            </div>
+            <!-- <div class="block-content" v-if="block.isActive"> -->
+              <!-- <n-select 
                 v-model:value="block.selectedVoice"
                 :options="block.voiceOptions.map(opt => ({ label: opt, value: opt }))"
                 style="margin-bottom: 8px;"
                 placeholder="选择人声"
                 clearable
-              />
+              /> -->
               <!-- 这里放置每个功能方块的具体内容 -->
               <!-- <n-input v-if="block.type === 'input'" v-model:value="block.value" :placeholder="block.placeholder" /> -->
               <!-- 其他类型的功能组件 -->
-            </div>
+            <!-- </div> -->
           </div>
         </div>
+        </n-infinite-scroll>
       </n-card>
 
       <!-- 观众互动 -->
-      <n-card title="观众互动" style="height: 100%; overflow: hidden;">
-        <n-scrollbar>
+      <n-card title="观众互动">
+        <template #header-extra>
+          <n-switch 
+            v-model:value="autoReadMode" 
+          >
+            <template #checked>自动朗读</template>
+            <template #unchecked>关闭朗读</template>
+          </n-switch>
+        </template>
+        <n-infinite-scroll style="height: calc(100vh - 260px);padding-right: 15px;" :distance="10">
           <div 
             v-for="(msg, index) in messages" 
             :key="index" 
             class="message-item"
-            style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+            style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;"
           >
-            <span class="username">{{ msg.user }}:</span>
-            <span class="content">{{ msg.content }}</span>
-          </div>
-        </n-scrollbar>
+          <n-button 
+            text
+            @click=""
+            style="padding: 0; min-width: 20px; display: flex; align-items: center;"
+          >
+            <template #icon>
+              <i class="i-tdesign:play-circle w-15 h-15" style="vertical-align: middle;color: #888;"></i>
+            </template>
+          </n-button>
+          <span class="username" style="line-height: 1;">{{ msg.user }}:</span>
+          <span class="content" style="line-height: 1;">{{ msg.content }}</span>
+        </div>
+        </n-infinite-scroll>
         <div class="message-input">
           <n-input-group>
             <n-button text @click="toggleInputMode" class="mode-switch">
@@ -150,16 +179,29 @@
       </n-card>
 
       <!-- 直播数据 -->
-      <n-card title="直播数据" style="height: 100%; overflow: hidden;">
-        <div class="audio-blocks">
-          <div class="audio-block" v-for="(audio, index) in audioFiles" :key="index">
+      <n-card title="音频数据">
+        <n-infinite-scroll style="height: calc(100vh - 260px);padding-right: 15px;" :distance="10">
+          <div class="audio-blocks">
+          <div class="audio-block" v-for="(audio, index) in audioFiles" :key="index" style="background-color: #f8fafc;">
             <div class="audio-info">
-              <h4>{{ audio.title }}</h4>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4>{{ audio.title }}</h4>
+                <n-button 
+                  type="error" 
+                  text
+                  @click=""
+                >
+                  <template #icon>
+                    <i class="i-tdesign:delete w-15 h-15"></i>
+                  </template>
+                </n-button>
+              </div>
               <p>{{ audio.description }}</p>
             </div>
             <audio controls :src="audio.url"></audio>
           </div>
         </div>
+        </n-infinite-scroll>   
       </n-card>
         <!-- <div class="stats-grid">
           <n-statistic label="观看人数" :value="viewerCount" />
@@ -186,8 +228,7 @@ import {
   NStatistic,
   NScrollbar
 } from 'naive-ui'
-import { NIcon } from 'naive-ui'
-
+const autoReadMode = ref(false)
 const controlBlocks = ref([
   {
     title: '推流控制',
@@ -201,6 +242,142 @@ const controlBlocks = ref([
     type: 'select',
     isActive: false,
     options: ['高清', '标清', '流畅'],
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
     voiceOptions: ['默认', '男声', '女声', '卡通'],
     selectedVoice: '默认'
   },
@@ -231,6 +408,76 @@ const audioFiles = ref([
     title: '背景音乐1',
     description: '轻松愉轻松愉快的背景音乐轻松愉快的背景音乐轻松愉快的背景音乐轻松愉快的背景音乐轻松愉快的背景音乐轻松愉快的背景音乐快的背景音乐',
     url: '/audio/bgm1.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
   },
   {
     title: '开场音乐',
@@ -294,7 +541,8 @@ const audioDriverOptions = [
   
   .three-column-layout {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    // grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1.5fr 1fr;  // 中间列宽度是两侧的1.5倍
     gap: 8px;
     height: 100%;
     

@@ -13,7 +13,7 @@
 
         <!-- 新建对话按钮 -->
         <div class="flex justify-center items-center">
-            <n-button type="primary" ghost style="width:100%"  @click="currentView='LiveConsole'">
+            <n-button type="primary" ghost style="width:100%"  @click="setCurrentView('LiveConsole')">
                 <!-- <template #icon>
                     <i class="i-tdesign:chat-add w-16 h-16"></i>
                 </template> -->
@@ -23,7 +23,7 @@
 
          <!-- 新建对话按钮 -->
          <div class="flex justify-center items-center">
-            <n-button type="primary" ghost style="width:100%" @click="currentView='ModuleConfig'">
+            <n-button type="primary" ghost style="width:100%" @click="setCurrentView('ModuleConfig')">
                 <!-- <template #icon>
                     <i class="i-tdesign:chat-add w-16 h-16"></i>
                 </template> -->
@@ -67,7 +67,7 @@
                     <ChatList />
                 </div>
             </n-scrollbar>
-            <div class="sider-divider"></div>
+            <!-- <div class="sider-divider"></div> -->
         </div>
         
         <!-- <div class="recent-header">
@@ -84,19 +84,40 @@
             </n-scrollbar>
             <div class="sider-divider"></div>
         </div> -->
-
-        <div class="recent-header">
-            <span class=" text-[var(--bt-notice-text-color)] flex justify-start items-center ml-10">{{ $t("知识库")
-                }}</span>
-        </div>
+        
+        
+        <!-- <div class="recent-header">
+            <span class=" text-[var(--bt-notice-text-color)] flex justify-start items-center ml-10">
+                {{ $t("知识库")}} 
+            </span>
+        </div> -->
+        <n-tabs type="line" animated :size="'small'" justify-content="space-evenly" style=""
+        @update:value="handleUpdateValue">
+            <n-tab-pane name="zsk" tab="知识库" >
+            </n-tab-pane>
+            <n-tab-pane name="ypk" tab="音频库">
+            </n-tab-pane>
+        </n-tabs>
 
         <!-- 知识库 -->
-        <div class="sider-wrapper" style="overflow: hidden; gap:10px">
+        <div class="sider-wrapper" v-show="tab_pane == 'zsk'" style="overflow: hidden; gap:10px">
             <n-scrollbar :style="{ height: '100%' }">
                 <div class="sider-top">
                     <KnowledgeList />
                 </div>
             </n-scrollbar>
+        </div>
+        <div class="sider-wrapper" v-show="tab_pane == 'ypk'" style="overflow: hidden; gap:10px">
+            <n-scrollbar :style="{ height: '100%' }">
+                <div class="sider-top">
+                    <AudioLibraryList />
+                </div>
+            </n-scrollbar>
+            <!-- <n-scrollbar :style="{ height: '100%' }">
+                <div class="sider-top">
+                    <KnowledgeList />
+                </div>
+            </n-scrollbar> -->
         </div>
 
         <!-- 侧边栏下部分 -->
@@ -124,6 +145,7 @@ import { getGlobalStore } from "@/stores/global"
 import OptimizeProgress from "@/views/KnowleadgeStore/components/OptimizeProgress.vue"
 import ChatList from "./components/ChatList.vue"
 import KnowledgeList from "./components/KnowledgeList.vue";
+import AudioLibraryList from "./components/AudioLibraryList.vue";
 import SiderBottom from "./components/SiderBottom.vue";
 import RemoveChatConfirm from "./components/RemoveChatConfirm.vue";
 import ModifyChatConfirm from "./components/ModifyChatConfirm.vue";
@@ -134,6 +156,8 @@ import logoImage from "@/assets/images/logo.png"
 import logoDark from "@/assets/images/logo-dark.png"
 import { getSiderStoreData } from "../Sider/store/index.ts";
 import { useI18n } from "vue-i18n";
+import { set } from "@vueuse/core";
+import { log } from "mermaid/dist/logger.js";
 const { t: $t } = useI18n()
 
 const { siderBg } = getGlobalStore()
@@ -145,6 +169,9 @@ const { currentView } = getSiderStoreData()
  * @description 计算不同模式下logo的图片
  */
 
+const setCurrentView = (viewName: string) => {
+    set(currentView, viewName)
+}
 const logo = computed(() => {
     if (themeMode.value == "light") {
         return logoImage
@@ -158,6 +185,13 @@ const logo = computed(() => {
  */
 get_chat_list()
 
+const tab_pane = ref("zsk")
+const handleUpdateValue =  (value: string) => {
+        tab_pane.value = value;
+        console.log(tab_pane.value);
+
+}
+
 </script>
 
 <style scoped lang="scss">
@@ -166,7 +200,7 @@ get_chat_list()
 .layout-sider-wrapper {
     display: grid;
     // grid-template-rows: 50px 22px 2fr 22px 1fr 140px;
-    grid-template-rows: 50px 50px 50px 50px 50px 25px 22px 2fr 22px 1fr 170px;
+    grid-template-rows: 50px 50px 50px 50px 50px 25px 22px 1fr 35px  1fr 170px;
     height: 100%;
     box-sizing: border-box;
     padding: var(--bt-pd-small);

@@ -41,36 +41,35 @@
                     @click="settingsTtsShow = false"></i>
             </template>
 
-            <div class="ollama-url">
-                <n-input-group class="w-45%">
-                    <n-button>{{ $t("Ollama接口地址") }}</n-button>
+            <!-- <div class="ollama-url"> -->
+                <!-- <n-input-group class="w-45%"> -->
+                    <!-- <n-button>{{ $t("Ollama接口地址") }}</n-button> -->
                     <!-- 这里使用的是 ollamaUrl，应该改为 ollamaUrlTts -->
-                    <n-input placeholder="请填写ollama接入地址" v-model:value="ollamaUrlTts" />
-                    <n-button type="primary" @click="setOllamaUrl">{{ $t("保存") }}</n-button>
-                </n-input-group>
+                    <!-- <n-input placeholder="请填写ollama接入地址" v-model:value="ollamaUrlTts" /> -->
+                    <!-- <n-button type="primary" @click="setOllamaUrl">{{ $t("保存") }}</n-button> -->
+                <!-- </n-input-group> -->
                 <!-- 这里使用的是 isInstalledManager，应该改为 isInstalledManagerTts -->
-                <div class="notice" v-if="!isInstalledManagerTts">{{ $t("当前ollama地址不可用") }}</div>
-            </div>
+                <!-- <div class="notice" v-if="!isInstalledManagerTts">{{ $t("当前ollama地址不可用") }}</div> -->
+            <!-- </div> -->
 
             <!-- 这里使用的是 modelList，需要使用对应的 TTS 列表 -->
-            <div class="mt-20" v-if="modelList.length == 0">{{ $t("首次使用，请选择要安装的模型") }}</div>
+            <!-- <div class="mt-20" v-if="modelList.length == 0">{{ $t("首次使用，请选择要安装的模型") }}</div> -->
 
             <!-- 这里使用的是 ollamaUrl，应该改为 ollamaUrlTts -->
             <div class="mt-20" :class="{ mask: !ollamaUrlTts }">
                 <div class="flex justify-between items-center mb-10">
 
-                    <n-input-group>
+                    <!-- <n-input-group>
                         <n-input v-model:value="search" @keydown.enter.native="handleSearch" :style="{ width: '220px' }"
                             :placeholder='`${$t("如:")} deepseek-r1`' />
                         <n-button type="primary" @click="handleSearch" ghost>
                             {{ $t("搜索") }}
                         </n-button>
-                    </n-input-group>
+                    </n-input-group> -->
 
-                    <n-radio-group v-model:value="modeType" @update:value="handleSearch">
+                    <!-- <n-radio-group v-model:value="modeType" @update:value="handleSearch">
                         <n-radio-button v-for="tl in toolsListTts" :key="tl.value" :value="tl.value" :label="tl.label" />
-                    </n-radio-group>
-                    
+                    </n-radio-group> -->
                 </div>
                 <n-data-table :columns="modelColumns" :data="filterList" :pagination="pagination" style="height: 400px;"
                     flex-height />

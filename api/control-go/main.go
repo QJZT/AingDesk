@@ -1,12 +1,15 @@
 package main
 
 import (
+	"control-go/global"
 	"control-go/model"
 	"control-go/router"
 	"control-go/seed"
 	"flag"
 	"fmt"
+	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -14,7 +17,8 @@ import (
 )
 
 func main() {
-	p := flag.String("p", "p.db", "指定数据库环境 (dev/test/prod)")
+	p := flag.String("p", "test.db", "指定数据库环境")
+	p1 := flag.String("p1", "control-go", "指定存储环境文件夹")
 	flag.Parse()
 	// 确保启用 json1 扩展，并启用外键支持
 	db, err := gorm.Open(sqlite.Open(*p+"?_pragma=json1&_pragma=foreign_keys(1)"), &gorm.Config{
@@ -23,18 +27,15 @@ func main() {
 	if err != nil {
 		panic("failed to connect database")
 	}
+	db.AutoMigrate(&model.Name{}, &model.FileData{}, &model.ModuleConfig{}, &model.BaseModule{}, &model.Product{})
 
-	// 迁移 ModuleConfig、BaseModule 和 Product 表，确保顺序正确
-	if err := db.AutoMigrate(&model.ModuleConfig{}); err != nil {
-		panic("failed to migrate ModuleConfig: " + err.Error())
+	// 检查并创建文件夹
+	global.ToneFilePath = *p1
+	if _, err := os.Stat(*p1); os.IsNotExist(err) {
+		if err := os.Mkdir(*p1, 0755); err != nil {
+			panic("无法创建存储文件夹: " + err.Error())
+		}
 	}
-	if err := db.AutoMigrate(&model.BaseModule{}); err != nil {
-		panic("failed to migrate BaseModule: " + err.Error())
-	}
-	if err := db.AutoMigrate(&model.Product{}); err != nil {
-		panic("failed to migrate Product: " + err.Error())
-	}
-	fmt.Println("Database migration completed")
 
 	// 插入假数据
 	if err := seed.SeedBaseModule(db); err != nil {
@@ -52,11 +53,17 @@ func main() {
 	r := gin.Default()
 	// 设置信任的代理
 	r.SetTrustedProxies([]string{"127.0.0.1"})
-
+	// 添加CORS中间件
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 	router.SetupBaseModuleRoutes(r, db)
 	router.SetupProductRoutes(r, db)
 	router.SetupPingRoutes(r)
-
-	fmt.Println("Starting server on :7072")
+	router.SetupNameRoutes(r, db)
 	r.Run(":7072")
 }

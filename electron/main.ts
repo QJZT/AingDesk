@@ -49,7 +49,8 @@ let goProcess;
 function startGoService() {
     const goExePath = path.resolve(pub.get_resource_path(), 'exe/control-go.exe');
     const dbPath = path.join(pub.get_data_path(), 'sqlite-data.db');
-    goProcess = spawn(goExePath, ['-p', dbPath], {
+    const goDataPath = path.join(pub.get_data_path(), 'control-go-file');
+    goProcess = spawn(goExePath, ['-p', dbPath,'-p1', goDataPath], {
       cwd: path.dirname(goExePath)
     });
   
@@ -64,6 +65,45 @@ function startGoService() {
     goProcess.on('close', (code) => {
       console.log(`control-go服务退出，代码 ${code}`);
     });
+
+//     // 监听消息
+//     let retryCount = 0;
+//     const maxRetries = 20;
+
+//     const pingInterval = setInterval(() => {
+//       const http = require('http');
+// const { app: electronApp } = require('electron');
+//       const options = {
+//           hostname: 'localhost',
+//           port: 7072, // 假设服务运行在8080端口
+//           path: '/ping',
+//           method: 'GET',
+//           headers: {
+//               'Content-Type': 'application/json'
+//           }
+//       };
+
+//       const req = http.request(options, (res) => {
+//           console.log(`Ping接口响应状态码: ${res.statusCode}`);
+//           res.on('data', (data) => {
+//             clearInterval(pingInterval);
+//           });
+//           retryCount = 0; // 成功时重置计数器
+//       });
+
+//       req.on('error', (error) => {
+//           console.error(`Ping err: ${error.message}`);
+//           retryCount++;
+//           if (retryCount >= maxRetries) {
+//               clearInterval(pingInterval);
+//               console.error('Ping err electronApp.quit');
+//               // 由于 ElectronEgg 上不存在 quit 属性，推测使用 electron 的 app 模块来退出应用
+//               electronApp.quit();
+//           }
+//       });
+
+//       req.end();
+//   }, 2000); // 每2秒调用一次
 }
 startGoService();
 
