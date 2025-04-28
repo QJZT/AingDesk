@@ -1,0 +1,4 @@
+database:
+      path: "p.db"
+    server:
+      port: ":7072"

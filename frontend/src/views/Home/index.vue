@@ -23,8 +23,8 @@
             <n-layout-content v-if="currentView === 'ChatContent'" class="layout-content" style="padding:0">
                 <ChatContent v-if="currentView === 'ChatContent'" />
             </n-layout-content>
-            <LiveConsole v-show="currentView === 'LiveConsole'" />
-            <ModuleConfig v-show="currentView === 'ModuleConfig'" />
+            <LiveConsole v-if="currentView === 'LiveConsole'" />
+            <ModuleConfig v-if="currentView === 'ModuleConfig'" />
         </n-layout>
     </n-layout>
 
