@@ -8,7 +8,7 @@
           v-model:value="selectedTimezone"
           :options="timezoneOptions"
           placeholder="选择时区"
-          style="width: 150px;"
+          style="width: 250px;"
         />
       </div>
       
@@ -18,7 +18,7 @@
           v-model:value="selectedLanguage"
           :options="languageOptions"
           placeholder="选择语种"
-          style="width: 100px;"
+          style="width: 150px;"
         />
       </div>
       
@@ -80,17 +80,66 @@
             <div class="block-header">
               <h4>{{ block.title }}</h4>
               <div style="display: flex; align-items: center; gap: 8px;">
-              <n-select 
+              <!-- <n-select 
                 v-model:value="block.selectedVoice"
                 :options="block.voiceOptions.map(opt => ({ label: opt, value: opt }))"
                 style="width: 90px;"
                 placeholder="选择人声"
                 clearable
                  size="small"
-              />
+              /> -->
+              
               <n-switch v-model:value="block.isActive"  size="small" />
               </div>
+              
             </div>
+            <div style="height: 5px;"></div>
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+              <div style="width: 30%;font-size: 12px;">
+                选择人声
+            </div>
+            <n-select 
+                v-model:value="block.selectedVoice"
+                :options="block.voiceOptions.map(opt => ({ label: opt, value: opt }))"
+                style="width: 70%;"
+                placeholder="选择人声"
+                clearable
+                 size="small"
+              />
+            </div>
+            <div style="height: 5px;"></div>
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+              <div style="width: 30%;font-size: 12px;">
+              音量:{{block.volume}}%
+            </div>
+            <n-slider
+                v-model:value="block.volume"
+                :min="0"
+                :max="100"
+                :step="1"
+                style="width: 70%;"
+                tooltip
+                placement="bottom"
+                :format-tooltip="(value) => `音量: ${value}%`"
+              />
+            </div>
+            <div style="height: 5px;"></div>
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+              <div style="width: 30%;font-size: 12px">
+                音速:{{block.speed}}x
+              </div>
+              <n-slider
+                v-model:value="block.speed"
+                :min="0.01"
+                :max="2"
+                :step="0.01"
+                style="width: 70%;"
+                tooltip
+                placement="bottom"
+                :format-tooltip="(value) => `音速: ${value}x`"
+              />
+            </div>  
+              
             <!-- <div class="block-content" v-if="block.isActive"> -->
               <!-- <n-select 
                 v-model:value="block.selectedVoice"
@@ -235,13 +284,123 @@ const controlBlocks = ref([
     type: 'switch',
     isActive: true,
     voiceOptions: ['默认', '男声', '女声', '卡通'],
-    selectedVoice: '默认'
+    selectedVoice: '默认',
+    volume: 50, // 默认音量
+    speed: 1.0 // 默认音速
   },
   {
     title: '画质调节',
     type: 'select',
     isActive: false,
     options: ['高清', '标清', '流畅'],
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认',
+    volume: 50, // 默认音量
+    speed: 1.0 // 默认音速
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认',
+    volume: 50, // 默认音量
+    speed: 1.0 // 默认音速
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
+    voiceOptions: ['默认', '男声', '女声', '卡通'],
+    selectedVoice: '默认'
+  },
+  {
+    title: '直播公告',
+    type: 'input',
+    isActive: false,
+    placeholder: '输入直播公告内容',
     voiceOptions: ['默认', '男声', '女声', '卡通'],
     selectedVoice: '默认'
   },
@@ -483,6 +642,96 @@ const audioFiles = ref([
     title: '开场音乐',
     description: '直播开场专用音乐',
     url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
+  },
+  {
+    title: '开场音乐',
+    description: '直播开场专用音乐',
+    url: '/audio/opening.mp3'
   }
 ])
 function toggleLive() {
@@ -517,15 +766,52 @@ const selectedLanguage = ref('')
 const selectedAudioDriver = ref('')
 
 const timezoneOptions = [
+  { label: 'GMT-12 国际日期变更线西', value: 'GMT-12' },
+  { label: 'GMT-11 萨摩亚标准时间', value: 'GMT-11' },
+  { label: 'GMT-10 夏威夷-阿留申标准时间', value: 'GMT-10' },
+  { label: 'GMT-9 阿拉斯加标准时间', value: 'GMT-9' },
+  { label: 'GMT-8 太平洋标准时间', value: 'GMT-8' },
+  { label: 'GMT-7 山地标准时间', value: 'GMT-7' },
+  { label: 'GMT-6 中部标准时间', value: 'GMT-6' },
+  { label: 'GMT-5 东部标准时间', value: 'GMT-5' },
+  { label: 'GMT-4 大西洋标准时间', value: 'GMT-4' },
+  { label: 'GMT-3 巴西利亚标准时间', value: 'GMT-3' },
+  { label: 'GMT-2 南乔治亚和南桑威奇群岛时间', value: 'GMT-2' },
+  { label: 'GMT-1 亚速尔群岛标准时间', value: 'GMT-1' },
+  { label: 'GMT+0 格林威治标准时间', value: 'GMT+0' },
+  { label: 'GMT+1 中欧标准时间', value: 'GMT+1' },
+  { label: 'GMT+2 东欧标准时间', value: 'GMT+2' },
+  { label: 'GMT+3 莫斯科标准时间', value: 'GMT+3' },
+  { label: 'GMT+4 阿布扎比标准时间', value: 'GMT+4' },
+  { label: 'GMT+5 巴基斯坦标准时间', value: 'GMT+5' },
+  { label: 'GMT+6 孟加拉国标准时间', value: 'GMT+6' },
+  { label: 'GMT+7 印度支那时间', value: 'GMT+7' },
   { label: 'GMT+8 北京时间', value: 'GMT+8' },
-  { label: 'GMT+0 伦敦时间', value: 'GMT+0' },
-  { label: 'GMT-5 纽约时间', value: 'GMT-5' }
+  { label: 'GMT+9 日本标准时间', value: 'GMT+9' },
+  { label: 'GMT+10 澳大利亚东部标准时间', value: 'GMT+10' },
+  { label: 'GMT+11 所罗门群岛时间', value: 'GMT+11' },
+  { label: 'GMT+12 斐济标准时间', value: 'GMT+12' },
+  { label: 'GMT+13 汤加标准时间', value: 'GMT+13' },
+  { label: 'GMT+14 基里巴斯线岛时间', value: 'GMT+14' }
 ]
 
 const languageOptions = [
-  { label: '简体中文', value: 'zh-CN' },
-  { label: 'English', value: 'en-US' },
-  { label: '日本語', value: 'ja-JP' }
+{ label: '英语:en', value: 'en' },
+  { label: '西班牙语:es', value: 'es' },
+  { label: '法语:fr', value: 'fr' },
+  { label: '德语:de', value: 'de' },
+  { label: '意大利语:it', value: 'it' },
+  { label: '葡萄牙语:pt', value: 'pt' },
+  { label: '波兰语:pl', value: 'pl' },
+  { label: '土耳其语:tr', value: 'tr' },
+  { label: '俄语:ru', value: 'ru' },
+  { label: '荷兰语:nl', value: 'nl' },
+  { label: '捷克语:cs', value: 'cs' },
+  { label: '阿拉伯语:ar', value: 'ar' },
+  { label: '简体中文:zh-cn', value: 'zh-cn' },
+  { label: '日语:ja', value: 'ja' },
+  { label: '匈牙利语:hu', value: 'hu' },
+  { label: '韩语:ko', value: 'ko' }
 ]
 
 const audioDriverOptions = [
