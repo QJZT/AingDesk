@@ -27,12 +27,14 @@
         <div class="form-item">
           <span class="label">{{ $t('触发条件') }} *</span>
           <div class="trigger-conditions">
-            <n-checkbox v-model:checked="basicForm.triggers.cycleExecution">{{ $t('循环执行') }}</n-checkbox>
-            <n-checkbox v-model:checked="basicForm.triggers.elasticComment">{{ $t('弹幕评论') }}</n-checkbox>
-            <n-checkbox v-model:checked="basicForm.triggers.gift">{{ $t('送礼物') }}</n-checkbox>
-            <n-checkbox v-model:checked="basicForm.triggers.like">{{ $t('点赞') }}</n-checkbox>
-            <n-checkbox v-model:checked="basicForm.triggers.joinRoom">{{ $t('进入直播间') }}</n-checkbox>
-            <n-checkbox v-model:checked="basicForm.triggers.notice">{{ $t('警告提示') }}</n-checkbox>
+            <n-radio-group v-model:value="basicForm.selectedTrigger">
+              <n-radio value="cycleExecution">{{ $t('循环执行') }}</n-radio>
+              <n-radio value="elasticComment">{{ $t('弹幕评论') }}</n-radio>
+              <n-radio value="gift">{{ $t('送礼物') }}</n-radio>
+              <n-radio value="like">{{ $t('点赞') }}</n-radio>
+              <n-radio value="joinRoom">{{ $t('进入直播间') }}</n-radio>
+              <n-radio value="notice">{{ $t('警告提示') }}</n-radio>
+            </n-radio-group>
           </div>
         </div>
       </div>
@@ -85,6 +87,7 @@
             <n-tag class="speech-tag" @click="addSpeechTag('再过十分钟')">{{ $t('再过十分钟') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('在线人数')">{{ $t('在线人数') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('直播间名称')">{{ $t('直播间名称') }}</n-tag>
+            <n-tag class="speech-tag" @click="addSpeechTag('点赞用户名')">{{ $t('点赞用户名') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('点赞用户名')">{{ $t('点赞用户名') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('送礼物用户名')">{{ $t('送礼物用户名') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('礼物名称')">{{ $t('礼物名称') }}</n-tag>
@@ -142,6 +145,7 @@ const loadDraft = () => {
     : {
         minTime: 0,
         maxTime: 0,
+        selectedTrigger: 'elasticComment', // 默认选中弹幕评论
         triggers: {
           cycleExecution: false,
           elasticComment: true,
@@ -157,6 +161,47 @@ const loadDraft = () => {
       };
 };
 
+// 添加 watch 来同步 selectedTrigger 和 triggers
+watch(() => basicForm.value.selectedTrigger, (newTrigger) => {
+  // 重置所有触发条件
+  Object.keys(basicForm.value.triggers).forEach(key => {
+    basicForm.value.triggers[key] = false;
+  });
+  // 设置选中的触发条件
+  if (newTrigger) {
+    basicForm.value.triggers[newTrigger] = true;
+  }
+}, { immediate: true });
+
+// 修改 watch initialData 部分
+watch(() => props.initialData, (newData) => {
+  if (newData && !localStorage.getItem('basicModuleDraft')) {
+    // 找到第一个为 true 的触发条件
+    const selectedTrigger = Object.entries(newData.triggers || {})
+      .find(([_, value]) => value)?.[0] || 'elasticComment';
+
+    basicForm.value = {
+      minTime: newData.minTime || 0,
+      maxTime: newData.maxTime || 0,
+      selectedTrigger,
+      triggers: {
+        cycleExecution: true,
+        elasticComment: false,
+        gift: false,
+        like: false,
+        joinRoom: false,
+        notice: false,
+        [selectedTrigger]: true
+      },
+      readStep: newData.readStep || 'random',
+      modelRewrite: newData.modelRewrite ? 'yes' : 'no',
+      rewriteFrequency: newData.rewriteFrequency || 0,
+      speechContent: newData.description || ''
+    };
+  }
+  console.log('BasicModuleDialog 初始化表单数据:', basicForm.value);
+}, { immediate: true });
+
 // 表单数据，优先从 localStorage 加载草稿
 const basicForm = ref(loadDraft());
 
@@ -167,13 +212,15 @@ watch(() => props.initialData, (newData) => {
     basicForm.value = {
       minTime: newData.minTime || 0,
       maxTime: newData.maxTime || 0,
+      selectedTrigger,
       triggers: {
-        cycleExecution: newData.triggers?.cycleExecution || false,
-        elasticComment: newData.triggers?.elasticComment || false,
-        gift: newData.triggers?.gift || false,
-        like: newData.triggers?.like || false,
-        joinRoom: newData.triggers?.joinRoom || false,
-        notice: newData.triggers?.notice || false
+        cycleExecution: false,
+        elasticComment: false,
+        gift: false,
+        like: false,
+        joinRoom: false,
+        notice: false,
+        [selectedTrigger]: true
       },
       readStep: newData.readStep || 'random',
       modelRewrite: newData.modelRewrite ? 'yes' : 'no',

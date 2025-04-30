@@ -19,7 +19,7 @@ func SeedBaseModule(db *gorm.DB) error {
 		{
 			ModuleType:        model.ModuleTypeBase,
 			OrderNum:          0,
-			ModuleName:        "基础模块",
+			ModuleName:        "基础模块", //1312312
 			IntervalTimeStart: 5,
 			IntervalTimeEnd:   10,
 			TriggerConditions: model.JSONSlice{model.TriggerExecuteLoop},
