@@ -3,6 +3,7 @@ package router
 import (
 	"control-go/dto"
 	"control-go/model"
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -11,78 +12,46 @@ import (
 
 func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 	r.GET("/trigger-conditions", func(c *gin.Context) {
-		c.JSON(200, model.ValidTriggerConditions())
+		conditions := model.ValidTriggerConditions()
+		fmt.Printf("GET /trigger-conditions 返回数据: %v\n", conditions)
+		c.JSON(200, conditions)
 	})
 
-	// 获取指定用户的 ModuleConfig 及其关联的 BaseModules
-	r.GET("/module-configs", func(c *gin.Context) {
-		userIDStr := c.Query("user_id")
-		if userIDStr == "" {
-			c.JSON(400, gin.H{"error": "user_id parameter is required"})
-			return
-		}
-		userID, err := strconv.Atoi(userIDStr)
-		if err != nil || userID < 1 {
-			c.JSON(400, gin.H{"error": "user_id must be a positive integer"})
-			return
-		}
-
-		var moduleConfigs []model.ModuleConfig
-		if err := db.Where("user_id = ?", userID).
-			Preload("BaseModules", func(db *gorm.DB) *gorm.DB {
-				return db.Order("order_num")
-			}).
-			Find(&moduleConfigs).Error; err != nil {
-			c.JSON(500, gin.H{"error": "failed to query module configs"})
-			return
-		}
-		c.JSON(200, moduleConfigs)
-	})
-
-	// 获取指定用户的 BaseModules
+	// 获取所有基础模块
 	r.GET("/base-modules", func(c *gin.Context) {
-		userIDStr := c.Query("user_id")
-		if userIDStr == "" {
-			c.JSON(400, gin.H{"error": "user_id parameter is required"})
-			return
-		}
-		userID, err := strconv.Atoi(userIDStr)
-		if err != nil || userID < 1 {
-			c.JSON(400, gin.H{"error": "user_id must be a positive integer"})
-			return
-		}
-
 		var baseModules []model.BaseModule
-		if err := db.Joins("JOIN module_configs ON module_configs.id = base_modules.module_config_id").
-			Where("module_configs.user_id = ?", userID).
-			Order("base_modules.order_num").
-			Find(&baseModules).Error; err != nil {
+		if err := db.Order("order_num").Find(&baseModules).Error; err != nil {
+			fmt.Printf("GET /base-modules 失败，错误: %v\n", err)
 			c.JSON(500, gin.H{"error": "failed to query base modules"})
 			return
 		}
-		c.JSON(200, dto.ToBaseModuleResponseSlice(baseModules))
+		response := dto.ToBaseModuleResponseSlice(baseModules)
+		fmt.Printf("GET /base-modules 返回数据: %v\n", response)
+		c.JSON(200, response)
 	})
 
-	// 创建 BaseModule
+	// 创建基础模块
 	r.POST("/base-modules", func(c *gin.Context) {
-		userIDStr := c.Query("user_id")
-		if userIDStr == "" {
-			c.JSON(400, gin.H{"error": "user_id parameter is required"})
-			return
-		}
-		userID, err := strconv.Atoi(userIDStr)
-		if err != nil || userID < 1 {
-			c.JSON(400, gin.H{"error": "user_id must be a positive integer"})
-			return
-		}
-
 		var baseModule model.BaseModule
 		if err := c.ShouldBindJSON(&baseModule); err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
 
+		// 验证模块类型
+		if baseModule.ModuleType != model.ModuleTypeBase && baseModule.ModuleType != model.ModuleTypeAudio {
+			c.JSON(400, gin.H{"error": "invalid module type"})
+			return
+		}
+
+		// 如果是音频模块，验证音频路径
+		if baseModule.ModuleType == model.ModuleTypeAudio && baseModule.AudioPath == "" {
+			c.JSON(400, gin.H{"error": "audio module requires audio path"})
+			return
+		}
+
 		if baseModule.IntervalTimeStart >= baseModule.IntervalTimeEnd {
+			fmt.Println("POST /base-modules 失败，IntervalTimeStart 必须小于 IntervalTimeEnd")
 			c.JSON(400, gin.H{"error": "IntervalTimeStart must be less than IntervalTimeEnd"})
 			return
 		}
@@ -93,53 +62,40 @@ func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 		}
 		for _, cond := range baseModule.TriggerConditions {
 			if !validConditions[cond] {
+				fmt.Printf("POST /base-modules 失败，无效的 TriggerCondition: %s\n", cond)
 				c.JSON(400, gin.H{"error": "invalid TriggerCondition: " + cond})
 				return
 			}
 		}
 
-		var moduleConfig model.ModuleConfig
-		if err := db.Where("id = ? AND user_id = ?", baseModule.ModuleConfigID, userID).First(&moduleConfig).Error; err != nil {
-			c.JSON(400, gin.H{"error": "invalid ModuleConfigID or not owned by this user"})
-			return
-		}
-
+		// 创建基础模块部分的返回
 		if err := db.Create(&baseModule).Error; err != nil {
+			fmt.Printf("POST /base-modules 失败，数据库创建错误: %v\n", err)
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
 
-		// 返回完整 BaseModule，包含 ID（前端需要 ID 用于编辑和删除）
-		c.JSON(200, baseModule)
+		response := dto.ToBaseModuleResponse(baseModule)
+		fmt.Printf("POST /base-modules 返回数据: %v\n", response)
+		c.JSON(200, response)
 	})
 
-	// 更新 BaseModule
+	// 更新基础模块
 	r.PUT("/base-modules/:id", func(c *gin.Context) {
-		userIDStr := c.Query("user_id")
-		if userIDStr == "" {
-			c.JSON(400, gin.H{"error": "user_id parameter is required"})
-			return
-		}
-		userID, err := strconv.Atoi(userIDStr)
-		if err != nil || userID < 1 {
-			c.JSON(400, gin.H{"error": "user_id must be a positive integer"})
-			return
-		}
-
-		idStr := c.Param("id")
-		id, err := strconv.Atoi(idStr)
+		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil || id < 1 {
+			fmt.Printf("PUT /base-modules/%d 失败，无效的 ID: %v\n", id, err)
 			c.JSON(400, gin.H{"error": "id must be a positive integer"})
 			return
 		}
 
 		var baseModule model.BaseModule
-		if err := db.Joins("JOIN module_configs ON module_configs.id = base_modules.module_config_id").
-			Where("module_configs.user_id = ? AND base_modules.id = ?", userID, id).
-			First(&baseModule).Error; err != nil {
+		if err := db.First(&baseModule, id).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
-				c.JSON(404, gin.H{"error": "base module not found or not owned by this user"})
+				fmt.Printf("PUT /base-modules/%d 失败，模块未找到\n", id)
+				c.JSON(404, gin.H{"error": "base module not found"})
 			} else {
+				fmt.Printf("PUT /base-modules/%d 失败，数据库查询错误: %v\n", id, err)
 				c.JSON(500, gin.H{"error": "failed to query base module"})
 			}
 			return
@@ -147,12 +103,25 @@ func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 
 		var updateModule model.BaseModule
 		if err := c.ShouldBindJSON(&updateModule); err != nil {
+			fmt.Printf("PUT /base-modules/%d 失败，JSON 绑定错误: %v\n", id, err)
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
 
+		// 验证模块类型
+		if updateModule.ModuleType != model.ModuleTypeBase && updateModule.ModuleType != model.ModuleTypeAudio {
+			c.JSON(400, gin.H{"error": "invalid module type"})
+			return
+		}
+
+		// 如果是音频模块，验证音频路径
+		if updateModule.ModuleType == model.ModuleTypeAudio && updateModule.AudioPath == "" {
+			c.JSON(400, gin.H{"error": "audio module requires audio path"})
+			return
+		}
+
 		// 更新字段
-		baseModule.ModuleConfigID = updateModule.ModuleConfigID
+		baseModule.ModuleType = updateModule.ModuleType // 新增：更新模块类型
 		baseModule.OrderNum = updateModule.OrderNum
 		baseModule.ModuleName = updateModule.ModuleName
 		baseModule.IntervalTimeStart = updateModule.IntervalTimeStart
@@ -162,108 +131,48 @@ func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 		baseModule.ScriptContent = updateModule.ScriptContent
 		baseModule.IsModelRewrite = updateModule.IsModelRewrite
 		baseModule.RewriteFrequency = updateModule.RewriteFrequency
+		baseModule.AudioPath = updateModule.AudioPath // 新增：更新音频路径
 
+		// 更新基础模块部分的返回
 		if err := db.Save(&baseModule).Error; err != nil {
+			fmt.Printf("PUT /base-modules/%d 失败，数据库更新错误: %v\n", id, err)
 			c.JSON(500, gin.H{"error": "failed to update base module"})
 			return
 		}
 
-		// 返回完整 BaseModule，包含 ID
-		c.JSON(200, baseModule)
+		response := dto.ToBaseModuleResponse(baseModule)
+		fmt.Printf("PUT /base-modules/%d 返回数据: %v\n", id, response)
+		c.JSON(200, response)
 	})
 
-	// 删除 BaseModule
+	// 删除基础模块
 	r.DELETE("/base-modules/:id", func(c *gin.Context) {
-		userIDStr := c.Query("user_id")
-		if userIDStr == "" {
-			c.JSON(400, gin.H{"error": "user_id parameter is required"})
-			return
-		}
-		userID, err := strconv.Atoi(userIDStr)
-		if err != nil || userID < 1 {
-			c.JSON(400, gin.H{"error": "user_id must be a positive integer"})
-			return
-		}
-
-		idStr := c.Param("id")
-		id, err := strconv.Atoi(idStr)
+		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil || id < 1 {
+			fmt.Printf("DELETE /base-modules/%d 失败，无效的 ID: %v\n", id, err)
 			c.JSON(400, gin.H{"error": "id must be a positive integer"})
 			return
 		}
 
 		var baseModule model.BaseModule
-		if err := db.Joins("JOIN module_configs ON module_configs.id = base_modules.module_config_id").
-			Where("module_configs.user_id = ? AND base_modules.id = ?", userID, id).
-			First(&baseModule).Error; err != nil {
+		if err := db.First(&baseModule, id).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
-				c.JSON(404, gin.H{"error": "base module not found or not owned by this user"})
+				fmt.Printf("DELETE /base-modules/%d 失败，模块未找到\n", id)
+				c.JSON(404, gin.H{"error": "base module not found"})
 			} else {
+				fmt.Printf("DELETE /base-modules/%d 失败，数据库查询错误: %v\n", id, err)
 				c.JSON(500, gin.H{"error": "failed to query base module"})
 			}
 			return
 		}
 
 		if err := db.Delete(&baseModule).Error; err != nil {
+			fmt.Printf("DELETE /base-modules/%d 失败，数据库删除错误: %v\n", id, err)
 			c.JSON(500, gin.H{"error": "failed to delete base module"})
 			return
 		}
 
+		fmt.Printf("DELETE /base-modules/%d 返回数据: %v\n", id, gin.H{"message": "base module deleted successfully"})
 		c.JSON(200, gin.H{"message": "base module deleted successfully"})
-	})
-
-	// 获取指定模板数据
-	r.GET("/template-base-module", func(c *gin.Context) {
-		userIDStr := c.Query("user_id")
-		if userIDStr == "" {
-			c.JSON(400, gin.H{"error": "user_id parameter is required"})
-			return
-		}
-		userID, err := strconv.Atoi(userIDStr)
-		if err != nil || userID < 1 {
-			c.JSON(400, gin.H{"error": "user_id must be a positive integer"})
-			return
-		}
-
-		idStr := c.Query("id")
-		if idStr == "" {
-			c.JSON(400, gin.H{"error": "id parameter is required"})
-			return
-		}
-		id, err := strconv.Atoi(idStr)
-		if err != nil || id < 1 {
-			c.JSON(400, gin.H{"error": "id must be a positive integer"})
-			return
-		}
-
-		var moduleConfigs []model.ModuleConfig
-		if err := db.Where("user_id = ?", userID).Find(&moduleConfigs).Error; err != nil {
-			c.JSON(500, gin.H{"error": "failed to query module configs"})
-			return
-		}
-
-		if len(moduleConfigs) == 0 {
-			c.JSON(404, gin.H{"error": "no module configs found for this user"})
-			return
-		}
-
-		var baseModules []model.BaseModule
-		moduleConfigIDs := make([]uint, len(moduleConfigs))
-		for i, mc := range moduleConfigs {
-			moduleConfigIDs[i] = mc.ID
-		}
-		if err := db.Where("module_config_id IN ?", moduleConfigIDs).
-			Order("order_num").
-			Find(&baseModules).Error; err != nil {
-			c.JSON(500, gin.H{"error": "failed to query base modules"})
-			return
-		}
-
-		if id > len(baseModules) {
-			c.JSON(404, gin.H{"error": "template not found"})
-			return
-		}
-
-		c.JSON(200, dto.ToBaseModuleResponse(baseModules[id-1]))
 	})
 }

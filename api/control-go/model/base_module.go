@@ -59,26 +59,24 @@ func (j *JSONSlice) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, j)
 }
 
-// ModuleConfig 模块配置模型
-type ModuleConfig struct {
-	gorm.Model
-	UserID      uint         `gorm:"index"`    // 用户 ID，绑定到用户
-	Name        string       `gorm:"not null"` // 配置名称
-	Description string       // 配置描述
-	BaseModules []BaseModule `gorm:"foreignKey:ModuleConfigID"` // 一对多关系：一个 ModuleConfig 有多个 BaseModule
-}
+// 模块类型常量
+const (
+	ModuleTypeBase  = "base"  // 基础模块
+	ModuleTypeAudio = "audio" // 音频模块
+)
 
 // BaseModule 基础模块模型
 type BaseModule struct {
 	gorm.Model
-	ModuleConfigID    uint      `gorm:"index"` // 外键，关联 ModuleConfig
-	OrderNum          int       `gorm:"index"` // 排序编号，值越小越靠前
+	ModuleType        string    `gorm:"not null"` // 模块类型
+	OrderNum          int       `gorm:"index"`    // 排序编号，值越小越靠前
 	ModuleName        string    // 模块名称
 	IntervalTimeStart int       // 间隔时间起始（秒）
 	IntervalTimeEnd   int       // 间隔时间结束（秒）
 	TriggerConditions JSONSlice `gorm:"type:text"` // 触发条件（存储为 JSON 字符串）
 	ReadStep          string    // 读取步骤（random或sequential）
-	ScriptContent     string    // 话术文案
+	ScriptContent     JSONSlice `gorm:"type:text"` // 话术文案列表
 	IsModelRewrite    bool      // 是否模型改写
 	RewriteFrequency  int       // 改写频率（秒）
+	AudioPath         string    `gorm:"type:text"` // 音频文件路径，仅音频模块使用
 }

@@ -51,6 +51,8 @@ onMounted(() => {
 
   guideActive.value = storage.welcomeGuide
   targetNet.value = storage.searchEngine ? storage.searchEngine : ""
+
+  
 })
 
 /********** 拖拽上传 **********/

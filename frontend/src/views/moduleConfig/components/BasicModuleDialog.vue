@@ -1,3 +1,4 @@
+<!-- BasicModuleDialog.vue -->
 <template>
   <n-modal 
     :show="show"
@@ -42,7 +43,7 @@
           <span class="label">{{ $t('读取步骤') }} *</span>
           <n-radio-group v-model:value="basicForm.readStep">
             <n-radio value="random">{{ $t('随机') }}</n-radio>
-            <n-radio value="none">{{ $t('顺序') }}</n-radio>
+            <n-radio value="sequential">{{ $t('顺序') }}</n-radio>
           </n-radio-group>
         </div>
       </div>
@@ -133,48 +134,39 @@ const emits = defineEmits<{
   (e: 'save', value: any): void;
 }>();
 
-// 退出并触发事件
-const handleExit = () => {
-  console.log('退出基础模块弹窗，当前表单数据:', basicForm.value);  // 添加日志
-  emits('exit', basicForm.value);
-  emits('update:show', false);
+// 从 localStorage 加载草稿
+const loadDraft = () => {
+  const draft = localStorage.getItem('basicModuleDraft');
+  return draft
+    ? JSON.parse(draft)
+    : {
+        minTime: 0,
+        maxTime: 0,
+        triggers: {
+          cycleExecution: false,
+          elasticComment: true,
+          gift: false,
+          like: false,
+          joinRoom: false,
+          notice: false
+        },
+        readStep: 'random',
+        modelRewrite: 'yes',
+        rewriteFrequency: 0,
+        speechContent: ''
+      };
 };
 
-// 保存并触发事件
-const handleSave = () => {
-  console.log('保存基础模块，当前表单数据:', basicForm.value);  // 添加日志
-  emits('save', basicForm.value);
-  emits('update:show', false);
-};
-
-
-// 表单数据
-const basicForm = ref({
-  minTime: 30,
-  maxTime: 50,
-  triggers: {
-    cycleExecution: false,
-    elasticComment: true,
-    gift: false,
-    like: false,
-    joinRoom: false,
-    notice: false
-  },
-  readStep: 'random',
-  modelRewrite: 'yes',
-  rewriteFrequency: 180,
-  speechContent: ''
-});
-
-// 文案输入框的引用，指定为 Naive UI 的 InputInst 类型
-const speechInput = ref<InputInst | null>(null);
+// 表单数据，优先从 localStorage 加载草稿
+const basicForm = ref(loadDraft());
 
 // 监听 initialData 变化，填充表单（编辑模式）
 watch(() => props.initialData, (newData) => {
-  if (newData) {
+  // 如果没有草稿（localStorage 中没有数据），则使用 initialData 初始化
+  if (newData && !localStorage.getItem('basicModuleDraft')) {
     basicForm.value = {
-      minTime: newData.minTime || 30,
-      maxTime: newData.maxTime || 50,
+      minTime: newData.minTime || 0,
+      maxTime: newData.maxTime || 0,
       triggers: {
         cycleExecution: newData.triggers?.cycleExecution || false,
         elasticComment: newData.triggers?.elasticComment || false,
@@ -184,18 +176,27 @@ watch(() => props.initialData, (newData) => {
         notice: newData.triggers?.notice || false
       },
       readStep: newData.readStep || 'random',
-      modelRewrite: newData.modelRewrite || 'yes',
-      rewriteFrequency: newData.rewriteFrequency || 180,
+      modelRewrite: newData.modelRewrite ? 'yes' : 'no',
+      rewriteFrequency: newData.rewriteFrequency || 0,
       speechContent: newData.description || ''
     };
   }
+  console.log('BasicModuleDialog 初始化表单数据:', basicForm.value);
 }, { immediate: true });
+
+// 监听表单变化，保存到 localStorage
+watch(basicForm, (newFormData) => {
+  localStorage.setItem('basicModuleDraft', JSON.stringify(newFormData));
+  console.log('保存草稿到 localStorage (BasicModule):', newFormData);
+}, { deep: true });
+
+// 文案输入框的引用
+const speechInput = ref<InputInst | null>(null);
 
 // 点击标签插入到文案
 const addSpeechTag = (tag: string) => {
   if (!speechInput.value) return;
   
-  // 获取底层的 textarea 元素
   const textarea = speechInput.value.$el.querySelector('textarea');
   if (textarea) {
     const start = textarea.selectionStart;
@@ -203,10 +204,8 @@ const addSpeechTag = (tag: string) => {
     const text = basicForm.value.speechContent;
     const tagWithBraces = `{${$t(tag)}}`;
     
-    // 插入标签到光标位置
     basicForm.value.speechContent = text.slice(0, start) + tagWithBraces + text.slice(end);
     
-    // 将光标移动到插入标签后的位置
     setTimeout(() => {
       textarea.selectionStart = textarea.selectionEnd = start + tagWithBraces.length;
       textarea.focus();
@@ -214,14 +213,17 @@ const addSpeechTag = (tag: string) => {
   }
 };
 
-// 关闭弹窗
-const handleClose = () => {
+// 退出并触发事件
+const handleExit = () => {
+  console.log('退出基础模块弹窗，当前表单数据:', basicForm.value);
+  emits('exit', basicForm.value);
   emits('update:show', false);
 };
 
-// 提交表单
-const handleSubmit = () => {
-  emits('submit', basicForm.value);
+// 保存并触发事件
+const handleSave = () => {
+  console.log('保存基础模块，当前表单数据:', basicForm.value);
+  emits('save', basicForm.value);
   emits('update:show', false);
 };
 </script>

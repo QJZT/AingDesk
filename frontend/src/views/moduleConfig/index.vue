@@ -35,7 +35,13 @@
 
       <div class="content-section">
         <n-scrollbar style="max-height: calc(100vh - 400px)">
-          <div class="module-grid">
+          <div v-if="loading" class="loading-state">
+            <p>加载中...</p>
+          </div>
+          <div v-else-if="modules.length === 0" class="empty-state">
+            <p>暂无模块，请点击上方卡片添加新模块。</p>
+          </div>
+          <div v-else class="module-grid">
             <div class="module-item" v-for="module in modules" :key="module.id">
               <div class="module-header">
                 <h3>{{ module.name }}</h3>
@@ -74,38 +80,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted } from 'vue';
 import { NCard, NButton, NScrollbar } from 'naive-ui';
 import BasicModuleDialog from '@/views/ModuleConfig/components/BasicModuleDialog.vue';
 import AudioModuleDialog from '@/views/ModuleConfig/components/AudioModuleDialog.vue';
 import { eventBUS } from '@/views/Home/utils/tools';
 
-// 用户 ID，暂时写死
-const userId = '1';
-
 // 后端 API 基础 URL
-const API_BASE_URL = 'http://localhost:7072';
+const API_BASE_URL = 'http://localhost:7077';
 
 // 定义模块的接口
 interface Module {
-  id: number;
-  name: string;
-  description?: string;
-  minTime: number;
-  maxTime: number;
-  triggers: {
-    cycleExecution?: boolean;
-    elasticComment?: boolean;
-    gift?: boolean;
-    like?: boolean;
-    joinRoom?: boolean;
-    notice?: boolean;
-  };
-  audioFiles?: File[];
-  readStep?: 'random' | 'sequential';
-  modelRewrite?: boolean;
-  rewriteFrequency?: number;
+    id: number;
+    name: string;
+    description?: string;
+    minTime: number;
+    maxTime: number;
+    triggers: {
+        cycleExecution?: boolean;
+        elasticComment?: boolean;
+        gift?: boolean;
+        like?: boolean;
+        joinRoom?: boolean;
+        notice?: boolean;
+    };
+    audioFiles?: File[];
+    readStep?: 'random' | 'sequential';
+    modelRewrite?: boolean;
+    rewriteFrequency?: number;
 }
+
+// 控制加载状态
+const loading = ref(false);
 
 // 控制基础模块弹窗的显示
 const showBasicModule = ref(false);
@@ -118,136 +124,96 @@ const editingAudioModule = ref<Module | null>(null);
 // 模块数据
 const modules = ref<Module[]>([]);
 
-// 占位模板数据
-const defaultModules: Module[] = [
-  {
-    id: 1,
-    name: '欢迎模块',
-    description: '欢迎大家来到直播间，今天有精彩活动！{现在星期}{送礼物用户名}',
-    minTime: 20,
-    maxTime: 40,
-    triggers: {
-      cycleExecution: true,
-      elasticComment: true,
-      gift: false,
-      like: true,
-      joinRoom: false,
-      notice: false
-    },
-    readStep: 'random',
-    modelRewrite: true,
-    rewriteFrequency: 60
-  },
-  {
-    id: 2,
-    name: '规则提醒模块',
-    description: '请大家注意直播间规则，感谢配合！',
-    minTime: 50,
-    maxTime: 70,
-    triggers: {
-      cycleExecution: false,
-      elasticComment: false,
-      gift: true,
-      like: false,
-      joinRoom: true,
-      notice: true
-    },
-    readStep: 'sequential',
-    modelRewrite: false,
-    rewriteFrequency: 0
-  },
-  {
-    id: 3,
-    name: '福利模块',
-    description: '直播间福利来袭，快来参与吧！{现在时间}',
-    minTime: 30,
-    maxTime: 60,
-    triggers: {
-      cycleExecution: false,
-      elasticComment: true,
-      gift: true,
-      like: true,
-      joinRoom: false,
-      notice: false
-    },
-    readStep: 'random',
-    modelRewrite: true,
-    rewriteFrequency: 120
-  }
-];
+// 防止重复保存
+let isSaving = false;
 
 // 从后端获取模块数据
 async function fetchModules() {
-  console.log('开始加载模块数据...');
-  try {
-    const response = await fetch(`${API_BASE_URL}/base-modules?user_id=${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    console.log('API 响应状态:', response.status);
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`获取模块列表失败，状态码: ${response.status}，错误信息: ${errorData.error}`);
-    }
-    const backendData = await response.json();
-    console.log('后端返回数据:', backendData);
-    if (!Array.isArray(backendData)) {
-      throw new Error('后端返回数据格式错误，期望数组');
-    }
-    const mappedData = backendData.map((item) => {
-      try {
-        return mapBackendToFrontend(item);
-      } catch (mapError) {
-        console.error('映射数据时出错:', mapError, '原始数据:', item);
-        return null;
-      }
-    }).filter(module => module && module.id);
-    console.log('映射后的数据:', mappedData);
-    modules.value = mappedData;
-  } catch (error) {
-    console.error('加载模块失败:', error);
-    console.log('defaultModules 是否可用:', defaultModules);
+    console.log('开始加载模块数据...');
+    loading.value = true;
     try {
-      modules.value = [...defaultModules];
-      console.log('已赋值占位数据:', modules.value);
-    } catch (fallbackError) {
-      console.error('赋值占位数据失败:', fallbackError);
-      modules.value = [];
+        const response = await fetch(`${API_BASE_URL}/base-modules`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log('API 响应状态:', response.status);
+        const rawResponse = await response.text();
+        console.log('原始响应内容:', rawResponse);
+        console.log('原始响应长度:', rawResponse.length);
+        console.log('原始响应前100个字符:', rawResponse.substring(0, 100));
+        console.log('原始响应后100个字符:', rawResponse.substring(rawResponse.length - 100));
+        try {
+            JSON.parse(rawResponse);
+            console.log('JSON 解析成功');
+        } catch (parseError) {
+            console.error('JSON 解析失败:', parseError);
+            throw parseError;
+        }
+        if (!response.ok) {
+            let errorData;
+            try {
+                errorData = JSON.parse(rawResponse);
+            } catch (e) {
+                throw new Error(`获取模块列表失败，状态码: ${response.status}，原始响应: ${rawResponse}`);
+            }
+            throw new Error(`获取模块列表失败，状态码: ${response.status}，错误信息: ${errorData.error}`);
+        }
+        const backendData = JSON.parse(rawResponse);
+        console.log('后端返回数据:', backendData);
+        if (!Array.isArray(backendData)) {
+            throw new Error('后端返回数据格式错误，期望数组');
+        }
+        const mappedData = backendData.map((item) => {
+            try {
+                return mapBackendToFrontend(item);
+            } catch (mapError) {
+                console.error('映射数据时出错:', mapError, '原始数据:', item);
+                return null;
+            }
+        }).filter(module => module && module.id);
+        console.log('映射后的数据:', mappedData);
+        modules.value = mappedData;
+    } catch (error) {
+        console.error('加载模块失败:', error);
+        modules.value = [];
+    } finally {
+        loading.value = false;
+        console.log('加载完成，当前模块数据:', modules.value);
     }
-  } finally {
-    console.log('加载完成，当前模块数据:', modules.value);
-  }
 }
 
 // 将后端数据映射到前端格式
+// 将后端数据映射到前端格式的函数
+// 参数 backendModule: 后端返回的单个模块数据（可能是任意类型，需要做类型检查）
+// 返回值: 符合 Module 接口的对象，或者 null（如果数据无效）
 function mapBackendToFrontend(backendModule: any): Module | null {
-  if (!backendModule || typeof backendModule !== 'object') {
-    console.warn('无效的后端数据:', backendModule);
-    return null;
-  }
+    if (!backendModule || typeof backendModule !== 'object') {
+        console.warn('无效的后端数据:', backendModule);
+        return null;
+    }
 
-  const triggers: Module['triggers'] = {
-    cycleExecution: Array.isArray(backendModule.TriggerConditions) && backendModule.TriggerConditions.includes('ExecuteLoop') || false,
-    elasticComment: Array.isArray(backendModule.TriggerConditions) && backendModule.TriggerConditions.includes('BarrageComment') || false,
-    gift: Array.isArray(backendModule.TriggerConditions) && backendModule.TriggerConditions.includes('SendGift') || false,
-    like: Array.isArray(backendModule.TriggerConditions) && backendModule.TriggerConditions.includes('Like') || false,
-    joinRoom: Array.isArray(backendModule.TriggerConditions) && backendModule.TriggerConditions.includes('EnterLiveRoom') || false,
-    notice: Array.isArray(backendModule.TriggerConditions) && backendModule.TriggerConditions.includes('WarningTip') || false
-  };
+    const triggers: Module['triggers'] = {
+        cycleExecution: Array.isArray(backendModule.trigger_conditions) && backendModule.trigger_conditions.includes('ExecuteLoop') || false,
+        elasticComment: Array.isArray(backendModule.trigger_conditions) && backendModule.trigger_conditions.includes('BarrageComment') || false,
+        gift: Array.isArray(backendModule.trigger_conditions) && backendModule.trigger_conditions.includes('SendGift') || false,
+        like: Array.isArray(backendModule.trigger_conditions) && backendModule.trigger_conditions.includes('Like') || false,
+        joinRoom: Array.isArray(backendModule.trigger_conditions) && backendModule.trigger_conditions.includes('EnterLiveRoom') || false,
+        notice: Array.isArray(backendModule.trigger_conditions) && backendModule.trigger_conditions.includes('WarningTip') || false
+    };
 
-  return {
-    id: backendModule.ModuleConfigID || 0,
-    name: backendModule.ModuleName || '未知模块',
-    description: backendModule.ScriptContent || '',
-    minTime: backendModule.IntervalTimeStart || 0,
-    maxTime: backendModule.IntervalTimeEnd || 0,
-    triggers,
-    readStep: backendModule.ReadStep || 'random',
-    modelRewrite: backendModule.IsModelRewrite || false,
-    rewriteFrequency: backendModule.RewriteFrequency || 0
-  };
+    return {
+        id: backendModule.id || 0, // 修正为小写 id
+        name: backendModule.module_name || '未知模块', // 修正为 module_name
+        description: backendModule.script_content || '', // 修正为 script_content
+        minTime: backendModule.interval_time_start || 0, // 修正为 interval_time_start
+        maxTime: backendModule.interval_time_end || 0, // 修正为 interval_time_end
+        triggers,
+        readStep: backendModule.read_step || 'random', // 修正为 read_step
+        modelRewrite: backendModule.is_model_rewrite || false, // 修正为 is_model_rewrite
+        rewriteFrequency: backendModule.rewrite_frequency || 0 // 修正为 rewrite_frequency
+    };
 }
 
 // 将前端数据映射到后端格式
@@ -260,47 +226,64 @@ function mapFrontendToBackend(frontendModule: Module): any {
   if (frontendModule.triggers.joinRoom) triggerConditions.push('EnterLiveRoom');
   if (frontendModule.triggers.notice) triggerConditions.push('WarningTip');
 
+  // 计算 OrderNum：如果是新增模块，设置为当前最大 OrderNum + 1
+  const maxOrderNum = modules.value.length > 0 
+    ? Math.max(...modules.value.map(m => m.id)) // 近似替代 OrderNum
+    : 0;
+
   return {
-    ModuleConfigID: frontendModule.id,
-    OrderNum: modules.value.length + 1,
+    ID: frontendModule.id,
+    OrderNum: frontendModule.id === 0 ? maxOrderNum + 1 : frontendModule.id,
     ModuleName: frontendModule.name,
     IntervalTimeStart: frontendModule.minTime,
     IntervalTimeEnd: frontendModule.maxTime,
     TriggerConditions: triggerConditions,
-    ReadStep: frontendModule.readStep,
-    ScriptContent: frontendModule.description,
-    IsModelRewrite: frontendModule.modelRewrite,
-    RewriteFrequency: frontendModule.rewriteFrequency
+    ReadStep: frontendModule.readStep || 'random',
+    ScriptContent: frontendModule.description || '',
+    IsModelRewrite: frontendModule.modelRewrite || false,
+    RewriteFrequency: frontendModule.rewriteFrequency || 0
   };
 }
 
 // 保存模块到后端
 async function saveModule(module: Module, isEdit: boolean) {
-  try {
-    const method = isEdit ? 'PUT' : 'POST';
-    const url = isEdit
-      ? `${API_BASE_URL}/base-modules/${module.id}?user_id=${userId}`
-      : `${API_BASE_URL}/base-modules?user_id=${userId}`;
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(mapFrontendToBackend(module))
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`${isEdit ? '更新' : '新增'}模块失败，错误信息: ${errorData.error}`);
+    if (isSaving) {
+        console.log('正在保存中，请勿重复提交');
+        return;
     }
-    console.log(isEdit ? '模块更新成功' : '模块新增成功');
-    await fetchModules();
-  } catch (error) {
-    console.error('保存模块失败:', error);
-  }
+    if (module.minTime >= module.maxTime) {
+        console.error('保存失败：minTime 必须小于 maxTime');
+        return;
+    }
+
+    try {
+        isSaving = true;
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit
+            ? `${API_BASE_URL}/base-modules/${module.id}`
+            : `${API_BASE_URL}/base-modules`;
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mapFrontendToBackend(module))
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`${isEdit ? '更新' : '新增'}模块失败，错误信息: ${errorData.error}`);
+        }
+        console.log(isEdit ? '模块更新成功' : '模块新增成功');
+        await fetchModules();
+    } catch (error) {
+        console.error('保存模块失败:', error);
+    } finally {
+        isSaving = false;
+    }
 }
 
 // 删除模块
 async function deleteModuleFromBackend(module: Module) {
   try {
-    const response = await fetch(`${API_BASE_URL}/base-modules/${module.id}?user_id=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/base-modules/${module.id}`, {
       method: 'DELETE'
     });
     if (!response.ok) {
@@ -315,10 +298,9 @@ async function deleteModuleFromBackend(module: Module) {
 }
 
 // 组件挂载时加载数据
-onMounted(() => {
-  console.log('使用假数据初始化');
-  modules.value = [...defaultModules];
-  console.log('当前模块数据:', modules.value);
+onMounted(async () => {
+  console.log('组件挂载，开始加载后端数据');
+  await fetchModules();
 });
 
 // 点击“基础模块”卡片时打开弹窗
@@ -342,21 +324,21 @@ function handleBasicModuleExit(formData: any) {
 
 // 处理基础模块弹窗保存时的逻辑
 function handleBasicModuleSave(formData: any) {
-  console.log('基础模块保存，当前表单数据:', formData);
-  const module: Module = editingModule.value
-    ? { ...editingModule.value, ...formData, modelRewrite: formData.modelRewrite === 'yes' }
-    : {
-        id: modules.value.length + 1,
-        name: '新基础模块',
-        description: formData.speechContent || '用户输入的文案',
-        minTime: formData.minTime,
-        maxTime: formData.maxTime,
-        triggers: formData.triggers,
-        readStep: formData.readStep,
-        modelRewrite: formData.modelRewrite === 'yes',
-        rewriteFrequency: formData.rewriteFrequency
-      };
-  saveModule(module, !!editingModule.value);
+    console.log('基础模块保存，当前表单数据:', formData);
+    const module: Module = editingModule.value
+        ? { ...editingModule.value, ...formData, modelRewrite: formData.modelRewrite === 'yes' }
+        : {
+            id: 0,
+            name: '基础模块',
+            description: formData.speechContent || '用户输入的文案',
+            minTime: formData.minTime,
+            maxTime: formData.maxTime,
+            triggers: formData.triggers,
+            readStep: formData.readStep || 'random',
+            modelRewrite: formData.modelRewrite === 'yes',
+            rewriteFrequency: formData.rewriteFrequency
+        };
+    saveModule(module, !!editingModule.value);
 }
 
 // 处理音频交互模块弹窗退出时的提示
@@ -370,11 +352,13 @@ function handleAudioModuleSave(formData: any) {
   const module: Module = editingAudioModule.value
     ? { ...editingAudioModule.value, ...formData }
     : {
-        id: modules.value.length + 1,
-        name: '新音频模块',
+        id: 0,
+        name: '音频模块',
+        description: formData.speechContent || '',
         minTime: formData.minTime,
         maxTime: formData.maxTime,
         triggers: formData.triggers,
+        readStep: formData.readStep || 'random',
         audioFiles: formData.audioFiles
       };
   saveModule(module, !!editingAudioModule.value);
@@ -480,6 +464,18 @@ function truncateDescription(description: string, maxLength: number = 50): strin
 
   .content-section {
     width: 100%;
+  }
+
+  .loading-state {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 20px;
+    color: #666;
   }
 
   .module-grid {

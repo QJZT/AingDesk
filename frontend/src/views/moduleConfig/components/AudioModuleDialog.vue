@@ -1,3 +1,4 @@
+<!-- AudioModuleDialog.vue -->
 <template>
   <n-modal 
       :show="show"
@@ -92,53 +93,76 @@ const emits = defineEmits<{
   (e: 'save', value: any): void;
 }>();
 
-// 表单数据
-const audioForm = ref({
-  minTime: 30,
-  maxTime: 50,
-  triggers: {
-      cycleExecution: false,
-      elasticComment: true,
-      gift: false,
-      like: false,
-      joinRoom: false,
-      notice: false
-  },
-  audioFiles: [] as File[]
-});
+// 从 localStorage 加载草稿
+const loadDraft = () => {
+  const draft = localStorage.getItem('audioModuleDraft');
+  return draft
+    ? JSON.parse(draft)
+    : {
+        minTime: 30,
+        maxTime: 50,
+        triggers: {
+          cycleExecution: false,
+          elasticComment: true,
+          gift: false,
+          like: false,
+          joinRoom: false,
+          notice: false
+        },
+        audioFiles: [] as File[]
+      };
+};
+
+// 表单数据，优先从 localStorage 加载草稿
+const audioForm = ref(loadDraft());
 
 // 监听 initialData 变化，填充表单（编辑模式）
 watch(() => props.initialData, (newData) => {
-  if (newData) {
-      audioForm.value = {
-          minTime: newData.minTime || 30,
-          maxTime: newData.maxTime || 50,
-          triggers: {
-              cycleExecution: newData.triggers?.cycleExecution || false,
-              elasticComment: newData.triggers?.elasticComment || false,
-              gift: newData.triggers?.gift || false,
-              like: newData.triggers?.like || false,
-              joinRoom: newData.triggers?.joinRoom || false,
-              notice: newData.triggers?.notice || false
-          },
-          audioFiles: newData.audioFiles || []
-      };
+  // 如果没有草稿（localStorage 中没有数据），则使用 initialData 初始化
+  if (newData && !localStorage.getItem('audioModuleDraft')) {
+    audioForm.value = {
+      minTime: newData.minTime || 30,
+      maxTime: newData.maxTime || 50,
+      triggers: {
+        cycleExecution: newData.triggers?.cycleExecution || false,
+        elasticComment: newData.triggers?.elasticComment || false,
+        gift: newData.triggers?.gift || false,
+        like: newData.triggers?.like || false,
+        joinRoom: newData.triggers?.joinRoom || false,
+        notice: newData.triggers?.notice || false
+      },
+      audioFiles: newData.audioFiles || []
+    };
   }
+  console.log('AudioModuleDialog 初始化表单数据:', audioForm.value);
 }, { immediate: true });
+
+// 监听表单变化，保存到 localStorage
+watch(audioForm, (newFormData) => {
+  // 由于 File 对象不能直接序列化为 JSON，我们只保存其他字段
+  const draftData = {
+    minTime: newFormData.minTime,
+    maxTime: newFormData.maxTime,
+    triggers: newFormData.triggers,
+    // 注意：audioFiles 不保存到 localStorage，因为 File 对象无法序列化
+  };
+  localStorage.setItem('audioModuleDraft', JSON.stringify(draftData));
+  console.log('保存草稿到 localStorage (AudioModule):', draftData);
+}, { deep: true });
 
 // 处理音频文件上传
 const handleAudioChange = (options: { fileList: File[] }) => {
   audioForm.value.audioFiles = options.fileList;
 };
 
-// 退出并输出提示
+// 退出并触发事件
 const handleExit = () => {
   console.log('退出音频模块弹窗，当前表单数据:', audioForm.value);
   emits('exit', audioForm.value);
   emits('update:show', false);
 };
 
-// 保存并输出提示
+// 保存并触发事件
 const handleSave = () => {
   console.log('保存音频模块，当前表单数据:', audioForm.value);
   emits('save', audioForm.value);
