@@ -41,12 +41,22 @@
         >
           <template #suffix>
             <n-button 
-              type="primary" 
+              type="info" 
               @click="toggleLive"
               :loading="loading"
               text
             >
-              {{ isLive ? '停止接入' : '接入弹幕' }}
+            接入
+            </n-button>
+            <div style="width: 5px;"></div>
+            <n-button 
+
+              type="warning" 
+              @click="outToggleLive"
+              :loading="loading"
+              text
+            >
+            断开
             </n-button>
           </template>
         </n-input>
@@ -60,13 +70,13 @@
             placeholder="输入RTMP直播链接"
             style="width: 300px;"
           /> -->
-          <n-button 
+          <!-- <n-button 
             type="primary" 
             @click="toggleLive"
             :loading="loading"
           >
             {{ isLive ? '停止音频直播' : '启动音频直播' }}
-          </n-button>
+          </n-button> -->
         </n-input-group>
       </div>
     </div>
@@ -167,24 +177,49 @@
             <template #unchecked>关闭朗读</template>
           </n-switch>
         </template>
-        <n-infinite-scroll style="height: calc(100vh - 260px);padding-right: 15px;" :distance="10">
+        <div style="margin-bottom: 16px;">
+          <n-divider title-placement="left" style="font-size: 15px;height: 1px;margin: 12px 0;">
+              筛选查看
+          </n-divider>
+          <n-checkbox-group v-model:value="selectedFilters">
+            <n-space item-style="display: flex;" size="small" style="padding: 0 8px;">
+              <n-checkbox 
+                v-for="filter in filterOptions"
+                :key="filter.value"
+                :value="filter.value"
+                :label="filter.label"
+                size="small"
+                style="margin-right: 12px;"
+              >
+                <template #checked>
+                  <span style="color: var(--n-color-checked);">{{ filter.label }}</span>
+                </template>
+                <template #unchecked>
+                  <span style="color: var(--n-color);">{{ filter.label }}</span>
+                </template>
+              </n-checkbox>
+            </n-space>
+          </n-checkbox-group>
+          <n-divider style="height: 1px;margin: 12px 0;">
+          </n-divider>
+        </div>
+        <n-infinite-scroll style="height: calc(100vh - 380px);padding-right: 15px; overflow-y: auto" :distance="10">
           <div 
             v-for="(msg, index) in messages" 
             :key="index" 
             class="message-item"
             style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;"
           >
-          <n-button 
-            text
-            @click=""
-            style="padding: 0; min-width: 20px; display: flex; align-items: center;"
-          >
-            <template #icon>
-              <i class="i-tdesign:play-circle w-15 h-15" style="vertical-align: middle;color: #888;"></i>
-            </template>
-          </n-button>
-          <span class="username" style="line-height: 1;">{{ msg.user }}:</span>
-          <span class="content" style="line-height: 1;">{{ msg.content }}</span>
+          <!-- getMessageColor -->
+          <span class="content" style="line-height: 1;max-width: 30vw;" :style="{
+            color: getMessageColor(msg.data_types),
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }">{{ msg.content }}</span>
         </div>
         </n-infinite-scroll>
         <div class="message-input">
@@ -277,6 +312,7 @@ import {
   NStatistic,
   NScrollbar
 } from 'naive-ui'
+import { io } from "socket.io-client"
 const autoReadMode = ref(false)
 const controlBlocks = ref([
   {
@@ -551,15 +587,11 @@ const controlBlocks = ref([
 ])
 const isLive = ref(false)
 const loading = ref(false)
-const streamUrl = ref('rtmp://your-stream-url.com/live')
+const streamUrl = ref('')
 const viewerCount = ref(0)
 const likeCount = ref(0)
 const commentCount = ref(0)
 const duration = ref('00:00:00')
-const messages = ref([
-  { user: '用户1', content: '直播内容很棒！' },
-  { user: '用户2', content: '什么时候开始？' }
-])
 const newMessage = ref('')
 const isVoiceMode = ref(false)
 const audioFiles = ref([
@@ -734,13 +766,8 @@ const audioFiles = ref([
     url: '/audio/opening.mp3'
   }
 ])
-function toggleLive() {
-  loading.value = true
-  setTimeout(() => {
-    isLive.value = !isLive.value
-    loading.value = false
-  }, 1000)
-}
+
+
 
 function copyStreamUrl() {
   navigator.clipboard.writeText(streamUrl.value)
@@ -819,6 +846,146 @@ const audioDriverOptions = [
   { label: 'ASIO', value: 'asio' },
   { label: 'WASAPI', value: 'wasapi' }
 ]
+
+const socket = ref<any>(null) 
+let reconnectAttempts = 0
+const MAX_RECONNECT_ATTEMPTS = Infinity // 设置为无限重连
+
+onUnmounted(() => {
+  if (socket.value) {
+    socket.value.disconnect()
+    socket.value = null
+  }
+})
+
+const messages = ref<Array<{content: string,data_types: string , id?: string}>>([])
+  const filterOptions = ref([
+  { label: '弹幕消息', value: 'CommentEvent', checked: true },
+  { label: '礼物消息', value: 'GiftEvent', checked: true },
+  { label: '进入直播间', value: 'JoinEvent', checked: true },
+  { label: '分享', value: 'ShareEvent', checked: true },
+  { label: '关注', value: 'FollowEvent', checked: true },
+  { label: '点赞', value: 'LikeEvent', checked: true },
+])
+const selectedFilters = ref(['CommentEvent', 'GiftEvent','JoinEvent','ShareEvent',"FollowEvent","LikeEvent"]) // 默认选中的过滤项
+
+function addMessage(message: {content: string , data_types: string , id?: string}) {
+  const newMsg = {
+    ...message,
+    data_types: message.data_types,
+    id: Date.now().toString() // 为每条消息添加唯一ID
+  }
+  messages.value = [...messages.value.slice(-99), newMsg]
+}
+const getMessageColor = (type) => {
+  switch(type) {
+    case 'CommentEvent': return '#4A5568'
+    case 'GiftEvent': return '#2E7D32'   
+    case 'JoinEvent': return '#1565C0'  
+    case 'ShareEvent': return '#D84315'   
+    case 'FollowEvent': return '#6A1B9A' 
+    case 'LikeEvent': return '#C62828'  
+    default: return '#546E7A'       
+  }
+}
+onMounted(() => {
+  if (socket.value && socket.value.connected) return
+  
+  socket.value = io('ws://127.0.0.1:7073', {
+    reconnection: true,
+    reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+    reconnectionDelay: 3000,
+    randomizationFactor: 0.5
+  })
+    socket.value.on('connect', () => {
+      reconnectAttempts = 0
+      console.log('Socket.IO连接成功')
+    })
+    socket.value.on('reconnect_attempt', (attemptNumber) => {
+    reconnectAttempts = attemptNumber
+    console.log(`正在尝试第${attemptNumber}次重连...`)
+    })
+    socket.value.on('connect_error', (err) => {
+      console.error('Socket.IO连接错误:', err)
+    })
+    socket.value.on('ConnectEvent', function(message) {
+      if (!selectedFilters.value.includes("ConnectEvent")){
+        return;
+      }
+              console.log("ConnectEvent:",message);
+              addMessage({content: message ,data_types: "ConnectEvent"})
+    });
+    socket.value.on('CommentEvent', function(message) {//弹幕消息
+      if (!selectedFilters.value.includes("CommentEvent")){
+        return;
+      }
+              console.log("CommentEvent:",message);
+              addMessage({content: message,data_types: "CommentEvent"})
+    });
+    socket.value.on('GiftEvent', function(message) { //礼物消息
+      if (!selectedFilters.value.includes("GiftEvent")){
+        return;
+      }
+              console.log("GiftEvent:",message);
+              addMessage({content: message,data_types: "GiftEvent"})
+    });
+    socket.value.on('JoinEvent', function(message) {// 进入直播间
+      if (!selectedFilters.value.includes("JoinEvent")){
+        return;
+      }
+              console.log("JoinEvent:",message);
+              addMessage({content: message,data_types: "JoinEvent"})
+    });
+    socket.value.on('ShareEvent', function(message) { //分享
+      if (!selectedFilters.value.includes("ShareEvent")){
+        return;
+      }
+              console.log("ShareEvent:",message);
+              addMessage({content: message,data_types: "ShareEvent"})
+    });
+    socket.value.on('FollowEvent', function(message) { //关注
+      if (!selectedFilters.value.includes("FollowEvent")){
+        return;
+      }
+              console.log("FollowEvent:",message);
+              addMessage({content: message,data_types: "FollowEvent"})
+    });
+    socket.value.on('LikeEvent', function(message) { //点赞
+      if (!selectedFilters.value.includes("LikeEvent")){
+        return;
+      }
+              console.log("LikeEvent:",message);
+              addMessage({content: message,data_types: "LikeEvent"})
+    });
+    // socket.value.on('LiveEndEvent', function(message) { //直播结束
+    //           console.log("LiveEndEvent:",message);
+    //           addMessage({content: message})
+    // });
+    // socket.value.on('DisconnectEvent', function(message) { //断开连接
+    //           console.log("DisconnectEvent:",message);
+    //           addMessage({content: message})
+    // });
+})
+
+
+function toggleLive() {
+  loading.value = true
+  setTimeout(() => {
+    isLive.value = !isLive.value
+    loading.value = false
+  }, 1000)
+  socket.value.emit('sync_tk', { id: streamUrl.value });
+}
+
+function outToggleLive() {
+  loading.value = true
+  setTimeout(() => {
+    isLive.value = !isLive.value
+    loading.value = false
+  }, 1000)
+  socket.value.emit('sync_tk', { id: "" });
+}
+
 </script>
 
 <style scoped lang="scss">
