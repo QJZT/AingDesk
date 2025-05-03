@@ -8,6 +8,7 @@ import { Rag } from '../rag/rag';
 import { Stream } from 'stream';
 import { MCPClient } from './mcp_client';
 import { ChatContext, ChatHistory, ChatService, ModelInfo } from './chat';
+import { log } from 'console';
 
 /**
  * 存储所有模型信息的数组
@@ -320,6 +321,7 @@ export class ToChatService {
      * @param {any} args.rag_results - RAG结果列表
      * @param {any} args.search_results - 搜索结果列表
      * @param {string} args.compare_id - 对比ID
+     * @param {string} args.system_prompt - 系统提示词
      * @param {any} event - 事件对象，用于处理HTTP响应
      * @returns {Promise<any>} - 可读流，用于流式响应对话结果
      */
@@ -339,8 +341,11 @@ export class ToChatService {
         temp_chat?: string,
         compare_id?: string,
         mcp_servers?: string[],
+        system_prompt?: string, //系统提示词
     }, event: any): Promise<any> {
-        let { context_id: uuid, model: modelName, parameters, user_content, search, regenerate_id, supplierName, images, doc_files, temp_chat, rag_results, search_results, compare_id, mcp_servers } = args;
+        let { context_id: uuid, model: modelName, parameters, user_content, search, regenerate_id, supplierName, images, doc_files, temp_chat, rag_results, search_results, compare_id, mcp_servers,system_prompt } = args;
+        logger.info('chat args:', args);
+        
         if (!supplierName) {
             supplierName = 'ollama';
         }
@@ -442,8 +447,18 @@ export class ToChatService {
                         content: agentConfig.prompt
                     });
                 }
+            }else{
+                // 如果没有agent_name，使用system_prompt
+                if (system_prompt) {
+                    history.unshift({
+                        role:'system',
+                        content: system_prompt
+                    });
+                }
             }
         }
+        logger.info("-------------------------");
+        logger.info('history:', history);
         handleDocuments(letHistory, modelName, user_content);
         handleImages(letHistory, isVision);
         if (letHistory.tool_calls !== undefined) {

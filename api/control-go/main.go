@@ -27,7 +27,7 @@ func main() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	db.AutoMigrate(&model.Name{}, &model.FileData{}, &model.BaseModule{}, &model.Product{})
+	db.AutoMigrate(&model.Name{}, &model.FileData{}, &model.BaseModule{}, &model.Product{}, &model.KvStr{})
 
 	// 检查并创建文件夹
 	global.ToneFilePath = *p1
@@ -65,5 +65,7 @@ func main() {
 	router.SetupProductRoutes(r, db)
 	router.SetupPingRoutes(r)
 	router.SetupNameRoutes(r, db)
-	r.Run(":7077")
+	router.SetupKvRoutes(r, db)
+	router.ChatAiRoutes(r)
+	r.Run(":7072")
 }

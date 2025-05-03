@@ -380,6 +380,74 @@
         ]
     },
     {
+        "full_name": "qwen3:0.6b",
+        "name": "qwen3",
+        "msg": "Qwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models.",
+        "size": "523MB",
+        "zh_cn_msg": "Qwen3 是 Qwen 系列中最新一代的大型语言模型，提供一整套密集模型和混合专家 （MoE） 模型。",
+        "link": "https://ollama.com/library/qwen3:0.6b",
+        "parameters": "0.6b",
+        "pull_count": "0",
+        "tag_count": "0",
+        "updated": "6 months ago",
+        "updated_time": 1728022957,
+        "capability": [
+            "llm",
+            "tools"
+        ]
+    },
+    {
+        "full_name": "qwen3:1.7b",
+        "name": "qwen3",
+        "msg": "Qwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models.",
+        "size": "1.4GB",
+        "zh_cn_msg": "Qwen3 是 Qwen 系列中最新一代的大型语言模型，提供一整套密集模型和混合专家 （MoE） 模型。",
+        "link": "https://ollama.com/library/qwen3:1.7b",
+        "parameters": "1.7b",
+        "pull_count": "0",
+        "tag_count": "0",
+        "updated": "6 months ago",
+        "updated_time": 1728022957,
+        "capability": [
+            "llm",
+            "tools"
+        ]
+    },
+    {
+        "full_name": "qwen3:4b",
+        "name": "qwen3",
+        "msg": "Qwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models.",
+        "size": "2.6GB",
+        "zh_cn_msg": "Qwen3 是 Qwen 系列中最新一代的大型语言模型，提供一整套密集模型和混合专家 （MoE） 模型。",
+        "link": "https://ollama.com/library/qwen3:4b",
+        "parameters": "4b",
+        "pull_count": "0",
+        "tag_count": "0",
+        "updated": "6 months ago",
+        "updated_time": 1728022957,
+        "capability": [
+            "llm",
+            "tools"
+        ]
+    },
+    {
+        "full_name": "qwen3:8b",
+        "name": "qwen3",
+        "msg": "Qwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models.",
+        "size": "5.2GB",
+        "zh_cn_msg": "Qwen3 是 Qwen 系列中最新一代的大型语言模型，提供一整套密集模型和混合专家 （MoE） 模型。",
+        "link": "https://ollama.com/library/qwen3:8b",
+        "parameters": "8b",
+        "pull_count": "0",
+        "tag_count": "0",
+        "updated": "6 months ago",
+        "updated_time": 1728022957,
+        "capability": [
+            "llm",
+            "tools"
+        ]
+    },
+    {
         "full_name": "qwen2.5:0.5b",
         "name": "qwen2.5",
         "msg": "Qwen2.5 models are pretrained on Alibaba's latest large-scale dataset, encompassing up to 18 trillion tokens. The model supports up to 128K tokens and has multilingual support. ",
