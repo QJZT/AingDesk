@@ -1000,7 +1000,7 @@ const EnterLiveRoom= async (module) => {
         while (EnterLiveRoomUserName.value == "") { //等待有用户进入直播间
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
-        let content = module.script_content[index] 
+        let content = module.script_content[index]  //欢迎{用户名称}的到来，您你的到来让直播间蓬革
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
@@ -1018,7 +1018,7 @@ const EnterLiveRoom= async (module) => {
         playList.value.unshift({ //入队
             content: content, //内容
             filename: newFileName, //文件名
-            play_mode: "serial", //播放模式
+            play_mode: "top", //播放模式
         })    
         EnterLiveRoomUserName.value = "" //清空
         if (index == script_content_len - 1) { //循环
