@@ -1,4 +1,3 @@
-<!-- BasicModuleDialog.vue -->
 <template>
   <n-modal 
     :show="show"
@@ -88,22 +87,41 @@
             <n-tag class="speech-tag" @click="addSpeechTag('在线人数')">{{ $t('在线人数') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('直播间名称')">{{ $t('直播间名称') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('点赞用户名')">{{ $t('点赞用户名') }}</n-tag>
-            <n-tag class="speech-tag" @click="addSpeechTag('点赞用户名')">{{ $t('点赞用户名') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('送礼物用户名')">{{ $t('送礼物用户名') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('礼物名称')">{{ $t('礼物名称') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('发弹幕用户名')">{{ $t('发弹幕用户名') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('弹幕内容')">{{ $t('弹幕内容') }}</n-tag>
             <n-tag class="speech-tag" @click="addSpeechTag('直播间警告内容')">{{ $t('直播间警告内容') }}</n-tag>
           </div>
-          <!-- 文案输入框 -->
-          <n-input
-            type="textarea"
-            v-model:value="basicForm.speechContent"
-            :placeholder="$t('请键入指令')"
-            :autosize="{ minRows: 3, maxRows: 5 }"
-            ref="speechInput"
-          />
-          <div class="word-count">{{ basicForm.speechContent.length }}/20000</div>
+
+          <!-- n-dynamic-input 用于显示和编辑话术文案 -->
+          <n-dynamic-input
+            v-model:value="basicForm.speechContents"
+            :placeholder="$t('请输入话术文案')"
+            :min="1"
+            :max="22"
+            :on-create="handleSpeechContentCreate"
+            :on-remove="handleSpeechContentRemove"
+            class="speech-content-container"
+          >
+            <template #create-button-default>
+              <n-button type="primary" size="small">添加文案</n-button>
+            </template>
+            <template #default="{ value, index }">
+              <div class="speech-content-item">
+                <n-input
+                  type="textarea"
+                  :value="value"
+                  :placeholder="$t('请输入话术文案')"
+                  :autosize="{ minRows: 1, maxRows: 4 }"
+                  @update:value="newValue => updateSpeechContent(index, newValue)"
+                  @focus="() => activeInputIndex.value = index"
+                  maxlength="2000"
+                />
+                <div class="word-count">{{ value.length }}/2000</div>
+              </div>
+            </template>
+          </n-dynamic-input>
         </div>
       </div>
     </div>
@@ -121,7 +139,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NModal, NInput, NInputNumber, NCheckbox, NRadio, NRadioGroup, NTag, NButton } from 'naive-ui';
+import { NModal, NInput, NInputNumber, NRadio, NRadioGroup, NTag, NButton, NDynamicInput } from 'naive-ui';
 import type { InputInst } from 'naive-ui';
 
 const { t: $t } = useI18n();
@@ -145,7 +163,7 @@ const loadDraft = () => {
     : {
         minTime: 0,
         maxTime: 0,
-        selectedTrigger: 'elasticComment', // 默认选中弹幕评论
+        selectedTrigger: 'elasticComment',
         triggers: {
           cycleExecution: false,
           elasticComment: true,
@@ -157,61 +175,34 @@ const loadDraft = () => {
         readStep: 'random',
         modelRewrite: 'yes',
         rewriteFrequency: 0,
-        speechContent: ''
+        speechContents: [''] // 初始化时至少有一个空输入框
       };
 };
-
-// 添加 watch 来同步 selectedTrigger 和 triggers
-watch(() => basicForm.value.selectedTrigger, (newTrigger) => {
-  // 重置所有触发条件
-  Object.keys(basicForm.value.triggers).forEach(key => {
-    basicForm.value.triggers[key] = false;
-  });
-  // 设置选中的触发条件
-  if (newTrigger) {
-    basicForm.value.triggers[newTrigger] = true;
-  }
-}, { immediate: true });
-
-// 修改 watch initialData 部分
-watch(() => props.initialData, (newData) => {
-  if (newData && !localStorage.getItem('basicModuleDraft')) {
-    // 找到第一个为 true 的触发条件
-    const selectedTrigger = Object.entries(newData.triggers || {})
-      .find(([_, value]) => value)?.[0] || 'elasticComment';
-
-    basicForm.value = {
-      minTime: newData.minTime || 0,
-      maxTime: newData.maxTime || 0,
-      selectedTrigger,
-      triggers: {
-        cycleExecution: true,
-        elasticComment: false,
-        gift: false,
-        like: false,
-        joinRoom: false,
-        notice: false,
-        [selectedTrigger]: true
-      },
-      readStep: newData.readStep || 'random',
-      modelRewrite: newData.modelRewrite ? 'yes' : 'no',
-      rewriteFrequency: newData.rewriteFrequency || 0,
-      speechContent: newData.description || ''
-    };
-  }
-  console.log('BasicModuleDialog 初始化表单数据:', basicForm.value);
-}, { immediate: true });
 
 // 表单数据，优先从 localStorage 加载草稿
 const basicForm = ref(loadDraft());
 
-// 监听 initialData 变化，填充表单（编辑模式）
+// watch initialData 逻辑：监听 props.initialData 变化，初始化表单数据
 watch(() => props.initialData, (newData) => {
-  // 如果没有草稿（localStorage 中没有数据），则使用 initialData 初始化
   if (newData && !localStorage.getItem('basicModuleDraft')) {
+    const selectedTrigger = Object.entries(newData.triggers || {})
+      .find(([key, value]) => value === true)?.[0] || 'elasticComment';
+
+    // 修改 1：直接使用 script_content 数组，而不是 description
+    // 说明：script_content 是后端返回的字符串数组（逗号分隔），直接赋值给 speechContents
+    let speechContents = newData.script_content || [];
+    // 确保至少有一个输入框
+    if (speechContents.length === 0) {
+      speechContents = [''];
+    }
+    // 限制最大输入框数量为 22（与 n-dynamic-input 的 max 属性一致）
+    if (speechContents.length > 22) {
+      speechContents = speechContents.slice(0, 22);
+    }
+
     basicForm.value = {
-      minTime: newData.minTime || 0,
-      maxTime: newData.maxTime || 0,
+      minTime: newData.intervalTimeStart || 0, // 修改 2：使用 intervalTimeStart 和 intervalTimeEnd
+      maxTime: newData.intervalTimeEnd || 0,
       selectedTrigger,
       triggers: {
         cycleExecution: false,
@@ -223,12 +214,23 @@ watch(() => props.initialData, (newData) => {
         [selectedTrigger]: true
       },
       readStep: newData.readStep || 'random',
-      modelRewrite: newData.modelRewrite ? 'yes' : 'no',
+      modelRewrite: newData.isModelRewrite ? 'yes' : 'no', // 修改 3：映射 isModelRewrite
       rewriteFrequency: newData.rewriteFrequency || 0,
-      speechContent: newData.description || ''
+      speechContents
     };
   }
   console.log('BasicModuleDialog 初始化表单数据:', basicForm.value);
+}, { immediate: true });
+
+// 监听 selectedTrigger 变化，同步更新 triggers
+watch(() => basicForm.value.selectedTrigger, (newTrigger) => {
+  Object.keys(basicForm.value.triggers).forEach(key => {
+    basicForm.value.triggers[key] = false;
+  });
+  if (newTrigger) {
+    basicForm.value.triggers[newTrigger] = true;
+  }
+  console.log('触发条件更新:', basicForm.value.triggers);
 }, { immediate: true });
 
 // 监听表单变化，保存到 localStorage
@@ -237,40 +239,82 @@ watch(basicForm, (newFormData) => {
   console.log('保存草稿到 localStorage (BasicModule):', newFormData);
 }, { deep: true });
 
-// 文案输入框的引用
-const speechInput = ref<InputInst | null>(null);
-
-// 点击标签插入到文案
-const addSpeechTag = (tag: string) => {
-  if (!speechInput.value) return;
-  
-  const textarea = speechInput.value.$el.querySelector('textarea');
-  if (textarea) {
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = basicForm.value.speechContent;
-    const tagWithBraces = `{${$t(tag)}}`;
-    
-    basicForm.value.speechContent = text.slice(0, start) + tagWithBraces + text.slice(end);
-    
-    setTimeout(() => {
-      textarea.selectionStart = textarea.selectionEnd = start + tagWithBraces.length;
-      textarea.focus();
-    }, 0);
-  }
+// n-dynamic-input 相关方法
+const handleSpeechContentCreate = () => {
+  return '';
 };
 
-// 退出并触发事件
-const handleExit = () => {
-  console.log('退出基础模块弹窗，当前表单数据:', basicForm.value);
-  emits('exit', basicForm.value);
+const handleSpeechContentRemove = (index: number) => {
+  console.log(`移除文案输入框: 索引 ${index}`);
+};
+
+const updateSpeechContent = (index: number, newValue: string) => {
+  basicForm.value.speechContents[index] = newValue;
+};
+
+// addSpeechTag 逻辑
+const activeInputIndex = ref<number | null>(null);
+
+const addSpeechTag = (tag: string) => {
+  if (activeInputIndex.value === null) {
+    console.warn('未选择任何输入框，无法插入标签');
+    return;
+  }
+
+  const index = activeInputIndex.value;
+  const currentValue = basicForm.value.speechContents[index];
+  const tagWithBraces = `{${$t(tag)}}`;
+  basicForm.value.speechContents[index] = currentValue + tagWithBraces;
+
+  setTimeout(() => {
+    const textarea = document.querySelectorAll('.speech-content-item textarea')[index] as HTMLTextAreaElement;
+    if (textarea) {
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = currentValue.length + tagWithBraces.length;
+    }
+  }, 0);
+};
+
+// 保存逻辑
+const handleSave = () => {
+  if (basicForm.value.minTime >= basicForm.value.maxTime) {
+    console.error('保存失败：最小时间必须小于最大时间');
+    return;
+  }
+
+  const nonEmptyContents = basicForm.value.speechContents.filter(content => content.trim());
+  if (nonEmptyContents.length === 0) {
+    console.error('保存失败：至少需要输入一条非空话术文案');
+    return;
+  }
+
+  // 修改 4：构造符合后端 Module 接口的数据
+  // 说明：将 speechContents 直接作为 scriptContent 数组，不用 join('\n')
+  const formData = {
+    id: props.initialData?.id || 0, // 如果是编辑模式，传递 id
+    moduleType: 'base', // 基础模块
+    orderNum: props.initialData?.orderNum || 0,
+    moduleName: props.initialData?.moduleName || '基础模块',
+    intervalTimeStart: basicForm.value.minTime,
+    intervalTimeEnd: basicForm.value.maxTime,
+    triggerConditions: Object.entries(basicForm.value.triggers)
+      .filter(([_, value]) => value)
+      .map(([key]) => ({ type: key })), // 转换为 TriggerCondition 数组
+    readStep: basicForm.value.readStep,
+    scriptContent: basicForm.value.speechContents.filter(content => content.trim()), // 过滤空内容
+    isModelRewrite: basicForm.value.modelRewrite === 'yes',
+    rewriteFrequency: basicForm.value.rewriteFrequency
+  };
+
+  console.log('保存基础模块，当前表单数据:', formData);
+  emits('save', formData);
   emits('update:show', false);
 };
 
-// 保存并触发事件
-const handleSave = () => {
-  console.log('保存基础模块，当前表单数据:', basicForm.value);
-  emits('save', basicForm.value);
+// 退出逻辑
+const handleExit = () => {
+  console.log('退出基础模块弹窗，当前表单数据:', basicForm.value);
+  emits('exit', basicForm.value);
   emits('update:show', false);
 };
 </script>
@@ -322,10 +366,52 @@ const handleSave = () => {
       }
     }
 
-    .word-count {
-      text-align: right;
-      color: #999;
-      margin-top: 5px;
+    .speech-content-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+
+      :deep(.n-dynamic-input-item) {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .speech-content-item {
+        display: flex;
+        flex-direction: column;
+        width: 740px;
+        margin-right: 0;
+
+        .n-input {
+          textarea {
+            padding: 5px 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            border-radius: 4px;
+          }
+        }
+
+        .word-count {
+          text-align: right;
+          color: #999;
+          font-size: 12px;
+          margin-top: 2px;
+        }
+      }
+
+      :deep(.n-button--small) {
+        padding: 2px 6px;
+        font-size: 12px;
+      }
+
+      :deep(.n-dynamic-input-create-button) {
+        margin-top: 10px;
+        .n-button {
+          padding: 2px 8px;
+          font-size: 12px;
+        }
+      }
     }
   }
 }

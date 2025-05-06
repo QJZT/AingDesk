@@ -78,5 +78,6 @@ type BaseModule struct {
 	ScriptContent     JSONSlice `gorm:"type:text"` // 话术文案列表
 	IsModelRewrite    bool      // 是否模型改写
 	RewriteFrequency  int       // 改写频率（秒）
+	AudioName         string    `gorm:"type:text"` // 音频文件名称，仅音频模块使用
 	AudioPath         string    `gorm:"type:text"` // 音频文件路径，仅音频模块使用
 }

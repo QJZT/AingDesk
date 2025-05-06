@@ -889,6 +889,7 @@ const getMessageColor = (type) => {
   }
 }
 onMounted(() => {
+  /*
   if (socket.value && socket.value.connected) return
   
   socket.value = io('ws://127.0.0.1:7073', {
@@ -965,6 +966,7 @@ onMounted(() => {
     //           console.log("DisconnectEvent:",message);
     //           addMessage({content: message})
     // });
+    */
 })
 
 

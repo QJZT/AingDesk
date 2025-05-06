@@ -65,5 +65,5 @@ func main() {
 	router.SetupProductRoutes(r, db)
 	router.SetupPingRoutes(r)
 	router.SetupNameRoutes(r, db)
-	r.Run(":7077")
+	r.Run(":7073")
 }

@@ -19,7 +19,7 @@ func SeedBaseModule(db *gorm.DB) error {
 		{
 			ModuleType:        model.ModuleTypeBase,
 			OrderNum:          0,
-			ModuleName:        "基础模块", //1312312
+			ModuleName:        "基础模块", //22222
 			IntervalTimeStart: 5,
 			IntervalTimeEnd:   10,
 			TriggerConditions: model.JSONSlice{model.TriggerExecuteLoop},
@@ -114,6 +114,16 @@ func SeedBaseModule(db *gorm.DB) error {
 			},
 			IsModelRewrite:   false,
 			RewriteFrequency: 0,
+		},
+		{
+			ModuleType:        model.ModuleTypeAudio,
+			OrderNum:          7,
+			ModuleName:        "音频模块",
+			IntervalTimeStart: 5,
+			IntervalTimeEnd:   10,
+			TriggerConditions: model.JSONSlice{model.TriggerExecuteLoop},
+			AudioName:         "background.mp3",
+			AudioPath:         "/path/to/background.mp3",
 		},
 	}
 
