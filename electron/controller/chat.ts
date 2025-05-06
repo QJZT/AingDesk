@@ -169,6 +169,7 @@ class ChatController {
      * @param {any} args.rag_results - RAG结果列表
      * @param {any} args.search_results - 搜索结果列表
      * @param {string} args.compare_id - 对比ID
+     * @param {string} args.system_prompt - 系统提示词
      * @param {any} event - 事件对象，用于处理HTTP响应
      * @returns {Promise<any>} - 可读流，用于流式响应对话结果
      */
@@ -188,6 +189,7 @@ class ChatController {
         temp_chat?: string,
         compare_id?: string,
         mcp_servers?: string[],
+        system_prompt?: string, //系统提示词
     }, event: any): Promise<any> {
         let toChatService = new ToChatService();
         return await toChatService.chat(args, event);

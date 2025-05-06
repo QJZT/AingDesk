@@ -268,6 +268,7 @@ export function getModelContextLength(model: string): number {
     const modelContextObj: { [key: string]: number } = {
         "qwq": 32768,
         "qwen2.5": 32768,
+        "qwen3": 32768,
         "qwen": 32768,
         "deepseek": 32768,
         "phi": 16384,
