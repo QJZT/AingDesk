@@ -728,6 +728,11 @@ const fetchModules = async () => {
 }
 
 onMounted(() => {
+  fetchModules()
+  getMames()
+  getPromptRewrite()
+  // setInterval(fetchModules, 25000)
+
   if (socket.value && socket.value.connected) return
     //  { 
     //       's': '渲染完整数据',
@@ -817,7 +822,6 @@ onMounted(() => {
     //           console.log("DisconnectEvent:",message);
     //           addMessage({content: message})
     // });
-    */
 })
 
 const toggleFilter = (value) => {
