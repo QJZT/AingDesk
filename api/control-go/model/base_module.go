@@ -68,7 +68,7 @@ const (
 // BaseModule 基础模块模型
 type BaseModule struct {
 	gorm.Model
-	ModuleType        string    `gorm:"not null"` // 模块类型
+	ModuleType        string    `gorm:"not null"` // 模块类型 区分用途
 	OrderNum          int       `gorm:"index"`    // 排序编号，值越小越靠前
 	ModuleName        string    // 模块名称
 	IntervalTimeStart int       // 间隔时间起始（秒）
