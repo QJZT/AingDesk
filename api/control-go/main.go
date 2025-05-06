@@ -65,7 +65,5 @@ func main() {
 	router.SetupProductRoutes(r, db)
 	router.SetupPingRoutes(r)
 	router.SetupNameRoutes(r, db)
-	router.SetupKvRoutes(r, db)
-	router.ChatAiRoutes(r)
-	r.Run(":7072")
+	r.Run(":7073")
 }
