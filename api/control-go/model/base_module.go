@@ -68,16 +68,16 @@ const (
 // BaseModule 基础模块模型
 type BaseModule struct {
 	gorm.Model
-	ModuleType        string    `gorm:"not null"` // 模块类型 区分用途
-	OrderNum          int       `gorm:"index"`    // 排序编号，值越小越靠前
-	ModuleName        string    // 模块名称
-	IntervalTimeStart int       // 间隔时间起始（秒）
-	IntervalTimeEnd   int       // 间隔时间结束（秒）
-	TriggerConditions JSONSlice `gorm:"type:text"` // 触发条件（存储为 JSON 字符串）
-	ReadStep          string    // 读取步骤（random或sequential）
-	ScriptContent     JSONSlice `gorm:"type:text"` // 话术文案列表
-	IsModelRewrite    bool      // 是否模型改写
-	RewriteFrequency  int       // 改写频率（秒）
-	AudioName         string    `gorm:"type:text"` // 音频文件名称，仅音频模块使用
-	AudioPath         string    `gorm:"type:text"` // 音频文件路径，仅音频模块使用
+	ModuleType        string    `gorm:"not null" json:"module_type"`         // 模块类型 区分用途
+	OrderNum          int       `gorm:"index" json:"order_num"`              // 排序编号，值越小越靠前
+	ModuleName        string    `json:"module_name"`                         // 模块名称
+	IntervalTimeStart int       `json:"interval_time_start"`                 // 间隔时间起始（秒）
+	IntervalTimeEnd   int       `json:"interval_time_end"`                   // 间隔时间结束（秒）
+	TriggerConditions JSONSlice `gorm:"type:text" json:"trigger_conditions"` // 触发条件（存储为 JSON 字符串）
+	ReadStep          string    `json:"read_step"`                           // 读取步骤（random或sequential）
+	ScriptContent     JSONSlice `gorm:"type:text" json:"script_content"`     // 话术文案列表
+	IsModelRewrite    bool      `json:"isModel_rewrite"`                     // 是否模型改写
+	RewriteFrequency  int       `json:"rewrite_frequency"`                   // 改写频率（秒）
+	AudioName         string    `gorm:"type:text" json:"audio_name"`         // 音频文件名称，仅音频模块使用
+	AudioPath         string    `gorm:"type:text" json:"audio_path"`         // 音频文件路径，仅音频模块使用
 }
