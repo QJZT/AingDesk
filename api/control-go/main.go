@@ -21,6 +21,8 @@ func main() {
 	p1 := flag.String("p1", "control-go", "指定存储环境文件夹")
 	flag.Parse()
 	// 确保启用 json1 扩展，并启用外键支持
+	fmt.Println(*p)
+	fmt.Println(*p1)
 	db, err := gorm.Open(sqlite.Open(*p+"?_pragma=json1&_pragma=foreign_keys(1)"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info), // 启用调试日志
 	})

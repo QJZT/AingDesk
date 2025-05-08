@@ -47,7 +47,7 @@ func SeedBaseModule(db *gorm.DB) error {
 			RewriteFrequency:  60,
 		},
 		{
-			ModuleType:        model.ModuleTypeAudio,
+			ModuleType:        model.ModuleTypeBase,
 			OrderNum:          2,
 			ModuleName:        "欢迎模块",
 			IntervalTimeStart: 30,
@@ -59,7 +59,7 @@ func SeedBaseModule(db *gorm.DB) error {
 			RewriteFrequency:  0,
 		},
 		{
-			ModuleType:        model.ModuleTypeAudio,
+			ModuleType:        model.ModuleTypeBase,
 			OrderNum:          3,
 			ModuleName:        "点赞模块",
 			IntervalTimeStart: 30,
@@ -71,7 +71,7 @@ func SeedBaseModule(db *gorm.DB) error {
 			RewriteFrequency:  0,
 		},
 		{
-			ModuleType:        model.ModuleTypeAudio,
+			ModuleType:        model.ModuleTypeBase,
 			OrderNum:          4,
 			ModuleName:        "礼物模块",
 			IntervalTimeStart: 5,
@@ -85,7 +85,7 @@ func SeedBaseModule(db *gorm.DB) error {
 			RewriteFrequency: 0,
 		},
 		{
-			ModuleType:        model.ModuleTypeAudio,
+			ModuleType:        model.ModuleTypeBase,
 			OrderNum:          5,
 			ModuleName:        "礼物模块",
 			IntervalTimeStart: 5,

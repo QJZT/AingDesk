@@ -46,8 +46,12 @@
               <div class="module-header">
                 <h3>{{ module.moduleName }}</h3>
                 <p>周期时间：{{ module.intervalTimeStart }}~{{ module.intervalTimeEnd }}s 触发条件：{{ getTriggerConditions(module) }}</p>
-                <p>{{ truncateDescription(module.scriptContent.join('\n') || '无描述') }}</p>
-                <!-- 展示音频名称和路径（仅音频模块） -->
+                <div v-if="module.scriptContent && module.scriptContent.length > 0" class="script-content-box">
+                  <p v-for="(script, index) in module.scriptContent" :key="index">
+                    {{ script }}
+                  </p>
+                </div>
+                <p v-else>无描述</p>
                 <p v-if="module.moduleType === ModuleType.Audio && module.audioName">
                   音频名称：{{ module.audioName }}
                 </p>
@@ -67,7 +71,7 @@
     </n-card>
 
     <!-- 基础模块配置弹窗 -->
-    <BasicModuleDialog 
+    <BasicModuleDialog
       :show="showBasicModule"
       @update:show="showBasicModule = $event"
       @exit="handleBasicModuleExit"
@@ -76,7 +80,7 @@
     />
 
     <!-- 音频交互模块配置弹窗 -->
-    <AudioModuleDialog 
+    <AudioModuleDialog
       :show="showAudioModule"
       @update:show="showAudioModule = $event"
       @exit="handleAudioModuleExit"
@@ -99,10 +103,12 @@ const API_BASE_URL = 'http://localhost:7073';
 enum TriggerCondition {
   ExecuteLoop = "ExecuteLoop",        // 循环执行
   BarrageComment = "BarrageComment",  // 弹幕评论
-  SendGift = "SendGift",              // 送礼物
-  Like = "Like",                      // 点赞
-  EnterLiveRoom = "EnterLiveRoom",    // 进入直播间
-  WarningTip = "WarningTip",          // 警告提示
+  SendGift = "SendGift",             // 送礼物
+  Like = "Like",                     // 点赞
+  EnterLiveRoom = "EnterLiveRoom",   // 进入直播间
+  WarningTip = "WarningTip",         // 警告提示
+  ShareLiveRoom = "ShareLiveRoom",   // 分享直播间
+  FollowAnchor = "FollowAnchor",     // 关注主播
 }
 
 // 模块类型枚举
@@ -119,19 +125,19 @@ enum ReadStep {
 
 // 定义模块接口，与后端数据结构保持一致
 interface Module {
-  id: number;                           // 模块ID
-  moduleType: ModuleType;               // 模块类型（base/audio）
-  orderNum: number;                     // 排序编号
-  moduleName: string;                   // 模块名称
-  intervalTimeStart: number;            // 间隔时间起始（秒）
-  intervalTimeEnd: number;              // 间隔时间结束（秒）
-  triggerConditions: TriggerCondition[];// 触发条件列表
-  readStep: ReadStep;                   // 读取步骤（random/sequential）
-  scriptContent: string[];              // 话术文案列表
-  isModelRewrite: boolean;              // 是否启用大模型改写
-  rewriteFrequency: number;             // 改写频率（秒）
-  audioName?: string;                   // 音频文件名称（仅音频模块使用）
-  audioPath?: string;                   // 音频文件路径（仅音频模块使用）
+  id: number;
+  moduleType: ModuleType;
+  orderNum: number;
+  moduleName: string;
+  intervalTimeStart: number;
+  intervalTimeEnd: number;
+  triggerConditions: TriggerCondition[];
+  readStep: ReadStep;
+  scriptContent: string[];
+  isModelRewrite: boolean;
+  rewriteFrequency: number;
+  audioName?: string;
+  audioPath?: string;
 }
 
 // 控制加载状态
@@ -151,53 +157,35 @@ const modules = ref<Module[]>([]);
 // 防止重复保存
 let isSaving = false;
 
-// 从后端获取模块数据
+// 从后端获取模块数据（查）
 async function fetchModules() {
   console.log('开始加载模块数据...');
   loading.value = true;
   try {
-    console.log('发起请求:', `${API_BASE_URL}/base-modules`);
     const response = await fetch(`${API_BASE_URL}/base-modules`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
     });
-    console.log('响应状态:', response.status);
-    
-    const rawResponse = await response.text();
-    console.log('原始响应:', rawResponse);
-    
-    if (!rawResponse) {
-      throw new Error('后端返回空响应');
-    }
-    
-    let backendData;
-    try {
-      backendData = JSON.parse(rawResponse);
-      console.log('解析后的数据:', backendData);
-    } catch (parseError) {
-      console.error('JSON 解析失败:', parseError);
-      throw new Error(`后端返回数据无法解析为 JSON: ${rawResponse}`);
-    }
-    
     if (!response.ok) {
-      throw new Error(`获取模块列表失败，状态码: ${response.status}，错误信息: ${backendData.error || '未知错误'}`);
+      throw new Error(`获取模块列表失败，状态码: ${response.status}`);
     }
-    
-    if (!Array.isArray(backendData)) {
-      throw new Error('后端返回数据格式错误，期望数组');
-    }
-    
+    const backendData = await response.json();
+    console.log('后端返回数据:', backendData);
+
     const mappedData = backendData
       .map((item) => mapBackendToFrontend(item))
       .filter((module): module is Module => module !== null && module.id !== undefined);
     console.log('映射后的数据:', mappedData);
-    
-    modules.value = mappedData;
+
+    // 清空并重新赋值，确保响应式更新
+    modules.value = [];
+    modules.value = [...mappedData];
   } catch (error) {
     console.error('加载模块失败:', error);
     modules.value = [];
+    window.$message?.error('加载模块失败：' + error.message);
   } finally {
     loading.value = false;
     console.log('加载完成，当前模块数据:', modules.value);
@@ -211,6 +199,49 @@ function mapBackendToFrontend(backendModule: any): Module | null {
     return null;
   }
 
+  const triggerConditions = Array.isArray(backendModule.trigger_conditions)
+    ? backendModule.trigger_conditions.map((condition: string) => {
+        switch (condition) {
+          case 'ExecuteLoop':
+          case 'controlLoop':
+          case 'intervalLoop':
+            return TriggerCondition.ExecuteLoop;
+          case 'BarrageComment':
+          case 'barrageComment':
+            return TriggerCondition.BarrageComment;
+          case 'SendGift':
+          case 'sendGift':
+            return TriggerCondition.SendGift;
+          case 'Like':
+          case 'like':
+            return TriggerCondition.Like;
+          case 'EnterLiveRoom':
+          case 'enterLiveRoom':
+            return TriggerCondition.EnterLiveRoom;
+          case 'WarningTip':
+          case 'warning':
+            return TriggerCondition.WarningTip;
+          case 'ShareLiveRoom':
+          case 'shareLiveRoom':
+            return TriggerCondition.ShareLiveRoom;
+          case 'FollowAnchor':
+          case 'followAnchor':
+            return TriggerCondition.FollowAnchor;
+          default:
+            return condition as TriggerCondition;
+        }
+      })
+    : [];
+
+  let scriptContent: string[] = [];
+  if (backendModule.script_content) {
+    if (Array.isArray(backendModule.script_content)) {
+      scriptContent = backendModule.script_content;
+    } else if (typeof backendModule.script_content === 'string') {
+      scriptContent = backendModule.script_content.split(',').map((s: string) => s.trim());
+    }
+  }
+
   return {
     id: backendModule.id || 0,
     moduleType: (backendModule.module_type || 'base') as ModuleType,
@@ -218,13 +249,9 @@ function mapBackendToFrontend(backendModule: any): Module | null {
     moduleName: backendModule.module_name || '未知模块',
     intervalTimeStart: backendModule.interval_time_start || 0,
     intervalTimeEnd: backendModule.interval_time_end || 0,
-    triggerConditions: Array.isArray(backendModule.trigger_conditions)
-      ? backendModule.trigger_conditions as TriggerCondition[]
-      : [],
+    triggerConditions,
     readStep: (backendModule.read_step || 'random') as ReadStep,
-    scriptContent: Array.isArray(backendModule.script_content)
-      ? backendModule.script_content
-      : [],
+    scriptContent,
     isModelRewrite: backendModule.is_model_rewrite || false,
     rewriteFrequency: backendModule.rewrite_frequency || 0,
     audioName: backendModule.audio_name || '',
@@ -235,34 +262,53 @@ function mapBackendToFrontend(backendModule: any): Module | null {
 // 将前端数据映射到后端格式
 function mapFrontendToBackend(frontendModule: Module): any {
   const maxOrderNum = modules.value.length > 0
-    ? Math.max(...modules.value.map(m => m.orderNum))
+    ? Math.max(...modules.value.map((m) => m.orderNum))
     : 0;
+
+  const triggerConditions = frontendModule.triggerConditions.map((condition) => {
+    switch (condition) {
+      case TriggerCondition.ExecuteLoop:
+        return 'ExecuteLoop';
+      case TriggerCondition.BarrageComment:
+        return 'BarrageComment';
+      case TriggerCondition.SendGift:
+        return 'SendGift';
+      case TriggerCondition.Like:
+        return 'Like';
+      case TriggerCondition.EnterLiveRoom:
+        return 'EnterLiveRoom';
+      case TriggerCondition.WarningTip:
+        return 'WarningTip';
+      case TriggerCondition.ShareLiveRoom:
+        return 'ShareLiveRoom';
+      case TriggerCondition.FollowAnchor:
+        return 'FollowAnchor';
+      default:
+        return condition;
+    }
+  });
 
   return {
     id: frontendModule.id,
-    module_type: frontendModule.moduleType,
+    module_type: frontendModule.moduleType || 'base',
     order_num: frontendModule.id === 0 ? maxOrderNum + 1 : frontendModule.orderNum,
     module_name: frontendModule.moduleName,
     interval_time_start: frontendModule.intervalTimeStart,
     interval_time_end: frontendModule.intervalTimeEnd,
-    trigger_conditions: frontendModule.triggerConditions,
+    trigger_conditions: triggerConditions,
     read_step: frontendModule.readStep,
     script_content: frontendModule.scriptContent,
-    is_model_rewrite: frontendModule.isModelRewrite,
-    rewrite_frequency: frontendModule.rewriteFrequency,
+    is_model_rewrite: frontendModule.isModelRewrite || false,
+    rewrite_frequency: frontendModule.rewriteFrequency || 0,
     audio_name: frontendModule.audioName || '',
     audio_path: frontendModule.audioPath || '',
   };
 }
 
-// 保存模块到后端
+// 保存模块到后端（增/改）
 async function saveModule(module: Module, isEdit: boolean) {
   if (isSaving) {
     console.log('正在保存中，请勿重复提交');
-    return;
-  }
-  if (module.intervalTimeStart >= module.intervalTimeEnd) {
-    console.error('保存失败：intervalTimeStart 必须小于 intervalTimeEnd');
     return;
   }
 
@@ -272,25 +318,34 @@ async function saveModule(module: Module, isEdit: boolean) {
     const url = isEdit
       ? `${API_BASE_URL}/base-modules/${module.id}`
       : `${API_BASE_URL}/base-modules`;
+
+    console.log('发送到后端的请求数据:', module);
     const response = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(mapFrontendToBackend(module)),
     });
+
+    const responseData = await response.json();
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`${isEdit ? '更新' : '新增'}模块失败，错误信息: ${errorData.error}`);
+      throw new Error(responseData.error || `保存失败，状态码：${response.status}`);
     }
-    console.log(isEdit ? '模块更新成功' : '模块新增成功');
-    await fetchModules();
+
+    console.log('后端保存响应:', responseData);
+    await fetchModules(); // 刷新数据
+    window.$message?.success(isEdit ? '更新成功' : '添加成功');
   } catch (error) {
-    console.error('保存模块失败:', error);
+    console.error('保存失败:', error);
+    window.$message?.error('保存失败：' + (error.message || '未知错误'));
   } finally {
     isSaving = false;
   }
 }
 
-// 删除模块
+// 删除模块（删）
 async function deleteModuleFromBackend(module: Module) {
   try {
     const response = await fetch(`${API_BASE_URL}/base-modules/${module.id}`, {
@@ -298,12 +353,33 @@ async function deleteModuleFromBackend(module: Module) {
     });
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`删除模块失败，错误信息: ${errorData.error}`);
+      throw new Error(errorData.error || '未知错误');
     }
     console.log('模块删除成功');
     await fetchModules();
+    window.$message?.success('模块删除成功');
   } catch (error) {
     console.error('删除模块失败:', error);
+    window.$message?.error('删除模块失败：' + error.message);
+  }
+}
+
+// 测试模块
+async function testModule(module: Module) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/base-modules/${module.id}/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || '测试失败');
+    }
+    console.log('模块测试成功');
+    window.$message?.success('模块测试成功');
+  } catch (error) {
+    console.error('测试模块失败:', error);
+    window.$message?.error('测试模块失败：' + error.message);
   }
 }
 
@@ -316,14 +392,14 @@ onMounted(async () => {
 // 点击“基础模块”卡片时打开弹窗
 function handleBasicModuleClick() {
   console.log('打开基础模块弹窗');
-  editingModule.value = null;
+  editingModule.value = null; // 新增时设为 null
   showBasicModule.value = true;
 }
 
 // 点击“音频交互模块”卡片时打开弹窗
 function handleAudioModuleClick() {
   console.log('打开音频交互模块弹窗');
-  editingAudioModule.value = null;
+  editingAudioModule.value = null; // 新增时设为 null
   showAudioModule.value = true;
 }
 
@@ -338,71 +414,69 @@ function handleBasicModuleSave(formData: any) {
   const module: Module = editingModule.value
     ? {
         ...editingModule.value,
-        moduleName: formData.moduleName || editingModule.value.moduleName,
-        intervalTimeStart: formData.minTime,
-        intervalTimeEnd: formData.maxTime,
-        triggerConditions: formData.triggers
-          ? Object.entries(formData.triggers)
-              .filter(([_, value]) => value)
-              .map(([key]) => {
-                switch (key) {
-                  case 'cycleExecution':
-                    return TriggerCondition.ExecuteLoop;
-                  case 'elasticComment':
-                    return TriggerCondition.BarrageComment;
-                  case 'gift':
-                    return TriggerCondition.SendGift;
-                  case 'like':
-                    return TriggerCondition.Like;
-                  case 'joinRoom':
-                    return TriggerCondition.EnterLiveRoom;
-                  case 'notice':
-                    return TriggerCondition.WarningTip;
-                  default:
-                    return null;
-                }
-              })
-              .filter((condition): condition is TriggerCondition => condition !== null)
-          : editingModule.value.triggerConditions,
-        readStep: (formData.readStep || editingModule.value.readStep) as ReadStep,
-        scriptContent: formData.speechContents || editingModule.value.scriptContent,
-        isModelRewrite: formData.modelRewrite === 'yes',
-        rewriteFrequency: formData.rewriteFrequency,
+        moduleName: formData.moduleName,
+        intervalTimeStart: formData.intervalTimeStart,
+        intervalTimeEnd: formData.intervalTimeEnd,
+        triggerConditions: formData.triggerConditions.map((condition: string) => {
+          switch (condition) {
+            case 'controlLoop':
+            case 'intervalLoop':
+              return TriggerCondition.ExecuteLoop;
+            case 'barrageComment':
+              return TriggerCondition.BarrageComment;
+            case 'sendGift':
+              return TriggerCondition.SendGift;
+            case 'like':
+              return TriggerCondition.Like;
+            case 'enterLiveRoom':
+              return TriggerCondition.EnterLiveRoom;
+            case 'shareLiveRoom':
+              return TriggerCondition.ShareLiveRoom;
+            case 'followAnchor':
+              return TriggerCondition.FollowAnchor;
+            case 'warning':
+              return TriggerCondition.WarningTip;
+            default:
+              return condition as TriggerCondition;
+          }
+        }),
+        readStep: formData.readStep as ReadStep,
+        scriptContent: formData.scriptContent,
       }
     : {
         id: 0,
         moduleType: ModuleType.Base,
         orderNum: 0,
         moduleName: formData.moduleName || '基础模块',
-        intervalTimeStart: formData.minTime,
-        intervalTimeEnd: formData.maxTime,
-        triggerConditions: formData.triggers
-          ? Object.entries(formData.triggers)
-              .filter(([_, value]) => value)
-              .map(([key]) => {
-                switch (key) {
-                  case 'cycleExecution':
-                    return TriggerCondition.ExecuteLoop;
-                  case 'elasticComment':
-                    return TriggerCondition.BarrageComment;
-                  case 'gift':
-                    return TriggerCondition.SendGift;
-                  case 'like':
-                    return TriggerCondition.Like;
-                  case 'joinRoom':
-                    return TriggerCondition.EnterLiveRoom;
-                  case 'notice':
-                    return TriggerCondition.WarningTip;
-                  default:
-                    return null;
-                }
-              })
-              .filter((condition): condition is TriggerCondition => condition !== null)
-          : [],
+        intervalTimeStart: formData.intervalTimeStart,
+        intervalTimeEnd: formData.intervalTimeEnd,
+        triggerConditions: formData.triggerConditions.map((condition: string) => {
+          switch (condition) {
+            case 'controlLoop':
+            case 'intervalLoop':
+              return TriggerCondition.ExecuteLoop;
+            case 'barrageComment':
+              return TriggerCondition.BarrageComment;
+            case 'sendGift':
+              return TriggerCondition.SendGift;
+            case 'like':
+              return TriggerCondition.Like;
+            case 'enterLiveRoom':
+              return TriggerCondition.EnterLiveRoom;
+            case 'shareLiveRoom':
+              return TriggerCondition.ShareLiveRoom;
+            case 'followAnchor':
+              return TriggerCondition.FollowAnchor;
+            case 'warning':
+              return TriggerCondition.WarningTip;
+            default:
+              return condition as TriggerCondition;
+          }
+        }),
         readStep: (formData.readStep || 'random') as ReadStep,
-        scriptContent: formData.speechContents || [],
-        isModelRewrite: formData.modelRewrite === 'yes',
-        rewriteFrequency: formData.rewriteFrequency || 0,
+        scriptContent: formData.scriptContent || [],
+        isModelRewrite: false,
+        rewriteFrequency: 0,
       };
   saveModule(module, !!editingModule.value);
 }
@@ -418,69 +492,69 @@ function handleAudioModuleSave(formData: any) {
   const module: Module = editingAudioModule.value
     ? {
         ...editingAudioModule.value,
-        moduleName: formData.moduleName || editingAudioModule.value.moduleName,
-        intervalTimeStart: formData.minTime,
-        intervalTimeEnd: formData.maxTime,
-        triggerConditions: formData.triggers
-          ? Object.entries(formData.triggers)
-              .filter(([_, value]) => value)
-              .map(([key]) => {
-                switch (key) {
-                  case 'cycleExecution':
-                    return TriggerCondition.ExecuteLoop;
-                  case 'elasticComment':
-                    return TriggerCondition.BarrageComment;
-                  case 'gift':
-                    return TriggerCondition.SendGift;
-                  case 'like':
-                    return TriggerCondition.Like;
-                  case 'joinRoom':
-                    return TriggerCondition.EnterLiveRoom;
-                  case 'notice':
-                    return TriggerCondition.WarningTip;
-                  default:
-                    return null;
-                }
-              })
-              .filter((condition): condition is TriggerCondition => condition !== null)
-          : editingAudioModule.value.triggerConditions,
-        readStep: (formData.readStep || editingAudioModule.value.readStep) as ReadStep,
-        scriptContent: formData.speechContents || editingAudioModule.value.scriptContent,
-        audioName: formData.audioName || editingAudioModule.value.audioName,
-        audioPath: formData.audioPath || editingAudioModule.value.audioPath,
+        moduleName: formData.moduleName,
+        intervalTimeStart: formData.intervalTimeStart,
+        intervalTimeEnd: formData.intervalTimeEnd,
+        triggerConditions: formData.triggerConditions.map((condition: string) => {
+          switch (condition) {
+            case 'controlLoop':
+            case 'intervalLoop':
+              return TriggerCondition.ExecuteLoop;
+            case 'barrageComment':
+              return TriggerCondition.BarrageComment;
+            case 'sendGift':
+              return TriggerCondition.SendGift;
+            case 'like':
+              return TriggerCondition.Like;
+            case 'enterLiveRoom':
+              return TriggerCondition.EnterLiveRoom;
+            case 'shareLiveRoom':
+              return TriggerCondition.ShareLiveRoom;
+            case 'followAnchor':
+              return TriggerCondition.FollowAnchor;
+            case 'warning':
+              return TriggerCondition.WarningTip;
+            default:
+              return condition as TriggerCondition;
+          }
+        }),
+        readStep: formData.readStep as ReadStep,
+        scriptContent: formData.scriptContent,
+        audioName: formData.audioName,
+        audioPath: formData.audioPath,
       }
     : {
         id: 0,
         moduleType: ModuleType.Audio,
         orderNum: 0,
         moduleName: formData.moduleName || '音频模块',
-        intervalTimeStart: formData.minTime,
-        intervalTimeEnd: formData.maxTime,
-        triggerConditions: formData.triggers
-          ? Object.entries(formData.triggers)
-              .filter(([_, value]) => value)
-              .map(([key]) => {
-                switch (key) {
-                  case 'cycleExecution':
-                    return TriggerCondition.ExecuteLoop;
-                  case 'elasticComment':
-                    return TriggerCondition.BarrageComment;
-                  case 'gift':
-                    return TriggerCondition.SendGift;
-                  case 'like':
-                    return TriggerCondition.Like;
-                  case 'joinRoom':
-                    return TriggerCondition.EnterLiveRoom;
-                  case 'notice':
-                    return TriggerCondition.WarningTip;
-                  default:
-                    return null;
-                }
-              })
-              .filter((condition): condition is TriggerCondition => condition !== null)
-          : [],
+        intervalTimeStart: formData.intervalTimeStart,
+        intervalTimeEnd: formData.intervalTimeEnd,
+        triggerConditions: formData.triggerConditions.map((condition: string) => {
+          switch (condition) {
+            case 'controlLoop':
+            case 'intervalLoop':
+              return TriggerCondition.ExecuteLoop;
+            case 'barrageComment':
+              return TriggerCondition.BarrageComment;
+            case 'sendGift':
+              return TriggerCondition.SendGift;
+            case 'like':
+              return TriggerCondition.Like;
+            case 'enterLiveRoom':
+              return TriggerCondition.EnterLiveRoom;
+            case 'shareLiveRoom':
+              return TriggerCondition.ShareLiveRoom;
+            case 'followAnchor':
+              return TriggerCondition.FollowAnchor;
+            case 'warning':
+              return TriggerCondition.WarningTip;
+            default:
+              return condition as TriggerCondition;
+          }
+        }),
         readStep: (formData.readStep || 'random') as ReadStep,
-        scriptContent: formData.speechContents || [],
+        scriptContent: formData.scriptContent || [],
         isModelRewrite: false,
         rewriteFrequency: 0,
         audioName: formData.audioName,
@@ -499,11 +573,6 @@ function editModule(module: Module) {
     editingModule.value = { ...module };
     showBasicModule.value = true;
   }
-}
-
-// 测试模块
-function testModule(module: Module) {
-  console.log('测试模块:', module);
 }
 
 // 删除模块
@@ -529,15 +598,19 @@ function getTriggerConditions(module: Module) {
         return '进入直播间';
       case TriggerCondition.WarningTip:
         return '管理警告';
+      case TriggerCondition.ShareLiveRoom:
+        return '分享直播间';
+      case TriggerCondition.FollowAnchor:
+        return '关注主播';
       default:
         return '';
     }
-  }).filter(name => name);
+  }).filter((name) => name);
   return conditionNames.length > 0 ? conditionNames.join('、') : '无限制';
 }
 
-// 截断描述以防止过长
-function truncateDescription(description: string, maxLength: number = 50): string {
+// 截断描述以防止过长（保留但未使用）
+function truncateDescription(description: string, maxLength: number = 30): string {
   if (description.length > maxLength) {
     return description.slice(0, maxLength) + '...';
   }
@@ -641,6 +714,11 @@ function truncateDescription(description: string, maxLength: number = 50): strin
       margin: 5px 0;
       color: #666;
       font-size: 12px;
+    }
+
+    .script-content-box {
+      max-height: 80px; /* 固定高度，约 4 行文字 */
+      overflow: hidden; /* 超出部分隐藏 */
     }
   }
 

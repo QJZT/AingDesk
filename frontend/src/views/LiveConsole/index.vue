@@ -807,7 +807,7 @@ const fetchModules = async () => {
   }
 }
 
-onMounted(() => {
+onMount21212ed(() => {
   fetchModules()
   getMames()
   getPromptRewrite()
@@ -827,7 +827,7 @@ onMounted(() => {
   socket.value = io('ws://127.0.0.1:7073', {
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-    reconnectionDelay: 3000,
+    reconnectionDelay: 5,
     randomizationFactor: 0.5
   })
     socket.value.on('connect', () => {
