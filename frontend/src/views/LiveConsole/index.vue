@@ -35,10 +35,21 @@
         <n-text depth="3" style="margin-right: 8px;">音频驱动</n-text>
         <n-select 
           v-model:value="selectedAudioDriver"
-          :options="audioDriverOptions"
+          :options="audioDeviceOptions"
           placeholder="选择驱动"
-          style="width: 100px;"
+          style="width: 180px;"
           @update:value="handleLanguageChange"
+        />
+      </div>
+
+      <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">语音模型</n-text>
+        <n-select 
+          v-model:value="selectedSpeechModel"
+          :options="speedModelOptions"
+          placeholder="选择驱动"
+          style="width: 180px;"
+          @update:value="initializeSpeechModel"
         />
       </div>
     </div>
@@ -206,7 +217,7 @@
             </div>
             <n-select 
                 v-model:value="block.selectedNameId"
-                :options="mames.map(opt => ({ label: opt.name, value: opt.id }))"
+                :options="humanVoiceOptions"
                 style="width: 70%;"
                 placeholder="选择人声"
                 clearable
@@ -550,6 +561,7 @@ const selectedTimezone = ref('')
 const selectedLanguage = ref('')
 const selectedLanguageLabel = ref('')
 const selectedAudioDriver = ref('')
+const selectedSpeechModel = ref('')
 const handleLanguageChange = async (value) => {
   try {
     const response = await fetch('http://127.0.0.1:7073/set_config', {
@@ -569,6 +581,27 @@ const handleLanguageChange = async (value) => {
     console.error('语言设置失败:', error)
   }
 }
+
+const initializeSpeechModel = async () => {
+  try {
+   const response = await fetch('http://127.0.0.1:7073/initialize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model:selectedSpeechModel.value
+       })
+    })
+    const data = await response.json()
+    console.log('语音模型初始化成功:', data)
+   }
+   catch (error) {
+    console.error('语音模型初始化失败:', error) 
+  }
+}
+
+
 const timezoneOptions = [
   { label: '国际日期变更线以西', value: 'Etc/GMT+12' },
   { label: '中途岛', value: 'Pacific/Midway' },
@@ -695,6 +728,53 @@ const getModulesKv =async  (id) => {
         return data.kv;
 }
 
+// 新增：音频设备下拉选项
+const audioDeviceOptions = ref([])
+
+const getAudioDevices = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:7073/get_sound_cards', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
+    audioDeviceOptions.value = data.map(item => ({
+      label: item,
+      value: item
+    }))
+    // 检查是否有"CABLE Input"，有则设为默认值
+    const cable = audioDeviceOptions.value.find(opt => opt.label === 'CABLE Output (VB-Audio Virtual Cable)')
+    if (cable) {
+      selectedAudioDriver.value = cable.value
+    }
+  } catch (error) {
+    console.error('获取音频设备失败:', error)
+  }
+}
+
+const speedModelOptions = ref([])
+
+const getSpeedModels = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:7073/get_model_files', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      } 
+    })
+    const data = await response.json()
+    speedModelOptions.value = (data.files || []).map(item => ({
+      label: item,
+      value: item
+    }))
+    
+  }  catch (error) {
+    console.error('获取语音模型失败:', error)
+  }
+}
+
 const setModulesKv =async  (id,kv) => {
   const response = await fetch('http://127.0.0.1:7072/set_kv', {
             method: 'POST',
@@ -731,6 +811,9 @@ onMounted(() => {
   fetchModules()
   getMames()
   getPromptRewrite()
+  getAudioDevices()
+  getHumanVoiceFiles()
+  getSpeedModels()
   // setInterval(fetchModules, 25000)
 
   if (socket.value && socket.value.connected) return
@@ -952,9 +1035,9 @@ const ExecuteLoop= async (module) => {
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
-            "zh-cn",  //语种
+            selectedLanguage.value || "en",  //语种
             newFileName, //生成文件名
-            "test3.wav", //音色文件名
+            module.selectedNameId, //音色文件名
             module.speed, //生成速度
             module.volume / 100 //生成音量
           ) //生成音量
@@ -1004,9 +1087,9 @@ const EnterLiveRoom= async (module) => {
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
-            "zh-cn",  //语种
+            selectedLanguage.value || "en",  //语种
             newFileName, //生成文件名
-            "test3.wav", //音色文件名
+            module.selectedNameId, //音色文件名
             module.speed, //生成速度
             module.volume / 100 //生成音量
           ) //生成音量
@@ -1055,9 +1138,9 @@ const Like= async (module) => {
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
-            "zh-cn",  //语种
+            selectedLanguage.value || "en",  //语种
             newFileName, //生成文件名
-            "test3.wav", //音色文件名
+            module.selectedNameId, //音色文件名
             module.speed, //生成速度
             module.volume / 100 //生成音量
           ) //生成音量
@@ -1108,9 +1191,9 @@ const SendGift= async (module) => {
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
-            "zh-cn",  //语种
+            selectedLanguage.value || "en",  //语种
             newFileName, //生成文件名
-            "test3.wav", //音色文件名
+            module.selectedNameId, //音色文件名
             module.speed, //生成速度
             module.volume / 100 //生成音量
           ) //生成音量
@@ -1161,9 +1244,9 @@ const BarrageComment= async (module) => {
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
-            "zh-cn",  //语种
+            selectedLanguage.value || "en",  //语种
             newFileName, //生成文件名
-            "test3.wav", //音色文件名
+            module.selectedNameId, //音色文件名
             module.speed, //生成速度
             module.volume / 100 //生成音量
           ) //生成音量
@@ -1247,6 +1330,27 @@ const play_task_voice_api = async (_filename:string,play_mode:string) => {
          }),
     });
     await response.json();
+}
+
+const humanVoiceOptions = ref([])
+
+const getHumanVoiceFiles = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:7073/get_human_voice_files', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
+    // 转换为下拉选项格式
+    humanVoiceOptions.value = (data.files || []).map(name => ({
+      label: name,
+      value: name
+    }))
+  } catch (error) {
+    console.error('获取人声音色文件失败:', error)
+  }
 }
 
 
