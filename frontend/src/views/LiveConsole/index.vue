@@ -77,7 +77,7 @@
       </div>
 
       <div class="setting-item">
-        <n-text depth="3" style="margin-right: 8px;">模型选择 {{ selectedModel }}</n-text>
+        <n-text depth="3" style="margin-right: 8px;">模型选择</n-text>
         <n-select
           v-model:value="selectedModel"
           :options="Object.entries(showModelList).map(([category, items]) => ({
@@ -86,12 +86,14 @@
             disabled: true,  // 添加disabled属性禁止选择
             children: items.map(item => ({
               label: item.title,
-              value: item.model
+              value: item.model,
+              supplierName: item.supplierName
             }))
           }))"
           placeholder="请选择模型"
           style="width: 400px;"
           clearable
+         @update:value="(value, option) => handleSelectedModelChange(value, option)"
         />
       </div>
       
@@ -481,6 +483,7 @@ import KnowledgeChoosePanel from "@/views/KnowleadgeStore/components/KnowledgeCh
 import { getKnowledgeStoreData } from "../KnowleadgeStore/store";
 import { getHeaderStoreData } from '../Header/store';
 import { getSoftSettingsStoreData } from '@/views/SoftSettings/store';
+import { useMessage } from "naive-ui";
 const {  showModelList } = getHeaderStoreData()
 const {
     themeColors,
@@ -502,6 +505,24 @@ const loading = ref(false)
 const streamUrl = ref('')
 const newMessage = ref('')
 const isVoiceMode = ref(false)
+
+const model_api = ref("")
+const parameters_api = ref("")
+const supplierName_api = ref("")
+const handleSelectedModelChange = async (value, option) => {
+  if (value == "") {
+    model_api.value = ""
+    parameters_api.value = ""
+    return
+  }
+  supplierName_api.value = option.supplierName
+  if (option.supplierName == "ollama") {
+        [model_api.value, parameters_api.value] = option.value.split(":")
+    } else {
+        model_api.value = option.value
+        parameters_api.value = ""
+    }
+}
 
 
 const {
@@ -711,8 +732,11 @@ const fetchModules = async () => {
     let  newList   =[]
     const response = await fetch('http://127.0.0.1:7072/base-modules')
     let list = await response.json()
+    console.log("lis23132t:",list);
     for (const  [index, module] of list.entries()) {
+      console.log("module.id:",module.id);
       let  kv =await getModulesKv(module.id)
+      console.log("kv:",kv);
       module.volume = kv.volume || 50
       module.isActive= kv.isActive || false
       module.retAi= kv.retAi || false
@@ -727,12 +751,12 @@ const fetchModules = async () => {
   }
 }
 
-onMount21212ed(() => {
+onMounted(() => {
   fetchModules()
   getMames()
   getPromptRewrite()
   // setInterval(fetchModules, 25000)
-
+  return
   if (socket.value && socket.value.connected) return
     //  { 
     //       's': '渲染完整数据',
@@ -745,7 +769,7 @@ onMount21212ed(() => {
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
     reconnectionDelay: 5,
-    randomizationFactor: 0.5
+    randomizationFactor: 5
   })
     socket.value.on('connect', () => {
       reconnectAttempts = 0
@@ -867,20 +891,24 @@ const registerModules = () => {
     start.value = true
     for (const module of modules.value) {
         // api\control-go\model\base_module.go
-        // TriggerExecuteLoop    = "ExecuteLoop"    // 执行循环：是否自动循环执行任务
-        // TriggerBarrageComment = "BarrageComment" // 弹幕评论：是否自动发送弹幕评论
-        // TriggerSendGift       = "SendGift"       // 送礼物：是否自动发送礼物
-        // TriggerLike           = "Like"           // 点赞：是否自动点赞
-        // TriggerEnterLiveRoom  = "EnterLiveRoom"  // 进入直播间：是否自动进入直播间
-        // TriggerWarningTip     = "WarningTip"     // 警告提示：是否显示警告提示
-
+//     TriggerExecuteLoop    = "ExecuteLoop"    // 执行循环：是否自动循环执行任务
+//     TriggerIntervalLoop   = "IntervalLoop"   // 间隔循环：按照指定间隔时间循环执行
+//     TriggerBarrageComment = "BarrageComment" // 弹幕评论：是否自动发送弹幕评论
+//     TriggerSendGift       = "SendGift"       // 送礼物：是否自动发送礼物
+//     TriggerLike           = "Like"           // 点赞：是否自动点赞
+//     TriggerEnterLiveRoom  = "EnterLiveRoom"  // 进入直播间：是否自动进入直播间
+//     TriggerWarningTip     = "WarningTip"     // 警告提示：是否显示警告提示
+// )
         //循环读取
-        if (module.trigger_conditions.includes("ExecuteLoop")) {
+        if (module.trigger_conditions.includes("ExecuteLoop")) { // 执行循环：是否自动循环执行任务
+            ExecuteLoop(module)
+        }
+        if (module.trigger_conditions.includes("IntervalLoop")) { //间隔循环：按照指定间隔时间循环执行
             ExecuteLoop(module)
         }
         //弹幕评论 BarrageComment
-        if (module.trigger_conditions.includes("BarrageComment")) {
-            ExecuteLoop(module)
+        if (module.trigger_conditions.includes("BarrageComment")) {// 弹幕
+            BarrageComment(module)
         }
         //送礼物 SendGift
         if (module.trigger_conditions.includes("SendGift")) {
@@ -945,9 +973,24 @@ const ExecuteLoop= async (module) => {
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
         // 是否改写
-        // if (module.retAi) { //是否改写
-        //   let prompt = promptText.value.replace('{语种}', selectedLanguageLabel.value) //替换
-        // }
+        if (module.retAi) { //是否改写
+          if (model_api.value == "") { //是否改写
+            console.log("请选择模型");
+            await new Promise(resolve => setTimeout(resolve, 4000))
+            continue
+          }
+          let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
+          content = ReplaceText(content) //内容赋值变量
+          const  apidata =  await DisposableSendApi(
+            model_api.value,
+            parameters_api.value,
+            content, //文本
+            prompt, //提示词
+            supplierName_api.value, //供应商名称
+          )
+          console.log("apidata:",apidata);
+          content = apidata
+        }
 
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
@@ -974,7 +1017,6 @@ const ExecuteLoop= async (module) => {
         }
     } while (start.value);
 }
-
 
 // 进入直播间 模块
 const EnterLiveRoomUserName = ref("")  //进入直播间用户名
@@ -1138,30 +1180,42 @@ const SendGift= async (module) => {
 const EnterBarrageUserName = ref("")  //弹幕评论 用户名
 const EnterBarrageContent = ref("")  //弹幕评论 内容
 const BarrageComment= async (module) => {
-    let index = 0 //当前播放索引
-    const script_content_len = module.script_content.length //脚本长度
+    // let index = 0 //当前播放索引
+    // const script_content_len = module.script_content.length //脚本长度
     do {
         if (!module.isActive) { 
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          await new Promise(resolve => setTimeout(resolve, 2000))
           continue
         }
-        if (module.read_step == "random") { //随机
-            if (index == 0) { 
-                module.script_content = shuffleArray(module.script_content)//将数组 打乱
-            }
-        }
+        //弹幕间隔时间
         if (module.interval_time_start != 0 && module.interval_time_end!= 0) { //间隔时间
             const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
             await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
         }
-        while (EnterBarrageUserName.value == "") { //等待有用户送礼物
+        while (EnterBarrageContent.value == "") { //弹幕内容
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
-        let content = module.script_content[index] 
+        if (model_api.value == "") { //是否改写
+            console.log("请选择模型");
+            await new Promise(resolve => setTimeout(resolve, 4000))
+            continue
+        }
+        let content = "" // 
+        let prompt =  ReplaceText(module.script_content[0]) //提示词
+          let ai_user_content =  ReplaceText(EnterBarrageContent.value) //弹幕内容作为ai输入
+            const  apidata =  await DisposableSendApi(
+              model_api.value,
+              parameters_api.value,
+              ai_user_content, //文本
+              prompt, //提示词
+              supplierName_api.value, //供应商名称
+            )
+            console.log("apidata:",apidata);
+            content = apidata
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
-            "zh-cn",  //语种
+            selectedLanguageLabel.value,  //语种
             newFileName, //生成文件名
             "test3.wav", //音色文件名
             module.speed, //生成速度
@@ -1179,11 +1233,6 @@ const BarrageComment= async (module) => {
         })    
         EnterBarrageUserName.value = "" //清空
         EnterBarrageContent.value = "" //清空
-        if (index == script_content_len - 1) { //循环
-            index = 0
-        } else {
-            index = index + 1
-        }
     } while (start.value);
 }
 // 更标准的Fisher-Yates洗牌算法
@@ -1212,7 +1261,7 @@ const generate_wav_api = async (_text:string,
     await myLock; // 等待之前的锁释放
     try {
     // generate_wav_api_runing = true;
-        const response = await fetch('http://192.168.1.10:7073/generate_wav', {
+        const response = await fetch('http://127.0.0.1:7073/generate_wav', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1236,7 +1285,7 @@ const generate_wav_api = async (_text:string,
 
 // 播放任务
 const play_task_voice_api = async (_filename:string,play_mode:string) => {
-    const response = await fetch('http://192.168.1.10:7073/play_task_voice', {
+    const response = await fetch('http://127.0.0.1:7073/play_task_voice', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1251,21 +1300,42 @@ const play_task_voice_api = async (_filename:string,play_mode:string) => {
 
 
 // 模型调用API
-const DisposableSendApi = async (user_content) => {
+const DisposableSendApi = async (model,parameters,user_content,system_prompt,supplier_name) => {
   const response = await fetch('http://127.0.0.1:7072/disposable_send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ 
-              model: "", 
-              parameters: "",
+              model: model, 
+              parameters: parameters,
               user_content: user_content,
-              system_prompt: promptText.value,  }),
+              system_prompt: system_prompt,
+              supplier_name:supplier_name,
+              }),
         });
-        const data = await response.json();
-        return data.kv;
+        console.log(response);
+        
+        const data = await response.text();
+        if (data.includes('</think>')) {
+          // 去除 <think>
+          const endIndex = data.indexOf('</think>');
+          // 截取endIndex 过后的字符串
+          const result = data.substring(endIndex + 7); // 跳过 </think> 标签
+          const result2 = result.replace(/\n/g, '');
+          return result2;
+        }
+        return data;
 }
+
+// 替换文本 替换变量
+const ReplaceText= (text) => {
+  let newText = text
+  if (text.includes('{语种}')){ //是否包含
+    newText = newText.replace('{语种}', selectedLanguageLabel.value) //替换
+  }
+  return newText;
+} 
 
 </script>
 

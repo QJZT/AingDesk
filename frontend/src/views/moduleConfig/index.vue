@@ -97,7 +97,7 @@ import BasicModuleDialog from '@/views/ModuleConfig/components/BasicModuleDialog
 import AudioModuleDialog from '@/views/ModuleConfig/components/AudioModuleDialog.vue';
 
 // 后端 API 基础 URL
-const API_BASE_URL = 'http://localhost:7073';
+const API_BASE_URL = 'http://localhost:7072';
 
 // 触发条件枚举，与后端保持一致
 enum TriggerCondition {

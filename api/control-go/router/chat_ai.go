@@ -16,6 +16,7 @@ func ChatAiRoutes(r *gin.Engine) {
 			Parameters   string `json:"parameters"`    //7b
 			UserContent  string `json:"user_content"`  // 用户输入的消息
 			SystemPrompt string `json:"system_prompt"` // 系统提示词
+			SupplierName string `json:"supplier_name"` //供应商名称
 		}{}
 		if err := c.ShouldBindJSON(&data); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -33,12 +34,13 @@ func ChatAiRoutes(r *gin.Engine) {
 			nil,               //知识库检索结果
 			true,              //是否为临时对话
 			data.SystemPrompt, // 系统提示词
-			"",                // 知识库名称S
+			"",                // 知识库名称
+			data.SupplierName, // 供应商名称
 		)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
 		pkg.RemoveChatApi(id)
-		c.JSON(http.StatusOK, gin.H{"data": str})
+		c.String(http.StatusOK, str)
 	})
 }

@@ -270,6 +270,7 @@ func SendChatApi(
 	temp_chat bool, //是否为临时对话
 	system_prompt string, // 系统提示词
 	regenerate_id string, // 重生成对话id
+	supplierName string, //供应商名称,
 ) (string, error) {
 	url := aing_url + "/chat/chat"
 	mapData := map[string]interface{}{}
@@ -277,6 +278,7 @@ func SendChatApi(
 	mapData["model"] = model
 	//模型名称 0.6b
 	mapData["parameters"] = parameters
+	mapData["supplierName"] = supplierName
 	//对话框id
 	mapData["context_id"] = context_id
 	// 用户输入的消息
