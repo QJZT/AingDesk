@@ -318,7 +318,8 @@
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
-            filter: 'brightness(1.2) contrast(1.2)'
+            filter: 'brightness(1.2) contrast(1.2)',
+            maxWidth: '100%'
           }">{{ msg.content }}</span>
         </div>
           </div>
@@ -331,10 +332,10 @@
              v-for="(data, index) in playList"
             :key="index" 
             class="message-item"
-            style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;"
+            style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;max-width: 50vw;"
           >
           <!-- getMessageColor -->
-          <span class="content" style="line-height: 1;" :style="{
+          <span class="content" style="line-height: 1;width: 45vw;"  :style="{
             // color: getMessageColor(msg.data_types),
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -839,7 +840,7 @@ onMounted(() => {
   getHumanVoiceFiles()
   getSpeedModels()
   // setInterval(fetchModules, 25000)
-  return
+  // return
   if (socket.value && socket.value.connected) return
     //  { 
     //       's': '渲染完整数据',
@@ -1000,11 +1001,11 @@ const registerModules = () => {
 
         //点赞 Like
         if (module.trigger_conditions.includes("Like")) {
-          EnterLiveRoom(module)
+          includesLike(module)
         }
         //进入直播间 EnterLiveRoom
         if (module.trigger_conditions.includes("EnterLiveRoom")) {
-          EnterLiveRoom(module)
+          includesEnterLiveRoom(module)
         }
     }
     playListConsumption()
@@ -1133,7 +1134,7 @@ const EnterLiveRoom= async (module) => {
         while (EnterLiveRoomUserName.value == "") { //等待有用户进入直播间
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
-        let content = module.script_content[index]  //欢迎{用户名称}的到来，您你的到来让直播间蓬革
+        let content = ReplaceText(module.script_content[index])  //欢迎{用户名称}的到来，您你的到来让直播间蓬革
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
@@ -1164,7 +1165,7 @@ const EnterLiveRoom= async (module) => {
 
 // 点赞 Like
 const EnterSupportRoomUserName = ref("")  //点赞直播间 用户名
-const Like= async (module) => {
+const includesLike= async (module) => {
     let index = 0 //当前播放索引
     const script_content_len = module.script_content.length //脚本长度
     do {
@@ -1184,7 +1185,7 @@ const Like= async (module) => {
         while (EnterSupportRoomUserName.value == "") { //等待有用户进入直播间
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
-        let content = module.script_content[index] 
+        let content = ReplaceText(module.script_content[index] ) //内容赋值变量
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
@@ -1238,6 +1239,165 @@ const SendGift= async (module) => {
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
         let content = module.script_content[index] 
+        if (module.retAi) { //是否改写
+            if (model_api.value == "") { //是否改写
+              console.log("请选择模型");
+              await new Promise(resolve => setTimeout(resolve, 4000))
+              continue
+            }
+           let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = ReplaceText(module.script_content[index]) //内容赋值变量
+           const  apidata =  await DisposableSendApi(
+            model_api.value,
+            parameters_api.value,
+            new_content, //文本
+            prompt, //提示词
+            supplierName_api.value, //供应商名称
+          )
+          console.log("apidata:",apidata);
+          content = apidata  //替换
+        }
+
+        const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
+        let ok = await generate_wav_api(
+            content, //文本
+            selectedLanguage.value || "en",  //语种
+            newFileName, //生成文件名
+            module.selectedNameId, //音色文件名
+            module.speed, //生成速度
+            module.volume / 100 //生成音量
+          ) //生成音量
+        if (!ok) { //生成失败
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            continue
+        }
+        // 插入到头部
+        playList.value.unshift({ //入队
+            content: content, //内容
+            filename: newFileName, //文件名
+            play_mode: "serial", //播放模式
+        })    
+        EnterGiftUserName.value = "" //清空
+        EnterGiftNum.value = "" //清空
+        EnterGiftGoodsName.value = "" //清空
+        if (index == script_content_len - 1) { //循环
+            index = 0
+        } else {
+            index = index + 1
+        }
+    } while (start.value);
+}
+const Like= async (module) => {
+    let index = 0 //当前播放索引
+    const script_content_len = module.script_content.length //脚本长度
+    do {
+        if (!module.isActive) { 
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          continue
+        }
+        if (module.read_step == "random") { //随机
+            if (index == 0) { 
+                module.script_content = shuffleArray(module.script_content)//将数组 打乱
+            }
+        }
+        if (module.interval_time_start != 0 && module.interval_time_end!= 0) { //间隔时间
+            const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
+            await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
+        }
+        while (EnterGiftUserName.value == "") { //等待有用户送礼物
+            await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+        let content = module.script_content[index] 
+        if (module.retAi) { //是否改写
+            if (model_api.value == "") { //是否改写
+              console.log("请选择模型");
+              await new Promise(resolve => setTimeout(resolve, 4000))
+              continue
+            }
+           let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = ReplaceText(module.script_content[index]) //内容赋值变量
+           const  apidata =  await DisposableSendApi(
+            model_api.value,
+            parameters_api.value,
+            new_content, //文本
+            prompt, //提示词
+            supplierName_api.value, //供应商名称
+          )
+          console.log("apidata:",apidata);
+          content = apidata  //替换
+        }
+
+        const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
+        let ok = await generate_wav_api(
+            content, //文本
+            selectedLanguage.value || "en",  //语种
+            newFileName, //生成文件名
+            module.selectedNameId, //音色文件名
+            module.speed, //生成速度
+            module.volume / 100 //生成音量
+          ) //生成音量
+        if (!ok) { //生成失败
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            continue
+        }
+        // 插入到头部
+        playList.value.unshift({ //入队
+            content: content, //内容
+            filename: newFileName, //文件名
+            play_mode: "serial", //播放模式
+        })    
+        EnterGiftUserName.value = "" //清空
+        EnterGiftNum.value = "" //清空
+        EnterGiftGoodsName.value = "" //清空
+        if (index == script_content_len - 1) { //循环
+            index = 0
+        } else {
+            index = index + 1
+        }
+    } while (start.value);
+}
+
+//进入直播间 EnterLiveRoom
+const includesEnterLiveRoom= async (module) => {
+    let index = 0 //当前播放索引
+    const script_content_len = module.script_content.length //脚本长度
+    do {
+        if (!module.isActive) { 
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          continue
+        }
+        if (module.read_step == "random") { //随机
+            if (index == 0) { 
+                module.script_content = shuffleArray(module.script_content)//将数组 打乱
+            }
+        }
+        if (module.interval_time_start != 0 && module.interval_time_end!= 0) { //间隔时间
+            const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
+            await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
+        }
+        while (EnterGiftUserName.value == "") { //等待有用户送礼物
+            await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+        let content = module.script_content[index] 
+        if (module.retAi) { //是否改写
+            if (model_api.value == "") { //是否改写
+              console.log("请选择模型");
+              await new Promise(resolve => setTimeout(resolve, 4000))
+              continue
+            }
+           let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = ReplaceText(module.script_content[index]) //内容赋值变量
+           const  apidata =  await DisposableSendApi(
+            model_api.value,
+            parameters_api.value,
+            new_content, //文本
+            prompt, //提示词
+            supplierName_api.value, //供应商名称
+          )
+          console.log("apidata:",apidata);
+          content = apidata  //替换
+        }
+
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
@@ -1446,6 +1606,30 @@ const ReplaceText= (text) => {
   if (text.includes('{语种}')){ //是否包含
     newText = newText.replace('{语种}', selectedLanguageLabel.value) //替换
   }
+  if (text.includes('{送礼用户名}')){ //是否包含
+    newText = newText.replace('{送礼用户名}', EnterGiftUserName.value) //替换
+  }
+  if (text.includes('{礼物名称}')){ //是否包含
+    newText = newText.replace('{礼物名称}', EnterGiftGoodsName.value) //替换
+  }
+  if (text.includes('{礼物数量}')){ //是否包含
+    newText = newText.replace('{礼物数量}', EnterGiftNum.value) //替换
+  }
+  if (text.includes('{点赞用户名}')){ //是否包含
+    newText = newText.replace('{点赞用户名}', EnterSupportRoomUserName.value) //替换
+  }
+  if (text.includes('{分享直播间用户名}')){ //是否包含
+    // newText = newText.replace('{分享直播间用户名}', selectedLanguageLabel.value) //替换
+  }
+  if (text.includes('{关注直播用户名}')){ //是否包含
+    // newText = newText.replace('{关注直播用户名}', selectedLanguageLabel.value) //替换
+  }
+  if (text.includes('{弹幕内容}')){ //是否包含
+    newText = newText.replace('{弹幕内容}', EnterBarrageContent.value) //替换
+  }
+  if (text.includes('{弹幕用户}')){ //是否包含
+    newText = newText.replace('{弹幕用户}', EnterBarrageUserName.value) //替换
+  }
   return newText;
 } 
 
@@ -1464,7 +1648,7 @@ const ReplaceText= (text) => {
     padding: 0px  12px;
     display: grid;
     // grid-template-columns: repeat(3, 1fr);
-    grid-template-columns: 1fr 3fr;  // 中间列宽度是两侧的1.5倍
+    grid-template-columns: 2fr 3fr;  // 中间列宽度是两侧的1.5倍
     gap: 8px;
     // height: 50%;
     
