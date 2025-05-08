@@ -585,7 +585,7 @@ const selectedAudioDriver = ref('')
 const selectedSpeechModel = ref('')
 const handleLanguageChange = async (value) => {
   try {
-    const response = await fetch('http://127.0.0.1:7073/set_config', {
+    const response = await fetch('http://192.168.1.10:7073/set_config', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -605,7 +605,7 @@ const handleLanguageChange = async (value) => {
 
 const initializeSpeechModel = async () => {
   try {
-   const response = await fetch('http://127.0.0.1:7073/initialize', {
+   const response = await fetch('http://192.168.1.10:7073/initialize', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -754,7 +754,7 @@ const audioDeviceOptions = ref([])
 
 const getAudioDevices = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:7073/get_sound_cards', {
+    const response = await fetch('http://192.168.1.10:7073/get_sound_cards', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -779,7 +779,7 @@ const speedModelOptions = ref([])
 
 const getSpeedModels = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:7073/get_model_files', {
+    const response = await fetch('http://192.168.1.10:7073/get_model_files', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -848,7 +848,7 @@ onMounted(() => {
     //       'g': 礼物名称,
     //       'gn': 礼物数量,
     //  }
-  socket.value = io('ws://127.0.0.1:7073', {
+  socket.value = io('ws://192.168.1.10:7073', {
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
     reconnectionDelay: 5,
@@ -1088,11 +1088,19 @@ const ExecuteLoop= async (module) => {
             await new Promise(resolve => setTimeout(resolve, 1000))
             continue
         }
-        playList.value.push({ //入队
+        if (module.trigger_conditions.includes("IntervalLoop")){ //定时触发的 插队前面
+            playList.value.unshift({ //入队
+              content: content, //内容
+              filename: newFileName, //文件名
+              play_mode: "serial", //播放模式
+          })   
+        }else {
+          playList.value.push({ //入队
             content: content, //内容
             filename: newFileName, //文件名
             play_mode: "serial", //播放模式
-        })    
+          })    
+        }
         if (index == script_content_len - 1) { //循环
             index = 0
         } else {
@@ -1309,7 +1317,7 @@ const BarrageComment= async (module) => {
             continue
         }
         // 插入到头部
-        playList.value.unshift({ //入队
+        playList.value.unshift({ //插队
             content: content, //内容
             filename: newFileName, //文件名
             play_mode: "serial", //播放模式
@@ -1329,7 +1337,7 @@ function shuffleArray(array) {
 // let generate_wav_api_runing = false // 运行在
 let generateLock = Promise.resolve(); // 初始化为已解决的Promise
 
-// http://127.0.0.1:7073/generate_wav
+// http://192.168.1.10:7073/generate_wav
 // 生成wav文件
 const generate_wav_api = async (_text:string,
     _language:string,
@@ -1344,7 +1352,7 @@ const generate_wav_api = async (_text:string,
     await myLock; // 等待之前的锁释放
     try {
     // generate_wav_api_runing = true;
-        const response = await fetch('http://127.0.0.1:7073/generate_wav', {
+        const response = await fetch('http://192.168.1.10:7073/generate_wav', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1368,7 +1376,7 @@ const generate_wav_api = async (_text:string,
 
 // 播放任务
 const play_task_voice_api = async (_filename:string,play_mode:string) => {
-    const response = await fetch('http://127.0.0.1:7073/play_task_voice', {
+    const response = await fetch('http://192.168.1.10:7073/play_task_voice', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1385,7 +1393,7 @@ const humanVoiceOptions = ref([])
 
 const getHumanVoiceFiles = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:7073/get_human_voice_files', {
+    const response = await fetch('http://192.168.1.10:7073/get_human_voice_files', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
