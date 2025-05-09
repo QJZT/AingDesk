@@ -66,6 +66,7 @@ func TestGetModelList2(t *testing.T) {
 
 `, // 系统提示词
 		"", // 知识库名称S
+		"",
 	)
 	fmt.Println(err)
 	fmt.Println(str)
