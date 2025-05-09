@@ -61,7 +61,6 @@
               </div>
               <div class="module-actions">
                 <n-button type="primary" @click="editModule(module)">编辑</n-button>
-                <n-button type="warning" @click="testModule(module)">测试</n-button>
                 <n-button type="error" @click="deleteModule(module)">删除</n-button>
               </div>
             </div>
@@ -97,30 +96,30 @@ import BasicModuleDialog from '@/views/ModuleConfig/components/BasicModuleDialog
 import AudioModuleDialog from '@/views/ModuleConfig/components/AudioModuleDialog.vue';
 
 // 后端 API 基础 URL
-const API_BASE_URL = 'http://localhost:7073';
+const API_BASE_URL = 'http://localhost:7074';
 
 // 触发条件枚举，与后端保持一致
 enum TriggerCondition {
-  ExecuteLoop = "ExecuteLoop",        // 循环执行
-  BarrageComment = "BarrageComment",  // 弹幕评论
-  SendGift = "SendGift",             // 送礼物
-  Like = "Like",                     // 点赞
-  EnterLiveRoom = "EnterLiveRoom",   // 进入直播间
-  WarningTip = "WarningTip",         // 警告提示
-  ShareLiveRoom = "ShareLiveRoom",   // 分享直播间
-  FollowAnchor = "FollowAnchor",     // 关注主播
+  SceneLoop = "SceneLoop",         // 控场循环
+  IntervalLoop = "IntervalLoop",   // 间隔循环：按照指定间隔时间循环执行
+  BarrageComment = "BarrageComment", // 弹幕评论：是否自动发送弹幕评论
+  SendGift = "SendGift",           // 送礼物：是否自动发送礼物
+  Like = "Like",                   // 点赞：是否自动点赞
+  EnterLiveRoom = "EnterLiveRoom", // 进入直播间：是否自动进入直播间
+  ShareRoom = "ShareRoom",         // 分享直播间
+  FollowRoom = "FollowRoom",       // 关注直播间
 }
 
 // 模块类型枚举
 enum ModuleType {
-  Base = "base",    // 基础模块
-  Audio = "audio",  // 音频模块
+  Base = "base",
+  Audio = "audio",
 }
 
 // 读取步骤枚举
 enum ReadStep {
-  Random = "random",        // 随机读取
-  Sequential = "sequential" // 顺序读取
+  Random = "random",
+  Sequential = "sequential"
 }
 
 // 定义模块接口，与后端数据结构保持一致
@@ -269,6 +268,8 @@ function mapFrontendToBackend(frontendModule: Module): any {
     switch (condition) {
       case TriggerCondition.ExecuteLoop:
         return 'ExecuteLoop';
+      case TriggerCondition.IntervalLoop:
+        return 'IntervalLoop';
       case TriggerCondition.BarrageComment:
         return 'BarrageComment';
       case TriggerCondition.SendGift:
@@ -279,10 +280,8 @@ function mapFrontendToBackend(frontendModule: Module): any {
         return 'EnterLiveRoom';
       case TriggerCondition.WarningTip:
         return 'WarningTip';
-      case TriggerCondition.ShareLiveRoom:
-        return 'ShareLiveRoom';
-      case TriggerCondition.FollowAnchor:
-        return 'FollowAnchor';
+      case TriggerCondition.CustomAction:
+        return 'CustomAction';
       default:
         return condition;
     }
@@ -364,35 +363,16 @@ async function deleteModuleFromBackend(module: Module) {
   }
 }
 
-// 测试模块
-async function testModule(module: Module) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/base-modules/${module.id}/test`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || '测试失败');
-    }
-    console.log('模块测试成功');
-    window.$message?.success('模块测试成功');
-  } catch (error) {
-    console.error('测试模块失败:', error);
-    window.$message?.error('测试模块失败：' + error.message);
-  }
-}
-
 // 组件挂载时加载数据
 onMounted(async () => {
   console.log('组件挂载，开始加载后端数据');
   await fetchModules();
 });
 
-// 点击“基础模块”卡片时打开弹窗
+// 点击“基础模块”卡片时打开弹窗（始终以添加模式）
 function handleBasicModuleClick() {
   console.log('打开基础模块弹窗');
-  editingModule.value = null; // 新增时设为 null
+  editingModule.value = null; // 始终以添加模式打开，填充默认数据
   showBasicModule.value = true;
 }
 
@@ -417,29 +397,7 @@ function handleBasicModuleSave(formData: any) {
         moduleName: formData.moduleName,
         intervalTimeStart: formData.intervalTimeStart,
         intervalTimeEnd: formData.intervalTimeEnd,
-        triggerConditions: formData.triggerConditions.map((condition: string) => {
-          switch (condition) {
-            case 'controlLoop':
-            case 'intervalLoop':
-              return TriggerCondition.ExecuteLoop;
-            case 'barrageComment':
-              return TriggerCondition.BarrageComment;
-            case 'sendGift':
-              return TriggerCondition.SendGift;
-            case 'like':
-              return TriggerCondition.Like;
-            case 'enterLiveRoom':
-              return TriggerCondition.EnterLiveRoom;
-            case 'shareLiveRoom':
-              return TriggerCondition.ShareLiveRoom;
-            case 'followAnchor':
-              return TriggerCondition.FollowAnchor;
-            case 'warning':
-              return TriggerCondition.WarningTip;
-            default:
-              return condition as TriggerCondition;
-          }
-        }),
+        triggerConditions: [formData.triggerConditions[0] as TriggerCondition],
         readStep: formData.readStep as ReadStep,
         scriptContent: formData.scriptContent,
       }
@@ -450,29 +408,7 @@ function handleBasicModuleSave(formData: any) {
         moduleName: formData.moduleName || '基础模块',
         intervalTimeStart: formData.intervalTimeStart,
         intervalTimeEnd: formData.intervalTimeEnd,
-        triggerConditions: formData.triggerConditions.map((condition: string) => {
-          switch (condition) {
-            case 'controlLoop':
-            case 'intervalLoop':
-              return TriggerCondition.ExecuteLoop;
-            case 'barrageComment':
-              return TriggerCondition.BarrageComment;
-            case 'sendGift':
-              return TriggerCondition.SendGift;
-            case 'like':
-              return TriggerCondition.Like;
-            case 'enterLiveRoom':
-              return TriggerCondition.EnterLiveRoom;
-            case 'shareLiveRoom':
-              return TriggerCondition.ShareLiveRoom;
-            case 'followAnchor':
-              return TriggerCondition.FollowAnchor;
-            case 'warning':
-              return TriggerCondition.WarningTip;
-            default:
-              return condition as TriggerCondition;
-          }
-        }),
+        triggerConditions: [formData.triggerConditions[0] as TriggerCondition],
         readStep: (formData.readStep || 'random') as ReadStep,
         scriptContent: formData.scriptContent || [],
         isModelRewrite: false,
@@ -532,9 +468,10 @@ function handleAudioModuleSave(formData: any) {
         intervalTimeEnd: formData.intervalTimeEnd,
         triggerConditions: formData.triggerConditions.map((condition: string) => {
           switch (condition) {
-            case 'controlLoop':
+            case 'sceneLoop':
+              return TriggerCondition.SceneLoop;
             case 'intervalLoop':
-              return TriggerCondition.ExecuteLoop;
+              return TriggerCondition.IntervalLoop;
             case 'barrageComment':
               return TriggerCondition.BarrageComment;
             case 'sendGift':
@@ -543,14 +480,12 @@ function handleAudioModuleSave(formData: any) {
               return TriggerCondition.Like;
             case 'enterLiveRoom':
               return TriggerCondition.EnterLiveRoom;
-            case 'shareLiveRoom':
-              return TriggerCondition.ShareLiveRoom;
-            case 'followAnchor':
-              return TriggerCondition.FollowAnchor;
-            case 'warning':
-              return TriggerCondition.WarningTip;
+            case 'shareRoom':
+              return TriggerCondition.ShareRoom;
+            case 'followRoom':
+              return TriggerCondition.FollowRoom;
             default:
-              return condition as TriggerCondition;
+              return '';
           }
         }),
         readStep: (formData.readStep || 'random') as ReadStep,
@@ -586,8 +521,10 @@ function getTriggerConditions(module: Module) {
   const conditions = module.triggerConditions || [];
   const conditionNames: string[] = conditions.map((condition) => {
     switch (condition) {
-      case TriggerCondition.ExecuteLoop:
-        return '循环执行';
+      case TriggerCondition.SceneLoop:
+        return '控场循环';
+      case TriggerCondition.IntervalLoop:
+        return '间隔循环';
       case TriggerCondition.BarrageComment:
         return '弹幕评论';
       case TriggerCondition.SendGift:
@@ -596,12 +533,10 @@ function getTriggerConditions(module: Module) {
         return '点赞';
       case TriggerCondition.EnterLiveRoom:
         return '进入直播间';
-      case TriggerCondition.WarningTip:
-        return '管理警告';
-      case TriggerCondition.ShareLiveRoom:
+      case TriggerCondition.ShareRoom:
         return '分享直播间';
-      case TriggerCondition.FollowAnchor:
-        return '关注主播';
+      case TriggerCondition.FollowRoom:
+        return '关注直播间';
       default:
         return '';
     }
@@ -717,8 +652,8 @@ function truncateDescription(description: string, maxLength: number = 30): strin
     }
 
     .script-content-box {
-      max-height: 80px; /* 固定高度，约 4 行文字 */
-      overflow: hidden; /* 超出部分隐藏 */
+      max-height: 80px;
+      overflow: hidden;
     }
   }
 

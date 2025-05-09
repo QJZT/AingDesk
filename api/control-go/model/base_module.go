@@ -10,23 +10,27 @@ import (
 
 // 触发条件常量
 const (
-	TriggerExecuteLoop    = "ExecuteLoop"    // 执行循环：是否自动循环执行任务
+	TriggerSceneLoop     = "SceneLoop"     // 控场循环
+	TriggerIntervalLoop  = "IntervalLoop"  // 间隔循环：按照指定间隔时间循环执行
 	TriggerBarrageComment = "BarrageComment" // 弹幕评论：是否自动发送弹幕评论
-	TriggerSendGift       = "SendGift"       // 送礼物：是否自动发送礼物
-	TriggerLike           = "Like"           // 点赞：是否自动点赞
-	TriggerEnterLiveRoom  = "EnterLiveRoom"  // 进入直播间：是否自动进入直播间
-	TriggerWarningTip     = "WarningTip"     // 警告提示：是否显示警告提示
+	TriggerSendGift      = "SendGift"      // 送礼物：是否自动发送礼物
+	TriggerLike          = "Like"          // 点赞：是否自动点赞
+	TriggerEnterLiveRoom = "EnterLiveRoom" // 进入直播间：是否自动进入直播间
+	TriggerShareRoom     = "ShareRoom"     // 分享直播间
+	TriggerFollowRoom    = "FollowRoom"    // 关注直播间
 )
 
 // ValidTriggerConditions 返回所有有效的触发条件
 func ValidTriggerConditions() []string {
 	return []string{
-		TriggerExecuteLoop,
+		TriggerSceneLoop,
+		TriggerIntervalLoop,
 		TriggerBarrageComment,
 		TriggerSendGift,
 		TriggerLike,
 		TriggerEnterLiveRoom,
-		TriggerWarningTip,
+		TriggerShareRoom,
+		TriggerFollowRoom,
 	}
 }
 
