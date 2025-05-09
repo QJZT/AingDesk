@@ -393,7 +393,7 @@ const module: Module = editingModule.value
 moduleName: formData.moduleName,
 intervalTimeStart: formData.intervalTimeStart,
 intervalTimeEnd: formData.intervalTimeEnd,
-triggerConditions: [formData.triggerConditions[0] as TriggerCondition],
+triggerConditions: [formData.selectedTrigger as TriggerCondition], // 直接使用选中的触发条件，无需转换
 readStep: formData.readStep as ReadStep,
 scriptContent: formData.scriptContent,
 }
@@ -404,7 +404,7 @@ orderNum: 0,
 moduleName: formData.moduleName || '基础模块',
 intervalTimeStart: formData.intervalTimeStart,
 intervalTimeEnd: formData.intervalTimeEnd,
-triggerConditions: [formData.triggerConditions[0] as TriggerCondition],
+triggerConditions: [formData.selectedTrigger as TriggerCondition], // 直接使用选中的触发条件，无需转换
 readStep: (formData.readStep || 'random') as ReadStep,
 scriptContent: formData.scriptContent || [],
 isModelRewrite: false,
