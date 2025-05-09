@@ -185,7 +185,7 @@
             </div>
             <n-slider
                 v-model:value="block.volume"
-                :min="0"
+                :min="10"
                 :max="100"
                 :step="1"
                 style="width: 70%;"
@@ -974,21 +974,21 @@ const registerModules = () => {
     //循环模块列表 干活
     start.value = true
     for (const module of modules.value) {
-        // api\control-go\model\base_module.go
-//     TriggerExecuteLoop    = "ExecuteLoop"    // 执行循环：是否自动循环执行任务
-//     TriggerIntervalLoop   = "IntervalLoop"   // 间隔循环：按照指定间隔时间循环执行
+//     TriggerSceneLoop     = "SceneLoop"     // 控场循环
+//     TriggerIntervalLoop  = "IntervalLoop"  // 间隔循环：按照指定间隔时间循环执行
 //     TriggerBarrageComment = "BarrageComment" // 弹幕评论：是否自动发送弹幕评论
-//     TriggerSendGift       = "SendGift"       // 送礼物：是否自动发送礼物
-//     TriggerLike           = "Like"           // 点赞：是否自动点赞
-//     TriggerEnterLiveRoom  = "EnterLiveRoom"  // 进入直播间：是否自动进入直播间
-//     TriggerWarningTip     = "WarningTip"     // 警告提示：是否显示警告提示
-// )
+//     TriggerSendGift      = "SendGift"      // 送礼物：是否自动发送礼物
+//     TriggerLike          = "Like"          // 点赞：是否自动点赞
+//     TriggerEnterLiveRoom = "EnterLiveRoom" // 进入直播间：是否自动进入直播间
+//     TriggerShareRoom     = "ShareRoom"     // 分享直播间
+//     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
+
         //循环读取
-        if (module.trigger_conditions.includes("ExecuteLoop")) { // 执行循环：是否自动循环执行任务
-            ExecuteLoop(module)
+        if (module.trigger_conditions.includes("SceneLoop")) { // 执行循环：是否自动循环执行任务
+          SceneLoop(module)
         }
         if (module.trigger_conditions.includes("IntervalLoop")) { //间隔循环：按照指定间隔时间循环执行
-            ExecuteLoop(module)
+          SceneLoop(module)
         }
         //弹幕评论 BarrageComment
         if (module.trigger_conditions.includes("BarrageComment")) {// 弹幕
@@ -1007,6 +1007,8 @@ const registerModules = () => {
         if (module.trigger_conditions.includes("EnterLiveRoom")) {
           includesEnterLiveRoom(module)
         }
+        //     TriggerShareRoom     = "ShareRoom"     // 分享直播间
+//     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
     }
     playListConsumption()
 }
@@ -1033,7 +1035,7 @@ const playListConsumption= async () => {
 }
 
 //循环模块处理
-const ExecuteLoop= async (module) => {
+const SceneLoop= async (module) => {
     let index = 0 //当前播放索引
     const script_content_len = module.script_content.length //脚本长度
     do {
