@@ -19,6 +19,10 @@ import (
 func main() {
 	p := flag.String("p", "test.db", "指定数据库环境")
 	p1 := flag.String("p1", "control-go", "指定存储环境文件夹")
+	p2 := flag.String("p2", "audio_modules", "指定音频模块文件夹") // 修改默认值为 "audio_modules"
+	flag.Parse()
+
+	// 打印参数值
 	flag.Parse()
 	// 确保启用 json1 扩展，并启用外键支持
 	fmt.Println(*p)
@@ -39,10 +43,19 @@ func main() {
 		}
 	}
 
+	// 设置 AudioFilePath 并检查/创建目录
+	global.AudioFilePath = *p2
+	if _, err := os.Stat(*p2); os.IsNotExist(err) {
+		if err := os.Mkdir(*p2, 0755); err != nil {
+			panic("无法创建音频模块文件夹: " + err.Error())
+		}
+	}
+
 	// 插入假数据
 	if err := seed.SeedBaseModule(db); err != nil {
 		panic("failed to seed BaseModule data: " + err.Error())
 	}
+
 	fmt.Println("Seeded BaseModule data successfully")
 	if err := seed.SeedProduct(db); err != nil {
 		panic("failed to seed Product data: " + err.Error())
@@ -69,5 +82,5 @@ func main() {
 	router.SetupNameRoutes(r, db)
 	router.SetupKvRoutes(r, db)
 	router.ChatAiRoutes(r)
-	r.Run(":7072")
+	r.Run(":7074")
 }
