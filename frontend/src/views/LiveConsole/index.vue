@@ -47,6 +47,7 @@
         <n-select 
           v-model:value="selectedSpeechModel"
           :options="speedModelOptions"
+          :loading="loading2"
           placeholder="选择驱动"
           style="width: 180px;"
           @update:value="initializeSpeechModel"
@@ -62,9 +63,9 @@
           <n-button ghost @click="showPromptDialog = true">
             改写提示词
           </n-button>
-          <n-button ghost>
+          <!-- <n-button ghost>
             弹幕提示词
-          </n-button>
+          </n-button> -->
         </n-button-group>
        </div>
      </div>
@@ -224,6 +225,7 @@
                 placeholder="选择人声"
                 clearable
                 size="small"
+                @click="getHumanVoiceFiles"
                 @update:value="handleVolumeChange(block)"
               />
             </div>
@@ -495,8 +497,8 @@ import KnowledgeChoosePanel from "@/views/KnowleadgeStore/components/KnowledgeCh
 import { getKnowledgeStoreData } from "../KnowleadgeStore/store";
 import { getHeaderStoreData } from '../Header/store';
 import { getSoftSettingsStoreData } from '@/views/SoftSettings/store';
-import { useMessage } from "naive-ui";
 const {  showModelList } = getHeaderStoreData()
+import { message, useDialog } from "@/utils/naive-tools"
 const {
     themeColors,
     themeMode
@@ -603,8 +605,10 @@ const handleLanguageChange = async (value) => {
     console.error('语言设置失败:', error)
   }
 }
-
+const loading2 = ref(false)
 const initializeSpeechModel = async () => {
+  // 加上logding
+  loading2.value = true
   try {
    const response = await fetch('http://192.168.1.10:7073/initialize', {
       method: 'POST',
@@ -617,9 +621,12 @@ const initializeSpeechModel = async () => {
     })
     const data = await response.json()
     console.log('语音模型初始化成功:', data)
+    message.success("模型初始化成功")
    }
    catch (error) {
     console.error('语音模型初始化失败:', error) 
+  }finally {
+    loading2.value = false
   }
 }
 
@@ -968,9 +975,16 @@ interface PlayItem {
 const playList = ref<PlayItem[]>([])//播放列表
 const uesPlayList = ref<PlayItem[]>([])//已播放列表
 const start = ref(false)//启动开关
-
 //注册模块，
-const registerModules = () => {
+
+const registerModules = async () => {
+    //启动之前检查变量做友好提示
+    if (selectedModel.value == "") {
+      message.error("请选择模型")
+      return 
+    }
+
+    await fetchModules()
     //循环模块列表 干活
     start.value = true
     for (const module of modules.value) {
@@ -1065,8 +1079,8 @@ const SceneLoop= async (module) => {
             await new Promise(resolve => setTimeout(resolve, 4000))
             continue
           }
-          let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
-          content = ReplaceText(content) //内容赋值变量
+          let prompt = await ReplaceText(promptText.value) //提示词 赋值变量
+          content = await ReplaceText(content) //内容赋值变量
           const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
@@ -1136,7 +1150,7 @@ const EnterLiveRoom= async (module) => {
         while (EnterLiveRoomUserName.value == "") { //等待有用户进入直播间
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
-        let content = ReplaceText(module.script_content[index])  //欢迎{用户名称}的到来，您你的到来让直播间蓬革
+        let content = await ReplaceText(module.script_content[index])  //欢迎{用户名称}的到来，您你的到来让直播间蓬革
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
@@ -1187,7 +1201,7 @@ const includesLike= async (module) => {
         while (EnterSupportRoomUserName.value == "") { //等待有用户进入直播间
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
-        let content = ReplaceText(module.script_content[index] ) //内容赋值变量
+        let content = await ReplaceText(module.script_content[index] ) //内容赋值变量
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
@@ -1247,8 +1261,8 @@ const SendGift= async (module) => {
               await new Promise(resolve => setTimeout(resolve, 4000))
               continue
             }
-           let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = ReplaceText(module.script_content[index]) //内容赋值变量
+           let prompt = await ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
            const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
@@ -1316,8 +1330,8 @@ const Like= async (module) => {
               await new Promise(resolve => setTimeout(resolve, 4000))
               continue
             }
-           let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = ReplaceText(module.script_content[index]) //内容赋值变量
+           let prompt = await ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
            const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
@@ -1387,8 +1401,8 @@ const includesEnterLiveRoom= async (module) => {
               await new Promise(resolve => setTimeout(resolve, 4000))
               continue
             }
-           let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = ReplaceText(module.script_content[index]) //内容赋值变量
+           let prompt = await  ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
            const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
@@ -1454,8 +1468,8 @@ const BarrageComment= async (module) => {
             continue
         }
         let content = "" // 
-        let prompt =  ReplaceText(module.script_content[0]) //提示词
-          let ai_user_content =  ReplaceText(EnterBarrageContent.value) //弹幕内容作为ai输入
+        let prompt = await ReplaceText(module.script_content[0]) //提示词
+          let ai_user_content = await  ReplaceText(EnterBarrageContent.value) //弹幕内容作为ai输入
             const  apidata =  await DisposableSendApi(
               model_api.value,
               parameters_api.value,
@@ -1603,7 +1617,7 @@ const DisposableSendApi = async (model,parameters,user_content,system_prompt,sup
 }
 
 // 替换文本 替换变量
-const ReplaceText= (text) => {
+const ReplaceText= async (text) => {
   let newText = text
   if (text.includes('{语种}')){ //是否包含
     newText = newText.replace('{语种}', selectedLanguageLabel.value) //替换
@@ -1632,6 +1646,18 @@ const ReplaceText= (text) => {
   if (text.includes('{弹幕用户}')){ //是否包含
     newText = newText.replace('{弹幕用户}', EnterBarrageUserName.value) //替换
   }
+  const response = await fetch('http://192.168.1.10:7073/get_combined_time_info', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
+    for (const key in data) {
+      if (text.includes('{'+key+'}')){ //是否包含
+        newText = newText.replace('{'+key+'}',data[key]) //替换
+      }
+    }
   return newText;
 } 
 
@@ -1642,7 +1668,12 @@ const ReplaceText= (text) => {
 .gd-bg{
   background-color: v-bind(themeThinkBg);
 }
-
+// .n-slider-handle {
+//   --n-handle-size: 5px !important;
+//   width: var(--n-handle-size) !important;
+//   height: var(--n-handle-size) !important;
+//   transform: translateX(-50%) translateY(-50%) !important;
+// }
 .live-console {
   // height: calc(100% - 130px);
   height: calc(100vh - 20px); padding-bottom: 20px;
