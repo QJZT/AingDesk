@@ -122,8 +122,8 @@ func SeedBaseModule(db *gorm.DB) error {
 			IntervalTimeStart: 5,
 			IntervalTimeEnd:   10,
 			TriggerConditions: model.JSONSlice{model.ModuleTypeBase},
-			AudioName:         "background.mp3",
-			AudioPath:         "/path/to/background.mp3",
+			AudioName:         "background.mp3",          //文件名字
+			AudioPath:         "/path/to/background.mp3", //保存的地址
 		},
 	}
 
