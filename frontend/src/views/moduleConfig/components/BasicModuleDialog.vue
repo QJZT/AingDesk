@@ -71,17 +71,25 @@
           <!-- 动态显示支持的变量标签 -->
           <div class="speech-tags">
             <span class="label">{{ $t('变量支持') }}：</span>
-            <n-tag v-if="isVariableSupported('现在时间')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('现在时间')">{{ $t('现在时间') }}</n-tag>
-            <n-tag v-if="isVariableSupported('现在日期')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('现在日期')">{{ $t('现在日期') }}</n-tag>
+            <!-- {
+              "下个整点": "2",
+              "再过五分钟(时分)": "2点01分",
+              "现在日期(月日)": "5月9日",
+              "现在时间(时分)": "1点56分",
+              "现在时间(时分秒)": "1点56分18秒"
+            } -->
+            <n-tag v-if="isVariableSupported('现在时间(时分)')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('现在时间(时分)')">{{ $t('现在时间(时分)') }}</n-tag>
+            <n-tag v-if="isVariableSupported('现在时间(时分秒)')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('现在时间(时分秒)')">{{ $t('现在时间(时分秒)') }}</n-tag>
+            <n-tag v-if="isVariableSupported('现在日期(月日)')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('现在日期(月日)')">{{ $t('现在日期(月日)') }}</n-tag>
             <n-tag v-if="isVariableSupported('下个整点')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('下个整点')">{{ $t('下个整点') }}</n-tag>
-            <n-tag v-if="isVariableSupported('再过五分钟')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('再过五分钟')">{{ $t('再过五分钟') }}</n-tag>
+            <n-tag v-if="isVariableSupported('再过五分钟(时分)')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('再过五分钟(时分)')">{{ $t('再过五分钟(时分)') }}</n-tag>
             <n-tag v-if="isVariableSupported('在线人数')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('在线人数')">{{ $t('在线人数') }}</n-tag>
             <n-tag v-if="isVariableSupported('直播间名称')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('直播间名称')">{{ $t('直播间名称') }}</n-tag>
             <n-tag v-if="isVariableSupported('点赞用户名')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('点赞用户名')">{{ $t('点赞用户名') }}</n-tag>
             <n-tag v-if="isVariableSupported('送礼用户名')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('送礼用户名')">{{ $t('送礼用户名') }}</n-tag>
             <n-tag v-if="isVariableSupported('礼物名称')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('礼物名称')">{{ $t('礼物名称') }}</n-tag>
             <n-tag v-if="isVariableSupported('弹幕内容')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('弹幕内容')">{{ $t('弹幕内容') }}</n-tag>
-            <n-tag v-if="isVariableSupported('直播间警告内容')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('直播间警告内容')">{{ $t('直播间警告内容') }}</n-tag>
+            <!-- <n-tag v-if="isVariableSupported('直播间警告内容')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('直播间警告内容')">{{ $t('直播间警告内容') }}</n-tag> -->
             <n-tag v-if="isVariableSupported('弹幕用户')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('弹幕用户')">{{ $t('弹幕用户') }}</n-tag>
             <n-tag v-if="isVariableSupported('礼物数量')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('礼物数量')">{{ $t('礼物数量') }}</n-tag>
             <n-tag v-if="isVariableSupported('进入直播间用户名')" class="speech-tag" @mousedown.prevent="prepareAddSpeechTag('进入直播间用户名')">{{ $t('进入直播间用户名') }}</n-tag>
@@ -197,17 +205,18 @@ const isReadStepSupported = computed(() => {
 
 const isVariableSupported = computed(() => (variable: string) => {
   const variableMap = {
-    '现在时间': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
-    '现在日期': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
+    '现在时间(时分)': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
+    '现在时间(时分秒)': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
+    '现在日期(月日)': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
     '下个整点': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
-    '再过五分钟': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
+    '再过五分钟(时分)': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
     '在线人数': ['sceneLoop', 'intervalLoop'],
     '直播间名称': ['sceneLoop', 'intervalLoop'],
     '点赞用户名': ['like'],
     '送礼用户名': ['sendGift'],
     '礼物名称': ['sendGift'],
     '弹幕内容': ['barrageComment'],
-    '直播间警告内容': ['sceneLoop', 'intervalLoop'],
+    // '直播间警告内容': ['sceneLoop', 'intervalLoop'],
     '弹幕用户': ['barrageComment'],
     '礼物数量': ['sendGift'],
     '进入直播间用户名': ['enterLiveRoom'],

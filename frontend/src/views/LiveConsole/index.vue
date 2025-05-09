@@ -113,6 +113,7 @@
        <div class="setting-item">
         <n-text depth="3" style="margin-right: 8px;">确认启动</n-text>
         <n-input-group>
+          {{ start }}
           <n-button 
             v-if="!start"
             type="primary" 
@@ -242,6 +243,14 @@
       <n-card title="观众互动" style="" :segmented="{content: true,footer:true}"
                     header-style="padding:10px;font-size:14px"
                     footer-style="padding:10px" content-style="padding:10px;height:100%">
+        <n-text depth="3" style="margin-right: 8px;">间隔时间(ms)</n-text>
+        <n-input-number 
+          v-model:value="intervalTime"
+          :min="0"
+          :max="500000"
+          :step="100"
+          style="width: 100px"
+        />
         <!-- <template #header-extra>
           <n-switch 
             v-model:value="autoReadMode" 
@@ -983,7 +992,8 @@ const registerModules = async () => {
       message.error("请选择模型")
       return 
     }
-
+    playList.value = []
+    uesPlayList.value = []
     await fetchModules()
     //循环模块列表 干活
     start.value = true
@@ -1053,6 +1063,8 @@ const SceneLoop= async (module) => {
     let index = 0 //当前播放索引
     const script_content_len = module.script_content.length //脚本长度
     do {
+      console.log("SceneLoop module:",module);
+      
         if (!module.isActive) { 
           await new Promise(resolve => setTimeout(resolve, 1000))
           continue
@@ -1065,6 +1077,8 @@ const SceneLoop= async (module) => {
         }
         if (module.interval_time_start != 0 && module.interval_time_end!= 0) { //间隔时间
             const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
+            console.log("randomTime:",randomTime);
+            
             await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
         }
 

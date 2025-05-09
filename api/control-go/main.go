@@ -82,5 +82,5 @@ func main() {
 	router.SetupNameRoutes(r, db)
 	router.SetupKvRoutes(r, db)
 	router.ChatAiRoutes(r)
-	r.Run(":7074")
+	r.Run(":7072")
 }
