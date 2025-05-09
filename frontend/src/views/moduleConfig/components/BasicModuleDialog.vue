@@ -24,23 +24,22 @@
         <div class="form-item">
           <span class="label">{{ $t('触发条件') }} *</span>
           <div class="trigger-conditions">
-            <!-- 修改单选按钮组的值为大写格式 -->
             <n-radio-group v-model:value="basicForm.selectedTrigger">
-              <n-radio value="SceneLoop">{{ $t('控场循环') }}</n-radio>
-              <n-radio value="IntervalLoop">{{ $t('间隔循环') }}</n-radio>
-              <n-radio value="BarrageComment">{{ $t('弹幕评论') }}</n-radio>
-              <n-radio value="SendGift">{{ $t('送礼物') }}</n-radio>
-              <n-radio value="Like">{{ $t('点赞') }}</n-radio>
-              <n-radio value="EnterLiveRoom">{{ $t('进入直播间') }}</n-radio>
-              <n-radio value="ShareRoom">{{ $t('分享直播间') }}</n-radio>
-              <n-radio value="FollowRoom">{{ $t('关注直播间') }}</n-radio>
+              <n-radio value="sceneLoop">{{ $t('控场循环') }}</n-radio>
+              <n-radio value="intervalLoop">{{ $t('间隔循环') }}</n-radio>
+              <n-radio value="barrageComment">{{ $t('弹幕评论') }}</n-radio>
+              <n-radio value="sendGift">{{ $t('送礼物') }}</n-radio>
+              <n-radio value="like">{{ $t('点赞') }}</n-radio>
+              <n-radio value="enterLiveRoom">{{ $t('进入直播间') }}</n-radio>
+              <n-radio value="shareRoom">{{ $t('分享直播间') }}</n-radio>
+              <n-radio value="followRoom">{{ $t('关注直播间') }}</n-radio>
             </n-radio-group>
           </div>
         </div>
       </div>
 
       <!-- 时间间隔（第二排） -->
-      <div class="form-row" v-if="basicForm.selectedTrigger !== 'SceneLoop'">
+      <div class="form-row" v-if="basicForm.selectedTrigger !== 'sceneLoop'">
         <div class="form-item">
           <span class="label">{{ $t('时间间隔') }} *</span>
           <div class="time-range">
@@ -173,16 +172,16 @@ const emits = defineEmits<{
 const basicForm = ref({
   minTime: 0,                    // 最小时间间隔（秒）
   maxTime: 0,                    // 最大时间间隔（秒）
-  selectedTrigger: 'SceneLoop',  // 修改默认值
+  selectedTrigger: 'sceneLoop', // 修改默认值
   triggers: {                    // 触发条件的状态映射
-    SceneLoop: true,            // 控场循环
-    IntervalLoop: false,         // 间隔循环
-    BarrageComment: false,       // 弹幕评论
-    SendGift: false,            // 送礼物
-    Like: false,                // 点赞
-    EnterLiveRoom: false,       // 进入直播间
-    ShareRoom: false,           // 分享直播间
-    FollowRoom: false,          // 关注直播间
+    seneLoop: true,           // 控场循环
+    intervalLoop: false,         // 间隔循环
+    barrageComment: false,       // 弹幕评论
+    sendGift: false,            // 送礼物
+    like: false,                // 点赞
+    enterLiveRoom: false,       // 进入直播间
+    shareRoom: false,       // 分享直播间
+    followRoom: false,        // 关注主播
   },
   readStep: 'random',           // 读取步骤：random-随机，sequential-顺序
   moduleName: '基础模块',        // 模块名称
@@ -192,28 +191,28 @@ const basicForm = ref({
 const singleSpeechContent = ref(basicForm.value.speechContents[0] || '');
 
 const isReadStepSupported = computed(() => {
-  const supportedTriggers = ['SceneLoop', 'IntervalLoop', 'SendGift', 'Like', 'EnterLiveRoom', 'ShareRoom', 'FollowRoom'];
+  const supportedTriggers = ['sceneLoop', 'intervalLoop', 'sendGift', 'like', 'enterLiveRoom', 'shareRoom', 'followRoom'];
   return supportedTriggers.includes(basicForm.value.selectedTrigger);
 });
 
 const isVariableSupported = computed(() => (variable: string) => {
   const variableMap = {
-    '现在时间': ['SceneLoop', 'IntervalLoop', 'BarrageComment', 'EnterLiveRoom'],
-    '现在日期': ['SceneLoop', 'IntervalLoop', 'BarrageComment', 'EnterLiveRoom'],
-    '下个整点': ['SceneLoop', 'IntervalLoop', 'BarrageComment', 'EnterLiveRoom'],
-    '再过五分钟': ['SceneLoop', 'IntervalLoop', 'BarrageComment', 'EnterLiveRoom'],
-    '在线人数': ['SceneLoop', 'IntervalLoop'],
-    '直播间名称': ['SceneLoop', 'IntervalLoop'],
-    '点赞用户名': ['Like'],
-    '送礼用户名': ['SendGift'],
-    '礼物名称': ['SendGift'],
-    '弹幕内容': ['BarrageComment'],
-    '直播间警告内容': ['SceneLoop', 'IntervalLoop'],
-    '弹幕用户': ['BarrageComment'],
-    '礼物数量': ['SendGift'],
-    '进入直播间用户名': ['EnterLiveRoom'],
-    '分享直播间用户名': ['ShareRoom'],
-    '关注直播用户名': ['FollowRoom'],
+    '现在时间': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
+    '现在日期': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
+    '下个整点': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
+    '再过五分钟': ['sceneLoop', 'intervalLoop', 'barrageComment', 'enterLiveRoom'],
+    '在线人数': ['sceneLoop', 'intervalLoop'],
+    '直播间名称': ['sceneLoop', 'intervalLoop'],
+    '点赞用户名': ['like'],
+    '送礼用户名': ['sendGift'],
+    '礼物名称': ['sendGift'],
+    '弹幕内容': ['barrageComment'],
+    '直播间警告内容': ['sceneLoop', 'intervalLoop'],
+    '弹幕用户': ['barrageComment'],
+    '礼物数量': ['sendGift'],
+    '进入直播间用户名': ['enterLiveRoom'],
+    '分享直播间用户名': ['shareRoom'],
+    '关注直播用户名': ['followRoom'],
   };
   return variableMap[variable as keyof typeof variableMap]?.includes(basicForm.value.selectedTrigger) || false;
 });
@@ -227,32 +226,32 @@ watch(() => props.initialData, (newData) => {
     basicForm.value.maxTime = newData.intervalTimeEnd || 0;
     
     // 修改触发条件的映射逻辑
-    let selectedTrigger = 'SceneLoop';
+    let selectedTrigger = 'sceneLoop';
     if (newData.triggerConditions && newData.triggerConditions.length > 0) {
       switch (newData.triggerConditions[0]) {
         case 'SceneLoop':
-          selectedTrigger = 'SceneLoop';
+          selectedTrigger = 'sceneLoop';
           break;
         case 'IntervalLoop':
-          selectedTrigger = 'IntervalLoop';
+          selectedTrigger = 'intervalLoop';
           break;
         case 'BarrageComment':
-          selectedTrigger = 'BarrageComment';
+          selectedTrigger = 'barrageComment';
           break;
         case 'SendGift':
-          selectedTrigger = 'SendGift';
+          selectedTrigger = 'sendGift';
           break;
         case 'Like':
-          selectedTrigger = 'Like';
+          selectedTrigger = 'like';
           break;
         case 'EnterLiveRoom':
-          selectedTrigger = 'EnterLiveRoom';
+          selectedTrigger = 'enterLiveRoom';
           break;
         case 'ShareRoom':
-          selectedTrigger = 'ShareRoom';
+          selectedTrigger = 'shareRoom';
           break;
         case 'FollowRoom':
-          selectedTrigger = 'FollowRoom';
+          selectedTrigger = 'followRoom';
           break;
       }
     }
@@ -270,19 +269,19 @@ watch(() => props.initialData, (newData) => {
     basicForm.value = {
       minTime: 0,
       maxTime: 0,
-      selectedTrigger: 'SceneLoop',  // 修改为大写
+      selectedTrigger: 'sceneLoop',
       triggers: {
-        SceneLoop: true,            // 修改为大写
-        IntervalLoop: false,
-        BarrageComment: false,
-        SendGift: false,
-        Like: false,
-        EnterLiveRoom: false,
-        ShareRoom: false,
-        FollowRoom: false,
+        sceneLoop: true,            // 修改为与前面定义一致的值
+        intervalLoop: false,
+        barrageComment: false,
+        sendGift: false,
+        like: false,
+        enterLiveRoom: false,
+        shareRoom: false,           // 修改为与前面定义一致的值
+        followRoom: false,          // 修改为与前面定义一致的值
       },
       readStep: 'random',
-      moduleName: '基础模块',
+      moduleName: '基础模块', // 默认值设置为“基础模块”
       speechContents: [''],
     };
     singleSpeechContent.value = '';
@@ -430,12 +429,12 @@ const handleSave = () => {
     return;
   }
 
-  // 当触发条件为 SceneLoop 时，设置默认时间间隔
+
   let intervalTimeStart = basicForm.value.minTime;
   let intervalTimeEnd = basicForm.value.maxTime;
-  if (basicForm.value.selectedTrigger === 'SceneLoop') {
+  if (basicForm.value.selectedTrigger === 'sceneLoop') {
     intervalTimeStart = 0;
-    intervalTimeEnd = 0;  // SceneLoop 模式下两个值都设为 0
+    intervalTimeEnd = 0; 
   } else if (basicForm.value.minTime >= basicForm.value.maxTime) {
     window.$message?.error('保存失败：最小时间必须小于最大时间');
     return;
@@ -449,28 +448,28 @@ const handleSave = () => {
 
   let triggerCondition;
   switch (basicForm.value.selectedTrigger) {
-    case 'SceneLoop':
+    case 'sceneLoop':
       triggerCondition = TriggerCondition.SceneLoop;
       break;
-    case 'IntervalLoop':
+    case 'intervalLoop':
       triggerCondition = TriggerCondition.IntervalLoop;
       break;
-    case 'BarrageComment':
+    case 'barrageComment':
       triggerCondition = TriggerCondition.BarrageComment;
       break;
-    case 'SendGift':
+    case 'sendGift':
       triggerCondition = TriggerCondition.SendGift;
       break;
-    case 'Like':
+    case 'like':
       triggerCondition = TriggerCondition.Like;
       break;
-    case 'EnterLiveRoom':
+    case 'enterLiveRoom':
       triggerCondition = TriggerCondition.EnterLiveRoom;
       break;
-    case 'ShareRoom':
+    case 'shareRoom':
       triggerCondition = TriggerCondition.ShareRoom;
       break;
-    case 'FollowRoom':
+    case 'followRoom':
       triggerCondition = TriggerCondition.FollowRoom;
       break;
     default:
@@ -501,16 +500,16 @@ const handleSave = () => {
   basicForm.value = {
     minTime: 0,
     maxTime: 0,
-    selectedTrigger: 'SceneLoop',  // 修改为大写
+    selectedTrigger: 'sceneLoop',
     triggers: {
-      SceneLoop: true,            // 修改为大写
-      IntervalLoop: false,
-      BarrageComment: false,
-      SendGift: false,
-      Like: false,
-      EnterLiveRoom: false,
-      ShareRoom: false,
-      FollowRoom: false,
+      sceneLoop: true,            // 修改为与前面定义一致的值
+      intervalLoop: false,
+      barrageComment: false,
+      sendGift: false,
+      like: false,
+      enterLiveRoom: false,
+      shareRoom: false,           // 修改为与前面定义一致的值
+      followRoom: false,          // 修改为与前面定义一致的值
     },
     readStep: 'random',
     moduleName: '基础模块',
