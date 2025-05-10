@@ -839,7 +839,7 @@ const fetchModules = async () => {
       module.retAi= kv.retAi || false
       module.speed = kv.speed || 1.0
       module.selectedNameId = kv.selectedNameId || ""
-      setModulesKv(module.id,module)
+      await setModulesKv(module.id,module)
       newList.push(module)
     }
     modules.value=newList
@@ -995,6 +995,7 @@ const registerModules = async () => {
     playList.value = []
     uesPlayList.value = []
     await fetchModules()
+    // return
     //循环模块列表 干活
     start.value = true
     for (const module of modules.value) {
