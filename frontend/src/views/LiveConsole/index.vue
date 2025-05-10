@@ -832,7 +832,7 @@ const fetchModules = async () => {
     console.log("lis23132t:",list);
     for (const  [index, module] of list.entries()) {
       console.log("module.id:",module.id);
-      let  kv =await getModulesKv(module.id)
+      let  kv = await getModulesKv(module.id)
       console.log("kv:",kv);
       module.volume = kv.volume || 50
       module.isActive= kv.isActive || false
