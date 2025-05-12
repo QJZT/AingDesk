@@ -91,7 +91,8 @@ import { ref, watch } from 'vue';
 import { NModal, NInputNumber, NButton, NUpload, NUploadDragger, NRadioGroup, NRadio } from 'naive-ui';
 import type { Ref } from 'vue';
 
-const API_BASE_URL = 'http://localhost:7074';
+// 后端 API 基础 URL
+const API_BASE_URL = 'http://localhost:7072'; // 确保与后端端口一致
 
 const props = defineProps<{
   show: boolean;

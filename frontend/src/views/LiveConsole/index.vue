@@ -47,6 +47,7 @@
         <n-select 
           v-model:value="selectedSpeechModel"
           :options="speedModelOptions"
+          :loading="loading2"
           placeholder="选择驱动"
           style="width: 180px;"
           @update:value="initializeSpeechModel"
@@ -62,9 +63,9 @@
           <n-button ghost @click="showPromptDialog = true">
             改写提示词
           </n-button>
-          <n-button ghost>
+          <!-- <n-button ghost>
             弹幕提示词
-          </n-button>
+          </n-button> -->
         </n-button-group>
        </div>
      </div>
@@ -112,6 +113,7 @@
        <div class="setting-item">
         <n-text depth="3" style="margin-right: 8px;">确认启动</n-text>
         <n-input-group>
+          {{ start }}
           <n-button 
             v-if="!start"
             type="primary" 
@@ -185,7 +187,7 @@
             </div>
             <n-slider
                 v-model:value="block.volume"
-                :min="0"
+                :min="10"
                 :max="100"
                 :step="1"
                 style="width: 70%;"
@@ -224,6 +226,7 @@
                 placeholder="选择人声"
                 clearable
                 size="small"
+                @click="getHumanVoiceFiles"
                 @update:value="handleVolumeChange(block)"
               />
             </div>
@@ -240,6 +243,14 @@
       <n-card title="观众互动" style="" :segmented="{content: true,footer:true}"
                     header-style="padding:10px;font-size:14px"
                     footer-style="padding:10px" content-style="padding:10px;height:100%">
+        <n-text depth="3" style="margin-right: 8px;">间隔时间(ms)</n-text>
+        <n-input-number 
+          v-model:value="intervalTime"
+          :min="0"
+          :max="500000"
+          :step="100"
+          style="width: 100px"
+        />
         <!-- <template #header-extra>
           <n-switch 
             v-model:value="autoReadMode" 
@@ -495,8 +506,8 @@ import KnowledgeChoosePanel from "@/views/KnowleadgeStore/components/KnowledgeCh
 import { getKnowledgeStoreData } from "../KnowleadgeStore/store";
 import { getHeaderStoreData } from '../Header/store';
 import { getSoftSettingsStoreData } from '@/views/SoftSettings/store';
-import { useMessage } from "naive-ui";
 const {  showModelList } = getHeaderStoreData()
+import { message, useDialog } from "@/utils/naive-tools"
 const {
     themeColors,
     themeMode
@@ -603,8 +614,10 @@ const handleLanguageChange = async (value) => {
     console.error('语言设置失败:', error)
   }
 }
-
+const loading2 = ref(false)
 const initializeSpeechModel = async () => {
+  // 加上logding
+  loading2.value = true
   try {
    const response = await fetch('http://192.168.1.10:7073/initialize', {
       method: 'POST',
@@ -617,9 +630,12 @@ const initializeSpeechModel = async () => {
     })
     const data = await response.json()
     console.log('语音模型初始化成功:', data)
+    message.success("模型初始化成功")
    }
    catch (error) {
     console.error('语音模型初始化失败:', error) 
+  }finally {
+    loading2.value = false
   }
 }
 
@@ -816,14 +832,14 @@ const fetchModules = async () => {
     console.log("lis23132t:",list);
     for (const  [index, module] of list.entries()) {
       console.log("module.id:",module.id);
-      let  kv =await getModulesKv(module.id)
+      let  kv = await getModulesKv(module.id)
       console.log("kv:",kv);
       module.volume = kv.volume || 50
       module.isActive= kv.isActive || false
       module.retAi= kv.retAi || false
       module.speed = kv.speed || 1.0
       module.selectedNameId = kv.selectedNameId || ""
-      setModulesKv(module.id,module)
+      await setModulesKv(module.id,module)
       newList.push(module)
     }
     modules.value=newList
@@ -968,27 +984,36 @@ interface PlayItem {
 const playList = ref<PlayItem[]>([])//播放列表
 const uesPlayList = ref<PlayItem[]>([])//已播放列表
 const start = ref(false)//启动开关
-
 //注册模块，
-const registerModules = () => {
+
+const registerModules = async () => {
+    //启动之前检查变量做友好提示
+    if (selectedModel.value == "") {
+      message.error("请选择模型")
+      return 
+    }
+    playList.value = []
+    uesPlayList.value = []
+    await fetchModules()
+    // return
     //循环模块列表 干活
     start.value = true
     for (const module of modules.value) {
-        // api\control-go\model\base_module.go
-//     TriggerExecuteLoop    = "ExecuteLoop"    // 执行循环：是否自动循环执行任务
-//     TriggerIntervalLoop   = "IntervalLoop"   // 间隔循环：按照指定间隔时间循环执行
+//     TriggerSceneLoop     = "SceneLoop"     // 控场循环
+//     TriggerIntervalLoop  = "IntervalLoop"  // 间隔循环：按照指定间隔时间循环执行
 //     TriggerBarrageComment = "BarrageComment" // 弹幕评论：是否自动发送弹幕评论
-//     TriggerSendGift       = "SendGift"       // 送礼物：是否自动发送礼物
-//     TriggerLike           = "Like"           // 点赞：是否自动点赞
-//     TriggerEnterLiveRoom  = "EnterLiveRoom"  // 进入直播间：是否自动进入直播间
-//     TriggerWarningTip     = "WarningTip"     // 警告提示：是否显示警告提示
-// )
+//     TriggerSendGift      = "SendGift"      // 送礼物：是否自动发送礼物
+//     TriggerLike          = "Like"          // 点赞：是否自动点赞
+//     TriggerEnterLiveRoom = "EnterLiveRoom" // 进入直播间：是否自动进入直播间
+//     TriggerShareRoom     = "ShareRoom"     // 分享直播间
+//     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
+
         //循环读取
-        if (module.trigger_conditions.includes("ExecuteLoop")) { // 执行循环：是否自动循环执行任务
-            ExecuteLoop(module)
+        if (module.trigger_conditions.includes("SceneLoop")) { // 执行循环：是否自动循环执行任务
+          SceneLoop(module)
         }
         if (module.trigger_conditions.includes("IntervalLoop")) { //间隔循环：按照指定间隔时间循环执行
-            ExecuteLoop(module)
+          SceneLoop(module)
         }
         //弹幕评论 BarrageComment
         if (module.trigger_conditions.includes("BarrageComment")) {// 弹幕
@@ -1007,6 +1032,8 @@ const registerModules = () => {
         if (module.trigger_conditions.includes("EnterLiveRoom")) {
           includesEnterLiveRoom(module)
         }
+        //     TriggerShareRoom     = "ShareRoom"     // 分享直播间
+//     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
     }
     playListConsumption()
 }
@@ -1033,10 +1060,12 @@ const playListConsumption= async () => {
 }
 
 //循环模块处理
-const ExecuteLoop= async (module) => {
+const SceneLoop= async (module) => {
     let index = 0 //当前播放索引
     const script_content_len = module.script_content.length //脚本长度
     do {
+      console.log("SceneLoop module:",module);
+      
         if (!module.isActive) { 
           await new Promise(resolve => setTimeout(resolve, 1000))
           continue
@@ -1049,6 +1078,8 @@ const ExecuteLoop= async (module) => {
         }
         if (module.interval_time_start != 0 && module.interval_time_end!= 0) { //间隔时间
             const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
+            console.log("randomTime:",randomTime);
+            
             await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
         }
 
@@ -1063,8 +1094,8 @@ const ExecuteLoop= async (module) => {
             await new Promise(resolve => setTimeout(resolve, 4000))
             continue
           }
-          let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
-          content = ReplaceText(content) //内容赋值变量
+          let prompt = await ReplaceText(promptText.value) //提示词 赋值变量
+          content = await ReplaceText(content) //内容赋值变量
           const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
@@ -1134,7 +1165,7 @@ const EnterLiveRoom= async (module) => {
         while (EnterLiveRoomUserName.value == "") { //等待有用户进入直播间
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
-        let content = ReplaceText(module.script_content[index])  //欢迎{用户名称}的到来，您你的到来让直播间蓬革
+        let content = await ReplaceText(module.script_content[index])  //欢迎{用户名称}的到来，您你的到来让直播间蓬革
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
@@ -1185,7 +1216,7 @@ const includesLike= async (module) => {
         while (EnterSupportRoomUserName.value == "") { //等待有用户进入直播间
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
-        let content = ReplaceText(module.script_content[index] ) //内容赋值变量
+        let content = await ReplaceText(module.script_content[index] ) //内容赋值变量
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
@@ -1245,8 +1276,8 @@ const SendGift= async (module) => {
               await new Promise(resolve => setTimeout(resolve, 4000))
               continue
             }
-           let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = ReplaceText(module.script_content[index]) //内容赋值变量
+           let prompt = await ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
            const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
@@ -1314,8 +1345,8 @@ const Like= async (module) => {
               await new Promise(resolve => setTimeout(resolve, 4000))
               continue
             }
-           let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = ReplaceText(module.script_content[index]) //内容赋值变量
+           let prompt = await ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
            const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
@@ -1385,8 +1416,8 @@ const includesEnterLiveRoom= async (module) => {
               await new Promise(resolve => setTimeout(resolve, 4000))
               continue
             }
-           let prompt =  ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = ReplaceText(module.script_content[index]) //内容赋值变量
+           let prompt = await  ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
            const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
@@ -1452,8 +1483,8 @@ const BarrageComment= async (module) => {
             continue
         }
         let content = "" // 
-        let prompt =  ReplaceText(module.script_content[0]) //提示词
-          let ai_user_content =  ReplaceText(EnterBarrageContent.value) //弹幕内容作为ai输入
+        let prompt = await ReplaceText(module.script_content[0]) //提示词
+          let ai_user_content = await  ReplaceText(EnterBarrageContent.value) //弹幕内容作为ai输入
             const  apidata =  await DisposableSendApi(
               model_api.value,
               parameters_api.value,
@@ -1601,7 +1632,7 @@ const DisposableSendApi = async (model,parameters,user_content,system_prompt,sup
 }
 
 // 替换文本 替换变量
-const ReplaceText= (text) => {
+const ReplaceText= async (text) => {
   let newText = text
   if (text.includes('{语种}')){ //是否包含
     newText = newText.replace('{语种}', selectedLanguageLabel.value) //替换
@@ -1630,6 +1661,18 @@ const ReplaceText= (text) => {
   if (text.includes('{弹幕用户}')){ //是否包含
     newText = newText.replace('{弹幕用户}', EnterBarrageUserName.value) //替换
   }
+  const response = await fetch('http://192.168.1.10:7073/get_combined_time_info', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
+    for (const key in data) {
+      if (text.includes('{'+key+'}')){ //是否包含
+        newText = newText.replace('{'+key+'}',data[key]) //替换
+      }
+    }
   return newText;
 } 
 
@@ -1640,7 +1683,12 @@ const ReplaceText= (text) => {
 .gd-bg{
   background-color: v-bind(themeThinkBg);
 }
-
+// .n-slider-handle {
+//   --n-handle-size: 5px !important;
+//   width: var(--n-handle-size) !important;
+//   height: var(--n-handle-size) !important;
+//   transform: translateX(-50%) translateY(-50%) !important;
+// }
 .live-console {
   // height: calc(100% - 130px);
   height: calc(100vh - 20px); padding-bottom: 20px;
