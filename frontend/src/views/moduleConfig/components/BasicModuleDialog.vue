@@ -434,7 +434,7 @@ const handleSave = () => {
   let intervalTimeEnd = basicForm.value.maxTime;
   if (basicForm.value.selectedTrigger === 'sceneLoop') {
     intervalTimeStart = 0;
-    intervalTimeEnd = 0; 
+    intervalTimeEnd = 1; 
   } else if (basicForm.value.minTime >= basicForm.value.maxTime) {
     window.$message?.error('保存失败：最小时间必须小于最大时间');
     return;

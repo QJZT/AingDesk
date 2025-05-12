@@ -1,98 +1,97 @@
-<!-- AudioModuleDialog.vue -->
 <template>
-  <n-modal 
-      :show="show"
-      @update:show="value => emits('update:show', value)"
-      preset="dialog" 
-      title="音频文件模块"
-      style="width: 800px"
-      :mask-closable="false"
+  <n-modal
+    :show="show"
+    @update:show="value => emits('update:show', value)"
+    preset="dialog"
+    title="音频文件模块"
+    style="width: 800px"
+    :mask-closable="false"
   >
-      <div class="audio-module-form">
-          <!-- 触发条件 -->
-          <div class="form-row">
-              <div class="form-item">
-                  <span class="label">触发条件 *</span>
-                  <div class="trigger-conditions">
-                      <n-radio-group v-model:value="audioForm.selectedTrigger">
-                          <n-radio value="SceneLoop">控场循环</n-radio>
-                          <n-radio value="IntervalLoop">间隔循环</n-radio>
-                          <n-radio value="BarrageComment">弹幕评论</n-radio>
-                          <n-radio value="SendGift">送礼物</n-radio>
-                          <n-radio value="Like">点赞</n-radio>
-                          <n-radio value="EnterLiveRoom">进入直播间</n-radio>
-                          <n-radio value="ShareRoom">分享直播间</n-radio>
-                          <n-radio value="FollowRoom">关注直播间</n-radio>
-                      </n-radio-group>
-                  </div>
-              </div>
+    <div class="audio-module-form">
+      <!-- 触发条件 -->
+      <div class="form-row">
+        <div class="form-item">
+          <span class="label">触发条件 *</span>
+          <div class="trigger-conditions">
+            <n-radio-group v-model:value="audioForm.selectedTrigger">
+              <n-radio value="SceneLoop">控场循环</n-radio>
+              <n-radio value="IntervalLoop">间隔循环</n-radio>
+              <n-radio value="BarrageComment">弹幕评论</n-radio>
+              <n-radio value="SendGift">送礼物</n-radio>
+              <n-radio value="Like">点赞</n-radio>
+              <n-radio value="EnterLiveRoom">进入直播间</n-radio>
+              <n-radio value="ShareRoom">分享直播间</n-radio>
+              <n-radio value="FollowRoom">关注直播间</n-radio>
+            </n-radio-group>
           </div>
-
-          <!-- 时间间隔 -->
-          <div class="form-row" v-if="audioForm.selectedTrigger !== 'SceneLoop'">
-              <div class="form-item">
-                  <span class="label">时间间隔（秒）*</span>
-                  <div class="time-range">
-                      <n-input-number 
-                          v-model:value="audioForm.minTime" 
-                          :min="0" 
-                          style="width: 100px" 
-                          show-button
-                          placeholder="最小值"
-                      />
-                      <span style="margin: 0 10px;">到</span>
-                      <n-input-number 
-                          v-model:value="audioForm.maxTime" 
-                          :min="0" 
-                          style="width: 100px" 
-                          show-button
-                          placeholder="最大值"
-                      />
-                      <span style="margin-left: 20px;">执行一次</span>
-                  </div>
-              </div>
-          </div>
-
-          <!-- 选择上传音频文件 -->
-          <div class="form-row">
-              <div class="form-item">
-                  <span class="label">选择上传音频文件 *</span>
-                  <n-upload
-                      :file-list="audioForm.audioFiles"
-                      accept="audio/*"
-                      :max="1"
-                      list-type="text"
-                      @change="handleAudioChange"
-                      :disabled="uploading"
-                  >
-                      <n-upload-dragger>
-                          <div style="padding: 20px; text-align: center;">
-                              <p v-if="uploading">上传中，请稍候...</p>
-                              <p v-else-if="audioForm.audioName">已上传：{{ audioForm.audioName }}</p>
-                              <p v-else>点击或拖拽文件到此区域上传</p>
-                          </div>
-                      </n-upload-dragger>
-                  </n-upload>
-              </div>
-          </div>
+        </div>
       </div>
-      
-      <!-- 底部按钮 -->
-      <template #action>
-          <div style="text-align: right">
-              <n-button type="warning" @click="handleExit">退出</n-button>
-              <n-button type="error" @click="handleSave" style="margin-left: 12px" :disabled="uploading || !audioForm.selectedTrigger">保存</n-button>
+
+      <!-- 时间间隔 -->
+      <div class="form-row" v-if="audioForm.selectedTrigger !== 'SceneLoop'">
+        <div class="form-item">
+          <span class="label">时间间隔（秒）*</span>
+          <div class="time-range">
+            <n-input-number
+              v-model:value="audioForm.minTime"
+              :min="0"
+              style="width: 100px"
+              show-button
+              placeholder="最小值"
+            />
+            <span style="margin: 0 10px;">到</span>
+            <n-input-number
+              v-model:value="audioForm.maxTime"
+              :min="0"
+              style="width: 100px"
+              show-button
+              placeholder="最大值"
+            />
+            <span style="margin-left: 20px;">执行一次</span>
           </div>
-      </template>
+        </div>
+      </div>
+
+      <!-- 选择上传音频文件 -->
+      <div class="form-row">
+        <div class="form-item">
+          <span class="label">选择上传音频文件 *</span>
+          <n-upload
+            :file-list="audioForm.audioFiles"
+            accept="audio/*"
+            :max="1"
+            list-type="text"
+            @change="handleAudioChange"
+            :disabled="uploading"
+          >
+            <n-upload-dragger>
+              <div style="padding: 20px; text-align: center;">
+                <p v-if="uploading">上传中，请稍候...</p>
+                <p v-else-if="audioForm.audioName">已上传：{{ audioForm.audioName }}</p>
+                <p v-else>点击或拖拽文件到此区域上传</p>
+              </div>
+            </n-upload-dragger>
+          </n-upload>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部按钮 -->
+    <template #action>
+      <div style="text-align: right">
+        <n-button type="warning" @click="handleExit">退出</n-button>
+        <n-button type="error" @click="handleSave" style="margin-left: 12px" :disabled="uploading || !audioForm.selectedTrigger || !audioForm.audioPath">保存</n-button>
+      </div>
+    </template>
   </n-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { NModal, NInputNumber, NButton, NUpload, NUploadDragger, NRadioGroup, NRadio } from 'naive-ui';
+import type { Ref } from 'vue';
 
-// 后端 API 基础 URL
-const API_BASE_URL = 'http://localhost:7074'; // 确保与后端端口一致
+const API_BASE_URL = 'http://localhost:7074';
 
 const props = defineProps<{
   show: boolean;
@@ -105,7 +104,7 @@ const emits = defineEmits<{
   (e: 'save', value: any): void;
 }>();
 
-// 从 localStorage 加载草稿
+// 加载草稿
 const loadDraft = () => {
   const draft = localStorage.getItem('audioModuleDraft');
   return draft
@@ -113,20 +112,52 @@ const loadDraft = () => {
     : {
         minTime: 30,
         maxTime: 50,
-        selectedTrigger: 'SceneLoop', // 默认选中控场循环
-        audioFiles: [], // 用于展示上传的文件列表
-        audioName: '', // 存储音频文件名
-        audioPath: '', // 存储音频文件路径
+        selectedTrigger: 'SceneLoop',
+        audioFiles: [],
+        audioName: '',
+        audioPath: '',
       };
 };
 
-// 表单数据，优先从 localStorage 加载草稿
+// 表单数据
 const audioForm = ref(loadDraft());
 
 // 上传状态
 const uploading = ref(false);
 
-// 监听 initialData 变化，填充表单（编辑模式）
+// 监听弹窗显示状态
+watch(() => props.show, (newShow) => {
+  if (newShow) {
+    if (props.initialData) {
+      // 编辑模式：使用初始数据
+      audioForm.value = {
+        minTime: props.initialData.intervalTimeStart || 30,
+        maxTime: props.initialData.intervalTimeEnd || 50,
+        selectedTrigger: props.initialData.triggerConditions?.[0] || 'SceneLoop',
+        audioFiles: [],
+        audioName: props.initialData.audioName || '',
+        audioPath: props.initialData.audioPath || '',
+      };
+    } else {
+      // 新建模式：重置表单
+      audioForm.value = {
+        minTime: 30,
+        maxTime: 50,
+        selectedTrigger: 'SceneLoop',
+        audioFiles: [],
+        audioName: '',
+        audioPath: '',
+      };
+    }
+    // 清除草稿
+    localStorage.removeItem('audioModuleDraft');
+  }
+}, { immediate: true });
+
+// 移除原有的 props.initialData 监听器
+// watch(() => props.initialData, ...) 删除这段代码
+
+// 初始化或编辑模式
 watch(() => props.initialData, (newData) => {
   if (newData && !localStorage.getItem('audioModuleDraft')) {
     audioForm.value = {
@@ -141,7 +172,7 @@ watch(() => props.initialData, (newData) => {
   console.log('AudioModuleDialog 初始化表单数据:', audioForm.value);
 }, { immediate: true });
 
-// 监听表单变化，保存到 localStorage
+// 监听表单变化，保存草稿
 watch(audioForm, (newFormData) => {
   const draftData = {
     minTime: newFormData.minTime,
@@ -156,7 +187,7 @@ watch(audioForm, (newFormData) => {
 
 // 处理音频文件上传
 const handleAudioChange = async (options: { fileList: any[] }) => {
-  const file = options.fileList[0]?.file; // 由于 max="1"，只取第一个文件
+  const file = options.fileList[0]?.file;
   if (!file) {
     audioForm.value.audioFiles = [];
     audioForm.value.audioName = '';
@@ -166,7 +197,7 @@ const handleAudioChange = async (options: { fileList: any[] }) => {
 
   uploading.value = true;
   const formData = new FormData();
-  formData.append('file', file); // 上传文件
+  formData.append('file', file);
 
   try {
     const response = await fetch(`${API_BASE_URL}/upload-audio`, {
@@ -181,6 +212,10 @@ const handleAudioChange = async (options: { fileList: any[] }) => {
 
     const result = await response.json();
     console.log('文件上传成功，返回数据:', result);
+
+    if (!result.path) {
+      throw new Error('上传成功但未返回有效的音频路径');
+    }
 
     audioForm.value.audioName = file.name;
     audioForm.value.audioPath = result.path;
@@ -197,15 +232,28 @@ const handleAudioChange = async (options: { fileList: any[] }) => {
   }
 };
 
-// 退出并触发事件
+// 退出
 const handleExit = () => {
   console.log('退出音频模块弹窗，当前表单数据:', audioForm.value);
+  // 清除草稿
+  localStorage.removeItem('audioModuleDraft');
   emits('exit', audioForm.value);
   emits('update:show', false);
 };
 
-// 保存并触发事件
-const handleSave = async () => {
+// 保存
+enum TriggerCondition {
+  SceneLoop = "SceneLoop",
+  IntervalLoop = "IntervalLoop",
+  BarrageComment = "BarrageComment",
+  SendGift = "SendGift",
+  Like = "Like",
+  EnterLiveRoom = "EnterLiveRoom",
+  ShareRoom = "ShareRoom",
+  FollowRoom = "FollowRoom",
+}
+
+const handleSave = () => {
   if (!audioForm.value.selectedTrigger) {
     window.$message?.error('保存失败：请先选择触发条件');
     return;
@@ -222,10 +270,12 @@ const handleSave = async () => {
     }
   }
 
-  if (!audioForm.value.audioPath) {
-    window.$message?.error('保存失败：请先上传音频文件');
+  if (!audioForm.value.audioPath || !audioForm.value.audioPath.trim()) {
+    window.$message?.error('保存失败：请先上传有效的音频文件');
     return;
   }
+
+  console.log('保存前 audioPath:', audioForm.value.audioPath);
 
   let intervalTimeStart = audioForm.value.minTime;
   let intervalTimeEnd = audioForm.value.maxTime;
@@ -234,47 +284,58 @@ const handleSave = async () => {
     intervalTimeEnd = 0;
   }
 
+  let triggerCondition;
+  switch (audioForm.value.selectedTrigger) {
+    case 'SceneLoop':
+      triggerCondition = TriggerCondition.SceneLoop;
+      break;
+    case 'IntervalLoop':
+      triggerCondition = TriggerCondition.IntervalLoop;
+      break;
+    case 'BarrageComment':
+      triggerCondition = TriggerCondition.BarrageComment;
+      break;
+    case 'SendGift':
+      triggerCondition = TriggerCondition.SendGift;
+      break;
+    case 'Like':
+      triggerCondition = TriggerCondition.Like;
+      break;
+    case 'EnterLiveRoom':
+      triggerCondition = TriggerCondition.EnterLiveRoom;
+      break;
+    case 'ShareRoom':
+      triggerCondition = TriggerCondition.ShareRoom;
+      break;
+    case 'FollowRoom':
+      triggerCondition = TriggerCondition.FollowRoom;
+      break;
+    default:
+      triggerCondition = TriggerCondition.SceneLoop;
+  }
+
   const formData = {
+    id: props.initialData?.id || 0,
     moduleType: 'audio',
-    moduleName: '音频模块',
+    moduleName: props.initialData?.moduleName || '音频模块',  // 保留原有模块名称
     intervalTimeStart,
     intervalTimeEnd,
-    triggerConditions: [audioForm.value.selectedTrigger],
-    readStep: '',
-    scriptContent: [],
-    isModelRewrite: false,
-    rewriteFrequency: 0,
+    triggerConditions: [triggerCondition],
+    readStep: props.initialData?.readStep || '',
+    scriptContent: props.initialData?.scriptContent || [],
+    isModelRewrite: props.initialData?.isModelRewrite || false,
+    rewriteFrequency: props.initialData?.rewriteFrequency || 0,
     audioName: audioForm.value.audioName,
     audioPath: audioForm.value.audioPath,
   };
 
-  console.log('保存音频模块，发送数据:', formData);
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/audio-modules`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || '保存失败');
-    }
-
-    const result = await response.json();
-    console.log('音频模块创建成功，返回数据:', result);
-    window.$message?.success('音频模块创建成功');
-
-    audioForm.value = loadDraft();
-    emits('update:show', false);
-    localStorage.removeItem('audioModuleDraft');
-  } catch (error) {
-    console.error('音频模块创建失败:', error);
-    window.$message?.error('音频模块创建失败：' + error.message);
-  }
+  console.log('保存音频模块，当前表单数据:', formData);
+  emits('save', formData);
+  emits('update:show', false);
+  
+  // 清除草稿和重置表单
+  localStorage.removeItem('audioModuleDraft');
+  audioForm.value = loadDraft();
 };
 </script>
 
@@ -287,40 +348,40 @@ const handleSave = async () => {
   overflow-y: auto;
 
   .form-row {
-      margin-bottom: 20px;
+    margin-bottom: 20px;
   }
 
   .form-item {
-      .label {
-          display: block;
-          margin-bottom: 8px;
-          font-weight: bold;
-      }
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
 
-      .time-range {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-      }
+    .time-range {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-      .trigger-conditions {
-          display: flex;
-          gap: 20px;
-          flex-wrap: wrap;
-      }
+    .trigger-conditions {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
   }
 
   .n-upload-dragger {
-      border: 2px dashed #d9d9d9;
-      border-radius: 4px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.3s;
+    border: 2px dashed #d9d9d9;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s;
 
-      &:hover {
-          border-color: #409eff;
-      }
+    &:hover {
+      border-color: #409eff;
+    }
   }
 }
 </style>

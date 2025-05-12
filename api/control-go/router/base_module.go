@@ -279,10 +279,10 @@ func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 			}
 
 			// 验证 IntervalTimeStart 和 IntervalTimeEnd
-			if updateModule.IntervalTimeStart >= updateModule.IntervalTimeEnd {
-				respondWithError(c, 400, "IntervalTimeStart 必须小于 IntervalTimeEnd")
-				return
-			}
+			//if updateModule.IntervalTimeStart >= updateModule.IntervalTimeEnd {
+			//respondWithError(c, 400, "IntervalTimeStart 必须小于 IntervalTimeEnd")
+			//return
+			//}
 
 			// 验证 TriggerConditions 不为空
 			if len(updateModule.TriggerConditions) == 0 {

@@ -200,7 +200,7 @@ function mapBackendToFrontend(backendModule: any): Module | null {
 
   const triggerConditions = Array.isArray(backendModule.trigger_conditions)
     ? backendModule.trigger_conditions.map((condition: string) => {
-      switch (condition) {
+        switch (condition) {
           case 'SceneLoop':
             return TriggerCondition.SceneLoop;
           case 'IntervalLoop':
@@ -275,13 +275,14 @@ function mapFrontendToBackend(frontendModule: Module): any {
       case TriggerCondition.FollowRoom:
         return 'FollowRoom';
       default:
+        console.warn('未映射的触发条件:', condition);
         return condition;
     }
   });
 
-  return {
+  const backendData = {
     id: frontendModule.id,
-    module_type: frontendModule.moduleType || 'base',
+    module_type: frontendModule.moduleType,
     order_num: frontendModule.id === 0 ? maxOrderNum + 1 : frontendModule.orderNum,
     module_name: frontendModule.moduleName,
     interval_time_start: frontendModule.intervalTimeStart,
@@ -294,6 +295,8 @@ function mapFrontendToBackend(frontendModule: Module): any {
     audio_name: frontendModule.audioName || '',
     audio_path: frontendModule.audioPath || '',
   };
+  console.log('转换后的后端数据:', backendData);
+  return backendData;
 }
 
 // 保存模块到后端（增/改）
@@ -310,17 +313,19 @@ async function saveModule(module: Module, isEdit: boolean) {
       ? `${API_BASE_URL}/base-modules/${module.id}`
       : `${API_BASE_URL}/base-modules`;
 
-    console.log('发送到后端的请求数据:', module);
+    const backendData = mapFrontendToBackend(module);
+    console.log('发送到后端的最终数据:', backendData);
+
     const response = await fetch(url, {
       method,
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(mapFrontendToBackend(module)),
+      body: JSON.stringify(backendData),
     });
 
     const responseData = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(responseData.error || `保存失败，状态码：${response.status}`);
     }
@@ -383,30 +388,43 @@ function handleBasicModuleExit(formData: any) {
 // 处理基础模块弹窗保存时的逻辑
 function handleBasicModuleSave(formData: any) {
   console.log('基础模块保存，当前表单数据:', formData);
-  const module: Module = editingModule.value
-    ? {
-        ...editingModule.value,
-        moduleName: formData.moduleName,
-        intervalTimeStart: formData.intervalTimeStart,
-        intervalTimeEnd: formData.intervalTimeEnd,
-        triggerConditions: [formData.triggerConditions[0] as TriggerCondition],
-        readStep: formData.readStep as ReadStep,
-        scriptContent: formData.scriptContent,
+  const module: Module = {
+    id: formData.id || 0,
+    moduleType: ModuleType.Base,
+    orderNum: 0, // 新增时设为 0，由后端生成
+    moduleName: formData.moduleName || '基础模块',
+    intervalTimeStart: formData.intervalTimeStart,
+    intervalTimeEnd: formData.intervalTimeEnd,
+    triggerConditions: formData.triggerConditions.map((condition: string) => {
+      switch (condition) {
+        case 'SceneLoop':
+          return TriggerCondition.SceneLoop;
+        case 'IntervalLoop':
+          return TriggerCondition.IntervalLoop;
+        case 'BarrageComment':
+          return TriggerCondition.BarrageComment;
+        case 'SendGift':
+          return TriggerCondition.SendGift;
+        case 'Like':
+          return TriggerCondition.Like;
+        case 'EnterLiveRoom':
+          return TriggerCondition.EnterLiveRoom;
+        case 'ShareRoom':
+          return TriggerCondition.ShareRoom;
+        case 'FollowRoom':
+          return TriggerCondition.FollowRoom;
+        default:
+          console.warn('未知触发条件:', condition);
+          return condition as TriggerCondition;
       }
-    : {
-        id: 0,
-        moduleType: ModuleType.Base,
-        orderNum: 0,
-        moduleName: formData.moduleName || '基础模块',
-        intervalTimeStart: formData.intervalTimeStart,
-        intervalTimeEnd: formData.intervalTimeEnd,
-        triggerConditions: [formData.triggerConditions[0] as TriggerCondition],
-        readStep: (formData.readStep || 'random') as ReadStep,
-        scriptContent: formData.scriptContent || [],
-        isModelRewrite: false,
-        rewriteFrequency: 0,
-      };
-  saveModule(module, !!editingModule.value);
+    }),
+    readStep: (formData.readStep || 'random') as ReadStep,
+    scriptContent: formData.scriptContent || [],
+    isModelRewrite: formData.isModelRewrite || false,
+    rewriteFrequency: formData.rewriteFrequency || 0,
+  };
+  console.log('构造的 Module 对象:', module);
+  saveModule(module, !!formData.id);
 }
 
 // 处理音频交互模块弹窗退出时的提示
@@ -417,76 +435,45 @@ function handleAudioModuleExit(formData: any) {
 // 处理音频交互模块弹窗保存时的逻辑
 function handleAudioModuleSave(formData: any) {
   console.log('音频模块保存，当前表单数据:', formData);
-  const module: Module = editingAudioModule.value
-    ? {
-        ...editingAudioModule.value,
-        moduleName: formData.moduleName,
-        intervalTimeStart: formData.intervalTimeStart,
-        intervalTimeEnd: formData.intervalTimeEnd,
-        triggerConditions: formData.triggerConditions.map((condition: string) => {
-          switch (condition) {
-            case 'sceneLoop':
-              return TriggerCondition.SceneLoop;
-            case 'intervalLoop':
-              return TriggerCondition.IntervalLoop;
-            case 'barrageComment':
-              return TriggerCondition.BarrageComment;
-            case 'sendGift':
-              return TriggerCondition.SendGift;
-            case 'like':
-              return TriggerCondition.Like;
-            case 'enterLiveRoom':
-              return TriggerCondition.EnterLiveRoom;
-            case 'shareRoom':
-              return TriggerCondition.ShareRoom;
-            case 'followRoom':
-              return TriggerCondition.FollowRoom;
-            default:
-              return condition as TriggerCondition;
-          }
-        }),
-        readStep: formData.readStep as ReadStep,
-        scriptContent: formData.scriptContent,
-        audioName: formData.audioName,
-        audioPath: formData.audioPath,
+  const module: Module = {
+    id: formData.id || 0,
+    moduleType: ModuleType.Audio,
+    orderNum: 0, // 新增时设为 0，由后端生成
+    moduleName: formData.moduleName || '音频模块',
+    intervalTimeStart: formData.intervalTimeStart,
+    intervalTimeEnd: formData.intervalTimeEnd,
+    triggerConditions: formData.triggerConditions.map((condition: string) => {
+      switch (condition) {
+        case 'SceneLoop':
+          return TriggerCondition.SceneLoop;
+        case 'IntervalLoop':
+          return TriggerCondition.IntervalLoop;
+        case 'BarrageComment':
+          return TriggerCondition.BarrageComment;
+        case 'SendGift':
+          return TriggerCondition.SendGift;
+        case 'Like':
+          return TriggerCondition.Like;
+        case 'EnterLiveRoom':
+          return TriggerCondition.EnterLiveRoom;
+        case 'ShareRoom':
+          return TriggerCondition.ShareRoom;
+        case 'FollowRoom':
+          return TriggerCondition.FollowRoom;
+        default:
+          console.warn('未知触发条件:', condition);
+          return condition as TriggerCondition;
       }
-    : {
-        id: 0,
-        moduleType: ModuleType.Audio,
-        orderNum: 0,
-        moduleName: formData.moduleName || '音频模块',
-        intervalTimeStart: formData.intervalTimeStart,
-        intervalTimeEnd: formData.intervalTimeEnd,
-        triggerConditions: formData.triggerConditions.map((condition: string) => {
-          switch (condition) {
-            case 'sceneLoop':
-              return TriggerCondition.SceneLoop;
-            case 'intervalLoop':
-              return TriggerCondition.IntervalLoop;
-            case 'barrageComment':
-              return TriggerCondition.BarrageComment;
-            case 'sendGift':
-              return TriggerCondition.SendGift;
-            case 'like':
-              return TriggerCondition.Like;
-            case 'enterLiveRoom':
-              return TriggerCondition.EnterLiveRoom;
-            case 'shareRoom':
-              return TriggerCondition.ShareRoom;
-            case 'followRoom':
-              return TriggerCondition.FollowRoom;
-            default:
-              return '';
-          }
-        }),
-        readStep: (formData.readStep || 'random') as ReadStep,
-        scriptContent: formData.scriptContent || [],
-        isModelRewrite: false,
-        rewriteFrequency: 0,
-        audioName: formData.audioName,
-        audioPath: formData.audioPath,
-      };
-  saveModule(module, !!editingAudioModule.value);
+    }),
+    readStep: (formData.readStep || 'random') as ReadStep,
+    scriptContent: formData.scriptContent || [],
+    isModelRewrite: formData.isModelRewrite || false,
+    rewriteFrequency: formData.rewriteFrequency || 0,
+    audioName: formData.audioName || '',
+    audioPath: formData.audioPath || '',
+  };
+  console.log('构造的 Module 对象:', module);
+  saveModule(module, !!formData.id);
 }
 
 // 编辑模块
@@ -529,7 +516,7 @@ function getTriggerConditions(module: Module) {
       case TriggerCondition.FollowRoom:
         return '关注直播间';
       default:
-        return '';
+        return condition;
     }
   }).filter((name) => name);
   return conditionNames.length > 0 ? conditionNames.join('、') : '无限制';
