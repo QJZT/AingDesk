@@ -463,7 +463,84 @@
     <!-- display: grid;
     // grid-template-rows: 50px 22px 2fr 22px 1fr 140px;
     grid-template-rows: 50px 50px 50px 50px 50px 25px 22px 1fr 35px  1fr 170px; -->
+    
+    
+   <!-- 发送消息卡片 -->
+   <div style="padding: 12px 12px 12px 12px;">
+    <n-card title="用户消息" :segmented="{content: true, footer: true}"
+            header-style="padding:10px;font-size:14px"
+            footer-style="padding:10px" content-style="padding:10px;height:100%">
+      <div class="control-block">
+        <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+          <div style="width: 30%;font-size: 12px;">音量: {{ announcementVolume }}%</div>
+          <n-slider
+            v-model:value="announcementVolume"
+            :min="10"
+            :max="100"
+            :step="1"
+            style="width: 70%;"
+            tooltip
+            placement="bottom"
+            :format-tooltip="(value) => `音量: ${value}%`"
+          />
+        </div>
+        <div style="height: 5px;"></div>
+        <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+          <div style="width: 30%;font-size: 12px;">音速: {{ announcementSpeed }}x</div>
+          <n-slider
+            v-model:value="announcementSpeed"
+            :min="0.5"
+            :max="2"
+            :step="0.01"
+            style="width: 70%;"
+            tooltip
+            placement="bottom"
+            :format-tooltip="(value) => `音速: ${value}x`"
+          />
+        </div>
+        <div style="height: 5px;"></div>
+        <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+          <div style="width: 30%;font-size: 12px;">选择人声</div>
+          <n-select 
+            v-model:value="announcementVoice"
+            :options="humanVoiceOptions"
+            style="width: 70%;"
+            placeholder="选择人声"
+            clearable
+            size="small"
+            @click="getHumanVoiceFiles"
+          />
+        </div>
+      </div>
+      <div style="height: 10px;"></div>
+      <div class="message-input">
+        <n-input-group>
+          <n-input 
+            v-model:value="announcementMessage"
+            type="textarea"
+            placeholder="输入消息..."
+            :autosize="{ minRows: 2, maxRows: 5 }"
+            @keyup.enter.ctrl.prevent="announcementMessage.value += '\n'"
+            @keyup.enter.exact="sendUserMessage"
+            style="flex: 1; min-width: 0;"
+          />
+          <n-button 
+            type="primary" 
+            @click="sendUserMessage"
+            :disabled="!announcementMessage.trim() || !announcementVoice"
+          >
+            <template #icon>
+              <i class="i-tdesign:send w-20 h-20"></i>
+            </template>
+            发送
+          </n-button>
+        </n-input-group>
+      </div>
+    </n-card>
+  </div>
 
+
+    <!-- 弹窗 -->
     <n-modal v-model:show="showPromptDialog">
       <n-card style="width:800px" title="编辑AI提示词" :bordered="false">
         <n-space vertical>
@@ -1458,6 +1535,8 @@ const includesEnterLiveRoom= async (module) => {
         }
     } while (start.value);
 }
+
+
 //弹幕评论数据
 const EnterBarrageUserName = ref("")  //弹幕评论 用户名
 const EnterBarrageContent = ref("")  //弹幕评论 内容
@@ -1517,6 +1596,7 @@ const BarrageComment= async (module) => {
         EnterBarrageContent.value = "" //清空
     } while (start.value);
 }
+
 // 更标准的Fisher-Yates洗牌算法
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -1565,6 +1645,15 @@ const generate_wav_api = async (_text:string,
     
 }
 
+
+
+
+
+
+
+
+
+
 // 播放任务
 const play_task_voice_api = async (_filename:string,play_mode:string) => {
     const response = await fetch('http://192.168.1.10:7073/play_task_voice', {
@@ -1581,6 +1670,46 @@ const play_task_voice_api = async (_filename:string,play_mode:string) => {
 }
 
 const humanVoiceOptions = ref([])
+// 送消息新增代码
+const announcementMessage = ref('')
+const announcementVolume = ref(50)
+const announcementSpeed = ref(1.0)
+const announcementVoice = ref('')
+const sendUserMessage = async () => {
+  if (!announcementMessage.value.trim() || !announcementVoice.value) {
+    message.error("请输入消息并选择人声")
+    return
+  }
+  try {
+    const newFileName = crypto.randomUUID() + "_" + Date.now() + '.wav'
+    const ok = await generate_wav_api(
+      announcementMessage.value,
+      selectedLanguage.value || "en",
+      newFileName,
+      announcementVoice.value,
+      announcementSpeed.value,
+      announcementVolume.value / 100
+    )
+    if (!ok) {
+      message.error("音频生成失败")
+      return
+    }
+    
+    playList.value.push({
+      content: announcementMessage.value,
+      filename: newFileName,
+      play_mode: "serial"
+    })
+    message.success("消息已发送")
+  } catch (error) {
+    console.error("发送用户消息失败:", error)
+    message.error("发送失败，请重试")
+  }
+  announcementMessage.value = ''
+}
+
+
+
 
 const getHumanVoiceFiles = async () => {
   try {
@@ -1675,6 +1804,11 @@ const ReplaceText= async (text) => {
     }
   return newText;
 } 
+
+
+
+
+
 
 </script>
 
