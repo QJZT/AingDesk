@@ -18,7 +18,7 @@
       </div>
       
       <div class="setting-item">
-        <n-text depth="3" style="margin-right: 8px;">语种设置 {{ selectedLanguageLabel }}</n-text>
+        <n-text depth="3" style="margin-right: 8px;">语种设置</n-text>
         <n-select 
           v-model:value="selectedLanguage"
           :options="languageOptions"
@@ -31,8 +31,8 @@
         />
       </div>
       
-      <div class="setting-item">
-        <n-text depth="3" style="margin-right: 8px;">音频驱动()</n-text>
+      <div class="setting-item"  @click="getAudioDevices">
+        <n-text depth="3" style="margin-right: 8px;">音频驱动</n-text>
         <n-select 
           v-model:value="selectedAudioDriver"
           :options="audioDeviceOptions"
@@ -53,7 +53,7 @@
           @update:value="initializeSpeechModel"
         />
       </div>
-
+    
       <div class="setting-item">
         <n-text depth="3" style="margin-right: 8px;">语音模型(辅助)</n-text>
         <n-select 
@@ -65,8 +65,61 @@
           @update:value="initializeSpeechModel"
         />
       </div>
+     
+    <div class="settings-bar">
+      <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">Temperature ({{ temperature }})<n-popover trigger="click">
+          <template #trigger>
+            <i class="i-tdesign:help-circle w-16 h-16 ml-2 cursor-pointer"></i>
+          </template>
+          <span>控制生成文本的随机性(0.1-1.5)，值越高结果越随机</span>
+        </n-popover></n-text>
+        <n-slider
+          v-model:value="temperature"
+          :min="0.1"
+          :max="1.5"
+          :step="0.1"
+          style="width: 150px;"
+          :format-tooltip="(value) => `Temperature: ${value}`"
+        />
+      </div>
 
+      <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">TopP ({{ top_p }}) <n-popover trigger="click">
+          <template #trigger>
+            <i class="i-tdesign:help-circle mt-5 cursor-pointer text-[var(--n-text-color)]"></i>
+          </template>
+          <span>控制生成文本的多样性(0.1-1)，值越低结果越保守</span>
+        </n-popover></n-text>
+      
+        <n-slider
+          v-model:value="top_p"
+          :min="0.1"
+          :max="1"
+          :step="0.05"
+          style="width: 150px;"
+          :format-tooltip="(value) => `Top P: ${value}`"
+        />
+      </div>
+      <div class="setting-item">
+        <div style="display: flex; align-items: center;">
+          <n-text depth="3" style="margin-right: 8px;">TopK ({{ top_k }})<n-popover trigger="click">
+            <template #trigger>
+              <i class="i-tdesign:help-circle mt-5 cursor-pointer text-[var(--n-text-color)]"></i>
+            </template>
+            <span>限制生成时考虑的词汇数量(1-100)，值越低结果越可预测</span>
+          </n-popover></n-text>
+        </div>
+        <n-input-number
+          v-model:value="top_k"
+          :min="1"
+          :max="100"
+          :step="1"
+          style="width: 100px;"
+        />
+      </div>
       <!-- speedModelOptions2 -->
+    </div>
     </div>
     <div class="settings-bar">
       <div class="setting-item">
@@ -122,18 +175,26 @@
          @update:value="(value, option) => handleSelectedModelChange(value, option)"
         />
       </div>
-      
+      <div class="setting-item">
+      <n-text depth="3" style="margin-right: 8px;">间隔时间(ms) </n-text>
+        <n-input-number 
+          v-model:value="intervalTime"
+          :min="0"
+          :max="500000"
+          :step="100"
+          style="width: 100px"
+        />
+      </div>
        <!-- 新增直播链接输入和启动按钮 -->
        <div class="setting-item">
-        <n-text depth="3" style="margin-right: 8px;">确认启动</n-text>
+        <n-text depth="3" style="margin-right: 8px;"></n-text>
         <n-input-group>
-          {{ start }}
           <n-button 
             v-if="!start"
             type="primary" 
             @click="registerModules"
             :loading="loading"
-            style="width: 120px;"
+            style="width: 220px;"
           >
             <template #icon>
               <i class="i-tdesign:play-circle"></i>
@@ -146,7 +207,7 @@
             type="error" 
             @click="start = false"
             :loading="loading"
-            style="width: 120px;"
+            style="width: 220px;"
           >
             <template #icon>
               <i class="i-tdesign:stop-circle"></i>
@@ -164,9 +225,23 @@
     <!-- height: calc(100vh - 460px) -->
     <!-- :style="{backgroundColor: themeThinkBg}" -->
     <div class="three-column-layout">
-      <n-card title="模块" style="" :segmented="{content: true,footer:true}"
-                    header-style="padding:10px;font-size:14px"
-                    footer-style="padding:10px" content-style="padding:10px;height:100%">
+      <n-card 
+        title="模块" 
+        style="" 
+        :segmented="{content: true,footer:true}"
+        header-style="padding:10px;font-size:14px"
+        footer-style="padding:10px" 
+        content-style="padding:10px;height:100%"
+      >
+        <!-- 新增刷新按钮 -->
+        <template #header-extra>
+          <n-button @click="fetchModules" size="small" :loading="loadingModules">
+            <!-- <template #icon>
+              <i class="i-tdesign:refresh"></i>
+            </template> -->
+            刷新
+          </n-button>
+        </template>
         <n-infinite-scroll style="height: 480px;overflow-y: auto;background: var(--n-color-embedded);
       border-radius: var(--n-border-radius);"  :distance="10">
           <div class="">
@@ -175,7 +250,7 @@
             <div class="block-header">
               <h4>{{ block.module_name }}</h4>
             <!-- <n-switch v-model:value="block.isActive"  size="small" @update:value="handleVolumeChange(block)"/> -->
-            <n-switch v-model:value="block.retAi"  size="small" @update:value="handleVolumeChange(block)">
+            <n-switch v-model:value="block.retAi"  size="small" @update:value="handleVolumeChange(block)" v-if="block.module_type == 'base'">
               <template #checked>
                 AI改写
               </template>
@@ -212,7 +287,7 @@
               />
             </div>
             <div style="height: 5px;"></div>
-            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;" v-if="block.module_type == 'base'">
               <div style="width: 30%;font-size: 12px">
                 音速:{{block.speed}}x
               </div>
@@ -229,10 +304,11 @@
               />
             </div> 
             <div style="height: 5px;"></div>
-            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;" v-if="block.module_type == 'base'">
               <div style="width: 30%;font-size: 12px;">
                 选择人声
             </div>
+           
             <n-select 
                 v-model:value="block.selectedNameId"
                 :options="humanVoiceOptions"
@@ -257,14 +333,7 @@
       <n-card title="观众互动" style="" :segmented="{content: true,footer:true}"
                     header-style="padding:10px;font-size:14px"
                     footer-style="padding:10px" content-style="padding:10px;height:100%">
-        <n-text depth="3" style="margin-right: 8px;">间隔时间(ms) </n-text>
-        <n-input-number 
-          v-model:value="intervalTime"
-          :min="0"
-          :max="500000"
-          :step="100"
-          style="width: 100px"
-        />
+      
         <!-- <template #header-extra>
           <n-switch 
             v-model:value="autoReadMode" 
@@ -373,7 +442,9 @@
         </div>
           </div>
         </n-infinite-scroll>
-
+        
+        弹幕检测：{{ EnterBarrageContent }}
+        <n-input type="text" v-model:value="EnterBarrageContent"/>
         <!-- <div class="setting-item">
         <n-input 
           v-model:value="EnterLiveRoomUserName"
@@ -927,8 +998,9 @@ const setModulesKv =async  (id,kv) => {
             body: JSON.stringify({ key: String(id) ,kv:kv}),
         });
 }
-
+const loadingModules = ref(false)
 const fetchModules = async () => {
+  loadingModules.value = true
   try {
     console.log('正在获取模块数据...')
     let  newList   =[]
@@ -950,6 +1022,10 @@ const fetchModules = async () => {
     modules.value=newList
   } catch (error) {
     console.error('获取模块数据失败:', error)
+  } finally {
+    setTimeout(() => {
+      loadingModules.value = false
+    }, 800)
   }
 }
 
@@ -1089,6 +1165,7 @@ interface PlayItem {
 const playList = ref<PlayItem[]>([])//播放列表
 const uesPlayList = ref<PlayItem[]>([])//已播放列表
 const start = ref(false)//启动开关
+const startUUID = ref("")//启动开关
 //注册模块，
 
 const registerModules = async () => {
@@ -1102,7 +1179,10 @@ const registerModules = async () => {
     // await fetchModules()
     // return
     //循环模块列表 干活
+    const newuuid = crypto.randomUUID()
+
     start.value = true
+    startUUID.value = newuuid;
     for (const module of modules.value) {
 //     TriggerSceneLoop     = "SceneLoop"     // 控场循环
 //     TriggerIntervalLoop  = "IntervalLoop"  // 间隔循环：按照指定间隔时间循环执行
@@ -1112,37 +1192,38 @@ const registerModules = async () => {
 //     TriggerEnterLiveRoom = "EnterLiveRoom" // 进入直播间：是否自动进入直播间
 //     TriggerShareRoom     = "ShareRoom"     // 分享直播间
 //     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
-
         //循环读取
-        if (module.trigger_conditions.includes("SceneLoop")) { // 执行循环：是否自动循环执行任务
-          SceneLoop(module)
+        if (module.module_type == "base") { 
+          if (module.trigger_conditions.includes("SceneLoop")) { // 执行循环：是否自动循环执行任务
+            SceneLoop(module,newuuid)
+          }
+          if (module.trigger_conditions.includes("IntervalLoop")) { //间隔循环：按照指定间隔时间循环执行
+            SceneLoop(module,newuuid)
+          }
+          //弹幕评论 BarrageComment
+          if (module.trigger_conditions.includes("BarrageComment")) {// 弹幕
+              BarrageComment(module,newuuid)
+          }
+          //送礼物 SendGift
+          if (module.trigger_conditions.includes("SendGift")) {
+            SendGift(module,newuuid)
+          }
+          //点赞 Like
+          if (module.trigger_conditions.includes("Like")) {
+            includesLike(module,newuuid)
+          }
+          //进入直播间 EnterLiveRoom
+          if (module.trigger_conditions.includes("EnterLiveRoom")) {
+            includesEnterLiveRoom(module,newuuid)
+          }
         }
-        if (module.trigger_conditions.includes("IntervalLoop")) { //间隔循环：按照指定间隔时间循环执行
-          SceneLoop(module)
-        }
-        //弹幕评论 BarrageComment
-        if (module.trigger_conditions.includes("BarrageComment")) {// 弹幕
-            BarrageComment(module)
-        }
-        //送礼物 SendGift
-        if (module.trigger_conditions.includes("SendGift")) {
-          SendGift(module)
-        }
-
-        //点赞 Like
-        if (module.trigger_conditions.includes("Like")) {
-          includesLike(module)
-        }
-        //进入直播间 EnterLiveRoom
-        if (module.trigger_conditions.includes("EnterLiveRoom")) {
-          includesEnterLiveRoom(module)
-        }
+        
         //     TriggerShareRoom     = "ShareRoom"     // 分享直播间
 //     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
     }
     playListConsumption()
 }
-const intervalTime = ref(1000) // 默认1000毫秒 1秒=1000毫秒
+const intervalTime = ref(0) // 默认1000毫秒 1秒=1000毫秒
 //消费playList
 const playListConsumption= async () => {
     do {
@@ -1165,7 +1246,7 @@ const playListConsumption= async () => {
 }
 
 //循环模块处理
-const SceneLoop= async (module) => {
+const SceneLoop= async (module,newuuil) => {
     let index = 0 //当前播放索引
     const script_content_len = module.script_content.length //脚本长度
     do {
@@ -1189,7 +1270,7 @@ const SceneLoop= async (module) => {
         }
 
         let content = module.script_content[index] 
-        while (playList.value.length >= 2) { //等待队列 消费完探入
+        while (playList.value.length >= 15) { //等待队列 消费完探入
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
         // 是否改写
@@ -1227,13 +1308,13 @@ const SceneLoop= async (module) => {
         }
         if (module.trigger_conditions.includes("IntervalLoop")){ //定时触发的 插队前面
             playList.value.unshift({ //入队
-              content: content, //内容
+              content: "["+module.module_name+"]"+content, //内容
               filename: newFileName, //文件名
               play_mode: "serial", //播放模式
           })   
         }else {
           playList.value.push({ //入队
-            content: content, //内容
+            content: "["+module.module_name+"]"+content, //内容
             filename: newFileName, //文件名
             play_mode: "serial", //播放模式
           })    
@@ -1243,65 +1324,15 @@ const SceneLoop= async (module) => {
         } else {
             index = index + 1
         }
-    } while (start.value);
+    } while (start.value && newuuil == startUUID.value);
 }
 
 // 进入直播间 模块
 const EnterLiveRoomUserName = ref("")  //进入直播间用户名
 
-const EnterLiveRoom= async (module) => {
-    let index = 0 //当前播放索引
-    const script_content_len = module.script_content.length //脚本长度
-    do {
-        if (!module.isActive) { 
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          continue
-        }
-        if (module.read_step == "random") { //随机
-            if (index == 0) { 
-                module.script_content = shuffleArray(module.script_content)//将数组 打乱
-            }
-        }
-        if (module.interval_time_start != 0 && module.interval_time_end!= 0) { //间隔时间
-            const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
-            await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
-            console.log("4");
-        }
-        while (EnterLiveRoomUserName.value == "") { //等待有用户进入直播间
-            await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-        let content = await ReplaceText(module.script_content[index])  //欢迎{用户名称}的到来，您你的到来让直播间蓬革
-        const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
-        let ok = await generate_wav_api(
-            content, //文本
-            selectedLanguage.value || "en",  //语种
-            newFileName, //生成文件名
-            module.selectedNameId, //音色文件名
-            module.speed, //生成速度
-            module.volume / 100 //生成音量
-          ) //生成音量
-        if (!ok) { //生成失败
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            continue
-        }
-        // 插入到头部
-        playList.value.unshift({ //入队
-            content: content, //内容
-            filename: newFileName, //文件名
-            play_mode: "top", //播放模式
-        })    
-        EnterLiveRoomUserName.value = "" //清空
-        if (index == script_content_len - 1) { //循环
-            index = 0
-        } else {
-            index = index + 1
-        }
-    } while (start.value);
-}
-
 // 点赞 Like
 const EnterSupportRoomUserName = ref("")  //点赞直播间 用户名
-const includesLike= async (module) => {
+const includesLike= async (module,newuuil) => {
     let index = 0 //当前播放索引
     const script_content_len = module.script_content.length //脚本长度
     do {
@@ -1337,7 +1368,7 @@ const includesLike= async (module) => {
         }
         // 插入到头部
         playList.value.unshift({ //入队
-            content: content, //内容
+            content: "["+module.module_name+"]"+content, //内容
             filename: newFileName, //文件名
             play_mode: "serial", //播放模式
         })    
@@ -1347,14 +1378,14 @@ const includesLike= async (module) => {
         } else {
             index = index + 1
         }
-    } while (start.value);
+    } while (start.value && newuuil == startUUID.value);
 }
 
 //送礼物数据
 const EnterGiftUserName = ref("")  //送礼物 用户名
 const EnterGiftNum = ref("")  //送礼物数量
 const EnterGiftGoodsName = ref("")  //送的礼物名字
-const SendGift= async (module) => {
+const SendGift= async (module,newuuil) => {
     let index = 0 //当前播放索引
     const script_content_len = module.script_content.length //脚本长度
     do {
@@ -1409,7 +1440,7 @@ const SendGift= async (module) => {
         }
         // 插入到头部
         playList.value.unshift({ //入队
-            content: content, //内容
+            content: "["+module.module_name+"]"+content, //内容
             filename: newFileName, //文件名
             play_mode: "serial", //播放模式
         })    
@@ -1421,80 +1452,12 @@ const SendGift= async (module) => {
         } else {
             index = index + 1
         }
-    } while (start.value);
+    } while (start.value && newuuil == startUUID.value);
 }
-const Like= async (module) => {
-    let index = 0 //当前播放索引
-    const script_content_len = module.script_content.length //脚本长度
-    do {
-        if (!module.isActive) { 
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          continue
-        }
-        if (module.read_step == "random") { //随机
-            if (index == 0) { 
-                module.script_content = shuffleArray(module.script_content)//将数组 打乱
-            }
-        }
-        if (module.interval_time_start != 0 && module.interval_time_end!= 0) { //间隔时间
-            const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
-            await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
-        }
-        while (EnterGiftUserName.value == "") { //等待有用户送礼物
-            await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-        let content = module.script_content[index] 
-        if (module.retAi) { //是否改写
-            if (model_api.value == "") { //是否改写
-              console.log("请选择模型");
-              await new Promise(resolve => setTimeout(resolve, 4000))
-              continue
-            }
-           let prompt = await ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
-           const  apidata =  await DisposableSendApi(
-            model_api.value,
-            parameters_api.value,
-            new_content, //文本
-            prompt, //提示词
-            supplierName_api.value, //供应商名称
-          )
-          console.log("apidata:",apidata);
-          content = apidata  //替换
-        }
 
-        const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
-        let ok = await generate_wav_api(
-            content, //文本
-            selectedLanguage.value || "en",  //语种
-            newFileName, //生成文件名
-            module.selectedNameId, //音色文件名
-            module.speed, //生成速度
-            module.volume / 100 //生成音量
-          ) //生成音量
-        if (!ok) { //生成失败
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            continue
-        }
-        // 插入到头部
-        playList.value.unshift({ //入队
-            content: content, //内容
-            filename: newFileName, //文件名
-            play_mode: "serial", //播放模式
-        })    
-        EnterGiftUserName.value = "" //清空
-        EnterGiftNum.value = "" //清空
-        EnterGiftGoodsName.value = "" //清空
-        if (index == script_content_len - 1) { //循环
-            index = 0
-        } else {
-            index = index + 1
-        }
-    } while (start.value);
-}
 
 //进入直播间 EnterLiveRoom
-const includesEnterLiveRoom= async (module) => {
+const includesEnterLiveRoom= async (module,newuuil) => {
     let index = 0 //当前播放索引
     const script_content_len = module.script_content.length //脚本长度
     do {
@@ -1549,7 +1512,7 @@ const includesEnterLiveRoom= async (module) => {
         }
         // 插入到头部
         playList.value.unshift({ //入队
-            content: content, //内容
+            content: "["+module.module_name+"]"+content, //内容
             filename: newFileName, //文件名
             play_mode: "serial", //播放模式
         })    
@@ -1561,14 +1524,14 @@ const includesEnterLiveRoom= async (module) => {
         } else {
             index = index + 1
         }
-    } while (start.value);
+    } while (start.value && newuuil == startUUID.value);
 }
 
 
 //弹幕评论数据
 const EnterBarrageUserName = ref("")  //弹幕评论 用户名
 const EnterBarrageContent = ref("")  //弹幕评论 内容
-const BarrageComment= async (module) => {
+const BarrageComment= async (module,newuuil) => {
     // let index = 0 //当前播放索引
     // const script_content_len = module.script_content.length //脚本长度
     do {
@@ -1616,13 +1579,13 @@ const BarrageComment= async (module) => {
         }
         // 插入到头部
         playList.value.unshift({ //插队
-            content: content, //内容
+            content: "["+module.module_name+"]"+content, //内容
             filename: newFileName, //文件名
             play_mode: "serial", //播放模式
         })    
         EnterBarrageUserName.value = "" //清空
         EnterBarrageContent.value = "" //清空
-    } while (start.value);
+    } while (start.value && newuuil == startUUID.value);
 }
 
 // 更标准的Fisher-Yates洗牌算法
@@ -1638,6 +1601,9 @@ let generateLock = Promise.resolve(); // 初始化为已解决的Promise
 
 // http://192.168.1.10:7073/generate_wav
 // 生成wav文件
+const temperature = ref(0.6)
+const top_p = ref(0.8)
+const top_k = ref(50)
 const generate_wav_api = async (_text:string,
     _language:string,
     _filename:string,
@@ -1669,9 +1635,9 @@ const generate_wav_api = async (_text:string,
                 "text": _text,
                 "text_language": _language,//目标音频
                 "cut_punc": "",
-                "top_k": 50, // *
-                "top_p": 0.8, // *
-                "temperature": 0.6,// 采样温度，控制生成的随机性，值越低越保守 // *
+                "top_k": top_k.value, // *
+                "top_p": top_p.value, // *
+                "temperature": temperature.value,// 采样温度，控制生成的随机性，值越低越保守 // *
                 "speed": _speed,
                 "filename": _filename,
                 "volume" : _volume,//
@@ -2036,7 +2002,7 @@ const ReplaceText= async (text) => {
   flex-wrap: wrap;  // 允许换行
   align-items: center;
   gap: 10px;  // 统一间距
-  padding: 12px;
+  // padding: 12px;
   background: var(--n-color-embedded);
   border-radius: var(--n-border-radius);
   

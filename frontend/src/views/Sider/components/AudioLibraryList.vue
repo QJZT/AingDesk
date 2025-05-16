@@ -5,17 +5,16 @@
             <li @click.stop="createNewKnowledgeStore" :class="{ 'add-knowledge': addingKnowledge }">
                 <div class="flex items-center" style="height: 100%;">
                     <i class="i-tdesign:folder-add w-16 h-16 mr-10 ml-8 text-[var(--bt-tit-color-secondary)]"></i>
-                    <div class="comu-title">{{ $t("新建音频") }}</div>
+                    <div class="comu-title">{{ $t("新建人声") }}</div>
                 </div>
             </li>
             <!-- openKnowledgeStore(item) -->
-            <li :class="[{ active: item.id == activeKnowledge }]" @click="openFileModal(item)"
+            <li  @click="openFileModal(item)"
                 v-for="item in list">
                 <div class="flex items-center" style="height: 100%;">
                     <i class="i-tdesign:folder w-16 h-16 mr-10 ml-8 text-[var(--bt-tit-color-secondary)]"></i>
-                    <div class="comu-title">#{{ item.id }}  {{ item.name  }}</div>
+                    <div class="comu-title"> {{ item  }}</div>
                 </div>
-
                 <n-popselect trigger="click" :options='options'
                     :on-update:value="(val: any) => dealPopOperation(val, item)">
                     <div class="flex justify-center items-center" style="height: 100%; padding: 0 8px;" @click.stop>
@@ -28,7 +27,7 @@
         <n-modal v-model:show="showModal">
             <n-card
                 style="width: 600px"
-                title="新建音频"
+                title="新建人声"
                 :bordered="false"
                 size="huge"
                 role="dialog"
@@ -38,7 +37,32 @@
                 <i class="i-tdesign:close-circle w-24 h-24 cursor-pointer text-[#909399]"
                     @click="showModal = false"></i>
             </template>
-                <n-input v-model:value="audioName" placeholder="请输入音频名称" />
+                请输入口播文案：
+                <n-input v-model:value="koubowenan" placeholder="请输入口播文案" type="textarea" :autosize="{ minRows: 4, maxRows: 6 }"/>
+                <div style="height: 20px;"></div>
+                上传音频文件：
+                <div class="upload-section">
+                        <n-upload
+                        :multiple="false"
+                        directory-dnd
+                        :show-file-list="true"
+                        @change="handleFileSelect"
+                        >
+                            <n-upload-dragger>
+                            <div style="margin-bottom: 12px">
+                                <n-icon size="48" :depth="3">
+                                <ArchiveIcon />
+                                </n-icon>
+                            </div>
+                            <n-text style="font-size: 16px">
+                                点击或者拖动文件到该区域来上传
+                            </n-text>
+                            <n-p depth="3" style="margin: 8px 0 0 0">
+                                请不要上传敏感数据，比如你的银行卡号和密码，信用卡号有效期和安全码
+                            </n-p>
+                            </n-upload-dragger>
+                        </n-upload>
+                    </div>
                 <template #footer>
                     <n-space justify="end">
                         <n-button @click="showModal = false">取消</n-button>
@@ -133,6 +157,8 @@ import { openKnowledgeStore } from "@/views/KnowleadgeStore/controller"
 // import { dealPopOperation } from "@/views/Sider/controller"
 import { getKnowledgeStoreData } from '@/views/KnowleadgeStore/store';
 import { useI18n } from "vue-i18n";
+import { message, useDialog } from "@/utils/naive-tools"
+import { log } from "mermaid/dist/logger.js";
 const { t: $t } = useI18n()
 const { knowledgeList, addingKnowledge, activeKnowledge, } = getKnowledgeStoreData()
 
@@ -140,31 +166,52 @@ const list = ref([]); // []ItemType[];
 
 onMounted(async () => {
     await api_names();
+    const intervalId = setInterval(api_names, 20000);
+    onBeforeUnmount(() => clearInterval(intervalId));
 });
 
 const api_names = async () => {
-    try {
-        const response = await fetch('http://127.0.0.1:7072/names', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        if (!response.ok) {
-            throw new Error('Failed to fetch data');
-        }
-        const data = await response.json();
-        interface ItemType {
-            name: string;
-            id: any;
-        }
-        list.value = data.map((item: ItemType) => ({
-            name: item.name,
-            id: item.id,
-        }));
-    } catch (error) {
-        console.error('Error fetching knowledge list:', error);
-    }
+    const response = await fetch('http://192.168.1.10:7073/get_human_voice_files', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
+    console.log(data.files);
+    list.value = data.files;
+    console.log("list.value:",list.value);
+    // get_human_voice_files_text_map.value = data.text_map || {}
+    // 转换为下拉选项格式
+    // humanVoiceOptions.value = (data.files || []).map(name => ({
+    //   label: name,
+    //   value: name
+    // }))
+    // } catch (error) {
+    //     console.error('获取人声音色文件失败:', error)
+    // }
+    // try {
+    //     const response = await fetch('http://127.0.0.1:7072/names', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //     });
+    //     if (!response.ok) {
+    //         throw new Error('Failed to fetch data');
+    //     }
+    //     const data = await response.json();
+    //     interface ItemType {
+    //         name: string;
+    //         id: any;
+    //     }
+    //     list.value = data.map((item: ItemType) => ({
+    //         name: item.name,
+    //         id: item.id,
+    //     }));
+    // } catch (error) {
+    //     console.error('Error fetching knowledge list:', error);
+    // }
 };
 
 const options = [
@@ -188,24 +235,38 @@ const options = [
 ]
 
 const showModal = ref(false);
-const audioName = ref('');
+const koubowenan = ref('');
+const selectedFiles = ref([]); // 新增：用于暂存选择的文件
+
+const handleFileSelect = ({ fileList: files }) => {
+    if (files.length > 1) {
+        message.error('只能提交一个文件') 
+        return;
+    }
+    selectedFiles.value = files.map(file => file.file);
+    console.log(selectedFiles.value);
+};
 const handleConfirm = async () => {
+    console.log(selectedFiles.value[0]);
     try {
-        const response = await fetch('http://127.0.0.1:7072/set_name', {
+        const formData = new FormData();
+        formData.append('text', koubowenan.value);
+        if (selectedFiles.value.length > 0) {
+            formData.append('file', selectedFiles.value[0]);
+            formData.append('filename', selectedFiles.value[0].name); // 确保文件名也被发送
+        }
+        const response = await fetch('http://192.168.1.10:7073/convert_and_save_audio_text', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ name: audioName.value }),
+            body: formData,
         });
 
         if (!response.ok) {
             throw new Error('Failed to set audio name');
         }
-
+        message.success("上传成功！")
         showModal.value = false;
-        audioName.value = '';
-        api_names() // 刷新列表
+        koubowenan.value = '';
+        api_names() // 刷新列表?
         // 可以在这里添加刷新列表的逻辑
     } catch (error) {
         console.error('Error setting audio name:', error);
@@ -351,7 +412,6 @@ const handleDelete = async (file: any) => {
 .upload-section {
     display: flex;
     justify-content: center;
-    padding: 16px 0;
 }
 
 .file-list-section {

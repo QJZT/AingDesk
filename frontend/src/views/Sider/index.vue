@@ -95,7 +95,7 @@
         @update:value="handleUpdateValue">
             <n-tab-pane name="zsk" tab="知识库" >
             </n-tab-pane>
-            <n-tab-pane name="ypk" tab="音频库">
+            <n-tab-pane name="ypk" tab="人声库">
             </n-tab-pane>
         </n-tabs>
 
