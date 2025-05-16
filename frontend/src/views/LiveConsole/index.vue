@@ -32,18 +32,18 @@
       </div>
       
       <div class="setting-item">
-        <n-text depth="3" style="margin-right: 8px;">音频驱动</n-text>
+        <n-text depth="3" style="margin-right: 8px;">音频驱动()</n-text>
         <n-select 
           v-model:value="selectedAudioDriver"
           :options="audioDeviceOptions"
           placeholder="选择驱动"
-          style="width: 180px;"
+          style="width: 340px;"
           @update:value="handleLanguageChange"
         />
       </div>
 
       <div class="setting-item">
-        <n-text depth="3" style="margin-right: 8px;">语音模型</n-text>
+        <n-text depth="3" style="margin-right: 8px;">语音模型(主)</n-text>
         <n-select 
           v-model:value="selectedSpeechModel"
           :options="speedModelOptions"
@@ -53,6 +53,20 @@
           @update:value="initializeSpeechModel"
         />
       </div>
+
+      <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">语音模型(辅助)</n-text>
+        <n-select 
+          v-model:value="selectedSpeechModel2"
+          :options="speedModelOptions2"
+          :loading="loading2"
+          placeholder="选择驱动"
+          style="width: 180px;"
+          @update:value="initializeSpeechModel"
+        />
+      </div>
+
+      <!-- speedModelOptions2 -->
     </div>
     <div class="settings-bar">
       <div class="setting-item">
@@ -243,7 +257,7 @@
       <n-card title="观众互动" style="" :segmented="{content: true,footer:true}"
                     header-style="padding:10px;font-size:14px"
                     footer-style="padding:10px" content-style="padding:10px;height:100%">
-        <n-text depth="3" style="margin-right: 8px;">间隔时间(ms)</n-text>
+        <n-text depth="3" style="margin-right: 8px;">间隔时间(ms) </n-text>
         <n-input-number 
           v-model:value="intervalTime"
           :min="0"
@@ -500,7 +514,7 @@
         </div>
         <div style="height: 5px;"></div>
         <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-          <div style="width: 30%;font-size: 12px;">选择人声</div>
+          <div style="width: 30%;font-size: 12px;">选择人声 </div>
           <n-select 
             v-model:value="announcementVoice"
             :options="humanVoiceOptions"
@@ -672,6 +686,7 @@ const selectedLanguage = ref('')
 const selectedLanguageLabel = ref('')
 const selectedAudioDriver = ref('')
 const selectedSpeechModel = ref('')
+const selectedSpeechModel2 = ref('')
 const handleLanguageChange = async (value) => {
   try {
     const response = await fetch('http://192.168.1.10:7073/set_config', {
@@ -694,15 +709,21 @@ const handleLanguageChange = async (value) => {
 const loading2 = ref(false)
 const initializeSpeechModel = async () => {
   // 加上logding
+  if (selectedSpeechModel.value == "" || selectedSpeechModel2.value == "") {
+    // message.error("请选择语音模型")
+    return
+  }
   loading2.value = true
+
   try {
-   const response = await fetch('http://192.168.1.10:7073/initialize', {
+   const response = await fetch('http://192.168.1.10:7074/set_model', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model:selectedSpeechModel.value
+        gpt_model_path: selectedSpeechModel.value,
+        sovits_model_path: selectedSpeechModel2.value
        })
     })
     const data = await response.json()
@@ -748,21 +769,22 @@ const timezoneOptions = [
 
 const languageOptions = [
 { label: '英语', value: 'en' },
-  { label: '西班牙语', value: 'es' },
-  { label: '法语', value: 'fr' },
-  { label: '德语', value: 'de' },
-  { label: '意大利语', value: 'it' },
-  { label: '葡萄牙语', value: 'pt' },
-  { label: '波兰语', value: 'pl' },
-  { label: '土耳其语', value: 'tr' },
-  { label: '俄语', value: 'ru' },
-  { label: '荷兰语', value: 'nl' },
-  { label: '捷克语', value: 'cs' },
-  { label: '阿拉伯语', value: 'ar' },
-  { label: '简体中文', value: 'zh-cn' },
-  { label: '日语', value: 'ja' },
-  { label: '匈牙利语', value: 'hu' },
-  { label: '韩语', value: 'ko' }
+{ label: '简体中文', value: 'zh' },
+
+  // { label: '西班牙语', value: 'es' },
+  // { label: '法语', value: 'fr' },
+  // { label: '德语', value: 'de' },
+  // { label: '意大利语', value: 'it' },
+  // { label: '葡萄牙语', value: 'pt' },
+  // { label: '波兰语', value: 'pl' },
+  // { label: '土耳其语', value: 'tr' },
+  // { label: '俄语', value: 'ru' },
+  // { label: '荷兰语', value: 'nl' },
+  // { label: '捷克语', value: 'cs' },
+  // { label: '阿拉伯语', value: 'ar' },
+  // { label: '日语', value: 'ja' },
+  // { label: '匈牙利语', value: 'hu' },
+  // { label: '韩语', value: 'ko' }
 ]
 
 const audioDriverOptions = [
@@ -870,17 +892,23 @@ const getAudioDevices = async () => {
 }
 
 const speedModelOptions = ref([])
+const speedModelOptions2 = ref([])
 
 const getSpeedModels = async () => {
   try {
-    const response = await fetch('http://192.168.1.10:7073/get_model_files', {
+    const response = await fetch('http://192.168.1.10:7074/get_model_filenames', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       } 
     })
     const data = await response.json()
-    speedModelOptions.value = (data.files || []).map(item => ({
+    
+    speedModelOptions.value = (data.data.gpt_filenames || []).map(item => ({
+      label: item,
+      value: item
+    }))
+    speedModelOptions2.value = (data.data.sovits_filenames || []).map(item => ({
       label: item,
       value: item
     }))
@@ -1071,7 +1099,7 @@ const registerModules = async () => {
     }
     playList.value = []
     uesPlayList.value = []
-    await fetchModules()
+    // await fetchModules()
     // return
     //循环模块列表 干活
     start.value = true
@@ -1623,18 +1651,31 @@ const generate_wav_api = async (_text:string,
     await myLock; // 等待之前的锁释放
     try {
     // generate_wav_api_runing = true;
-        const response = await fetch('http://192.168.1.10:7073/generate_wav', {
+        const response = await fetch('http://192.168.1.10:7074/generate_wav', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ 
-                text: _text,
-                language: _language,
-                filename : _filename,
-                speaker_wav: _speaker_wav,
-                speed: _speed,// 1,
-                volume: _volume// 0.5
+                // text: _text,
+                // language: _language,
+                // filename : _filename,
+                // speaker_wav: _speaker_wav,
+                // speed: _speed,// 1,
+                // volume: _volume// 0.5
+                "refer_wav_path": _speaker_wav,
+                "prompt_text": get_human_voice_files_text_map.value[_speaker_wav],
+                "prompt_language": "zh",
+                "text": _text,
+                "text_language": _language,//目标音频
+                "cut_punc": "",
+                "top_k": 50, // *
+                "top_p": 0.8, // *
+                "temperature": 0.6,// 采样温度，控制生成的随机性，值越低越保守 // *
+                "speed": _speed,
+                "filename": _filename,
+                "volume" : _volume,//
+                "sample_rate" : 22050//
             }),
         });
       // generate_wav_api_runing = false;
@@ -1670,6 +1711,7 @@ const play_task_voice_api = async (_filename:string,play_mode:string) => {
 }
 
 const humanVoiceOptions = ref([])
+const get_human_voice_files_text_map = ref({}) // 音色文件map
 // 送消息新增代码
 const announcementMessage = ref('')
 const announcementVolume = ref(50)
@@ -1720,6 +1762,7 @@ const getHumanVoiceFiles = async () => {
       }
     })
     const data = await response.json()
+    get_human_voice_files_text_map.value = data.text_map || {}
     // 转换为下拉选项格式
     humanVoiceOptions.value = (data.files || []).map(name => ({
       label: name,
@@ -1790,7 +1833,8 @@ const ReplaceText= async (text) => {
   if (text.includes('{弹幕用户}')){ //是否包含
     newText = newText.replace('{弹幕用户}', EnterBarrageUserName.value) //替换
   }
-  const response = await fetch('http://192.168.1.10:7073/get_combined_time_info', {
+  try {
+    const response = await fetch('http://192.168.1.10:7073/get_combined_time_info', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -1802,6 +1846,9 @@ const ReplaceText= async (text) => {
         newText = newText.replace('{'+key+'}',data[key]) //替换
       }
     }
+  } catch (error) {
+  }
+
   return newText;
 } 
 
