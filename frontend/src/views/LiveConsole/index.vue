@@ -551,77 +551,156 @@
     
     
    <!-- 发送消息卡片 -->
-   <div style="padding: 12px 12px 12px 12px;">
-    <n-card title="用户消息" :segmented="{content: true, footer: true}"
-            header-style="padding:10px;font-size:14px"
-            footer-style="padding:10px" content-style="padding:10px;height:100%">
-      <div class="control-block">
-        <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-          <div style="width: 30%;font-size: 12px;">音量: {{ announcementVolume }}%</div>
-          <n-slider
-            v-model:value="announcementVolume"
-            :min="10"
-            :max="100"
-            :step="1"
-            style="width: 70%;"
-            tooltip
-            placement="bottom"
-            :format-tooltip="(value) => `音量: ${value}%`"
-          />
+   <div class="live-console" :style="{backgroundColor: themeThinkBg}">
+    <!-- 用户消息卡片 -->
+    <div style="padding: 12px;">
+      <n-card 
+        title="用户消息" 
+        :segmented="{content: true, footer: true}"
+        header-style="padding:10px;font-size:14px"
+        footer-style="padding:10px" 
+        content-style="padding:10px;height:100%"
+      >
+        <!-- 控制区域：音量、语速、人声选择 -->
+        <div class="control-block">
+          <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 8px; width: 30%;">
+              <div style="width: 80px; font-size: 12px;">音量: {{ announcementVolume }}%</div>
+              <n-slider
+                v-model:value="announcementVolume"
+                :min="10"
+                :max="100"
+                :step="1"
+                style="flex: 1;"
+                tooltip
+                placement="bottom"
+                :format-tooltip="(value) => `音量: ${value}%`"
+                aria-label="消息音量调整"
+              />
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; width: 30%;">
+              <div style="width: 80px; font-size: 12px;">音速: {{ announcementSpeed }}x</div>
+              <n-slider
+                v-model:value="announcementSpeed"
+                :min="0.5"
+                :max="2"
+                :step="0.01"
+                style="flex: 1;"
+                tooltip
+                placement="bottom"
+                :format-tooltip="(value) => `音速: ${value}x`"
+                aria-label="消息语速调整"
+              />
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; width: 40%;">
+              <div style="width: 80px; font-size: 12px;">人声</div>
+              <n-select 
+                v-model:value="announcementVoice"
+                :options="humanVoiceOptions"
+                style="flex: 1;"
+                placeholder="选择人声"
+                clearable
+                size="small"
+                @click="getHumanVoiceFiles"
+                aria-label="选择消息人声"
+              />
+            </div>
+          </div>
         </div>
-        <div style="height: 5px;"></div>
-        <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-          <div style="width: 30%;font-size: 12px;">音速: {{ announcementSpeed }}x</div>
-          <n-slider
-            v-model:value="announcementSpeed"
-            :min="0.5"
-            :max="2"
-            :step="0.01"
-            style="width: 70%;"
-            tooltip
-            placement="bottom"
-            :format-tooltip="(value) => `音速: ${value}x`"
-          />
+        <div style="height: 10px;"></div>
+        <!-- 消息输入和语音控制区域 -->
+        <div class="message-input">
+          <div class="voice-shortcut" style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <n-button
+              text
+              size="small"
+              @click="showShortcutModal = true"
+              style="padding: 0;"
+              aria-label="设置按键说话快捷键"
+            >
+              <template #icon>
+                <i class="i-tdesign:keyboard w-16 h-16"></i>
+              </template>
+              按键说话快捷键：{{ voiceHotkey || '未设置' }}
+            </n-button>
+            <!-- 切换输入模式按钮 -->
+            <n-button
+              text
+              size="small"
+              @click="toggleInputMode"
+              style="padding: 0;"
+              aria-label="切换输入模式"
+            >
+              <template #icon>
+                <i :class="isVoiceMode ? 'i-tdesign:keyboard w-16 h-16' : 'i-tdesign:microphone-1 w-16 h-16'"></i>
+              </template>
+              {{ isVoiceMode ? '文本输入' : '语音输入' }}
+            </n-button>
+          </div>
+          <n-input-group>
+            <!-- 文本输入模式 -->
+            <n-input 
+              v-if="!isVoiceMode"
+              ref="messageInput"
+              v-model:value="announcementMessage"
+              type="textarea"
+              :placeholder="`输入消息后按 Enter 发送`"
+              :autosize="{ minRows: 2, maxRows: 5 }"
+              @keyup.enter.ctrl.prevent="announcementMessage += '\n'"
+              @keyup.enter.exact="sendUserMessage"
+              style="flex: 1; min-width: 0;"
+              aria-label="输入消息"
+            />
+            <!-- 语音输入模式 -->
+            <n-button 
+              v-if="isVoiceMode"
+              :type="isRecording ? 'warning' : 'default'"
+              :class="{ 'recording': isRecording }"
+              style="flex: 1; min-width: 0; padding: 0 16px;"
+              @click="handleVoiceButtonClick"
+              @keydown.prevent.space="handleVoiceButtonClick"
+              :aria-pressed="isRecording"
+              :aria-label="isRecording ? '停止录音' : '开始录音'"
+            >
+              <template #icon>
+                <i :class="isRecording ? 'i-tdesign:stop w-20 h-20' : 'i-tdesign:microphone-1 w-20 h-20'"></i>
+              </template>
+              <span>{{ isRecording ? '录音中' : `按 ${voiceHotkey || 'Space'} 录音` }}</span>
+            </n-button>
+            <!-- 发送按钮 -->
+            <n-button 
+              type="primary" 
+              @click="sendUserMessage"
+              :disabled="(!announcementMessage.trim() && !isVoiceMode) || !announcementVoice"
+              aria-label="发送消息"
+            >
+              <template #icon>
+                <i class="i-tdesign:send w-20 h-20"></i>
+              </template>
+              发送
+            </n-button>
+          </n-input-group>
+          <!-- 快捷键设置弹窗 -->
+          <n-modal v-model:show="showShortcutModal">
+            <n-card style="width: 400px" title="设置按键说话快捷键" aria-modal="true">
+              <n-input
+                v-model:value="tempHotkey"
+                placeholder="按下键盘按键以设置录音快捷键"
+                readonly
+                @keydown.stop.prevent="handleHotkeySet"
+                aria-label="输入录音快捷键"
+              />
+              <template #footer>
+                <div style="text-align: right;">
+                  <n-button @click="showShortcutModal = false" style="margin-right: 8px;" aria-label="取消">取消</n-button>
+                  <n-button type="primary" @click="saveHotkey" aria-label="确认">确定</n-button>
+                </div>
+              </template>
+            </n-card>
+          </n-modal>
         </div>
-        <div style="height: 5px;"></div>
-        <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-          <div style="width: 30%;font-size: 12px;">选择人声 </div>
-          <n-select 
-            v-model:value="announcementVoice"
-            :options="humanVoiceOptions"
-            style="width: 70%;"
-            placeholder="选择人声"
-            clearable
-            size="small"
-            @click="getHumanVoiceFiles"
-          />
-        </div>
-      </div>
-      <div style="height: 10px;"></div>
-      <div class="message-input">
-        <n-input-group>
-          <n-input 
-            v-model:value="announcementMessage"
-            type="textarea"
-            placeholder="输入消息..."
-            :autosize="{ minRows: 2, maxRows: 5 }"
-            @keyup.enter.ctrl.prevent="announcementMessage.value += '\n'"
-            @keyup.enter.exact="sendUserMessage"
-            style="flex: 1; min-width: 0;"
-          />
-          <n-button 
-            type="primary" 
-            @click="sendUserMessage"
-            :disabled="!announcementMessage.trim() || !announcementVoice"
-          >
-            <template #icon>
-              <i class="i-tdesign:send w-20 h-20"></i>
-            </template>
-            发送
-          </n-button>
-        </n-input-group>
-      </div>
-    </n-card>
+      </n-card>
+    </div>
   </div>
 
 
@@ -870,6 +949,8 @@ const MAX_RECONNECT_ATTEMPTS = Infinity // 设置为无限重连
 const modules = ref([])
 
 onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyDown);
+  document.removeEventListener('keyup', handleKeyUp);
   if (socket.value) {
     socket.value.disconnect()
     socket.value = null
@@ -1036,6 +1117,14 @@ onMounted(() => {
   getAudioDevices()
   getHumanVoiceFiles()
   getSpeedModels()
+  // 功能：组件挂载时设置事件监听器和初始焦点
+  // 逻辑：添加 keydown 监听器，聚焦 textarea
+  document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('keyup', handleKeyUp);
+  nextTick(() => {
+    messageInput.value?.$.el.focus();
+  });
+
   // setInterval(fetchModules, 25000)
   // return
   if (socket.value && socket.value.connected) return
@@ -1676,27 +1765,92 @@ const play_task_voice_api = async (_filename:string,play_mode:string) => {
     await response.json();
 }
 
-const humanVoiceOptions = ref([])
+// --- 快捷键管理 ---
+// 有效快捷键列表：限制用户可选的键，防止冲突
+const validHotkeys = [
+  'Space','Tab', 'Backspace',
+  'KeyA', 'KeyB', 'KeyC', 'KeyD', 'KeyE', 'KeyF', 'KeyG', 'KeyH', 'KeyI', 'KeyJ',
+  'KeyK', 'KeyL', 'KeyM', 'KeyN', 'KeyO', 'KeyP', 'KeyQ', 'KeyR', 'KeyS', 'KeyT',
+  'KeyU', 'KeyV', 'KeyW', 'KeyX', 'KeyY', 'KeyZ',
+  'Digit0', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'
+];
+
+
+// 占位方法：处理录音按钮点击和快捷键触发
+const handleVoiceButtonClick = () => {
+  // 功能：切换录音状态并调用后台 API（由您实现）
+  // 使用场景：点击录音按钮或按下快捷键时触发
+  // 注意：isRecording 用于更新界面，您需根据 API 响应更新状态
+    message.error("按下")
+    return
+  isRecording.value = !isRecording.value;
+  // 示例实现（请替换为您的后台 API 调用）：
+  // try {
+  //   await fetch('http://your-api-endpoint/record', {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ isRecording: isRecording.value })
+  //   });
+  //   message.info(isRecording.value ? '录音开始' : '录音停止');
+  // } catch (error) {
+  //   message.error('录音失败');
+  //   isRecording.value = false;
+  // }
+};
+
+const humanVoiceOptions = ref([])// 人声选项
+const showShortcutModal = ref(false)// 快捷键设置弹窗的可见性
+const tempHotkey = ref('')// 弹窗中临时存储的快捷键
 const get_human_voice_files_text_map = ref({}) // 音色文件map
-// 送消息新增代码
-const announcementMessage = ref('')
-const announcementVolume = ref(50)
-const announcementSpeed = ref(1.0)
-const announcementVoice = ref('')
+// 快捷键相关
+const voiceHotkey = ref('Space'); // 当前快捷键，默认空格键
+const isRecording = ref(false); // 录音状态
+const handleVoiceButtonDown = () => {
+  // 按下快捷键时触发
+  isRecording.value = true;
+  //message.info('开始录音');
+};
+const handleVoiceButtonUp = () => {
+  // 松开快捷键时触发
+  isRecording.value = false;
+  if (announcementMessage.value.trim()) {
+    message.warning('松开发送');
+    sendVoiceMessage(); // 调用独立的后台发送方法
+  } else {
+    message.warning('请输入消息内容后再松开快捷键');
+  }
+};
+
+const sendVoiceMessage = async () => {
+  // 占位方法：独立的后台发送逻辑
+  message.info('按键说话已发送：');
+  
+};
+
+
+// textarea 引用，用于检测焦点状态
+const messageInput = ref<HTMLInputElement | null>(null); // 明确指定类型为 HTMLInputElement 或 null
+// --- 响应式状态 ---
+// 消息输入相关
+const announcementMessage = ref(''); // 用户输入的消息文本
+const announcementVolume = ref(50); // 音量：10-100%，默认 50%
+const announcementSpeed = ref(1.0); // 语速：0.5-2x，默认 1x
+const announcementVoice = ref(''); // 选择的人声
+//发送消息
 const sendUserMessage = async () => {
   if (!announcementMessage.value.trim() || !announcementVoice.value) {
-    message.error("请输入消息并选择人声")
+    message.error("发送消息请请输入消息并选择人声")
     return
   }
   try {
     const newFileName = crypto.randomUUID() + "_" + Date.now() + '.wav'
     const ok = await generate_wav_api(
-      announcementMessage.value,
-      selectedLanguage.value || "en",
-      newFileName,
+      announcementMessage.value,//文本
+      selectedLanguage.value || "en",//语种
+      newFileName,//生成文件名
       announcementVoice.value,
-      announcementSpeed.value,
-      announcementVolume.value / 100
+      announcementSpeed.value,//生成速度
+      announcementVolume.value / 100//生成音量
     )
     if (!ok) {
       message.error("音频生成失败")
@@ -1718,6 +1872,62 @@ const sendUserMessage = async () => {
 
 
 
+
+
+// --- 快捷键触发 ---
+const handleKeyDown = (e: KeyboardEvent) => {
+  // 功能：监听快捷键按下，触发录音或准备发送消息
+  // 逻辑：仅在输入框未聚焦且弹窗未打开时，匹配 voiceHotkey 并调用 handleVoiceButtonDown
+  if (document.activeElement !== messageInput.value && !showShortcutModal.value) {
+    if (e.code === voiceHotkey.value && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      e.preventDefault();
+      handleVoiceButtonDown();
+    }
+  }
+};
+// --- 快捷键松开 ---
+const handleKeyUp = (e: KeyboardEvent) => {
+  // 功能：监听快捷键松开，触发发送消息
+  // 逻辑：仅在输入框未聚焦且弹窗未打开时，匹配 voiceHotkey 并调用 handleVoiceButtonUp
+  if (document.activeElement !== messageInput.value && !showShortcutModal.value) {
+    if (e.code === voiceHotkey.value) {
+      e.preventDefault();
+      handleVoiceButtonUp();
+    }
+  }
+};
+
+
+
+
+
+// 处理弹窗中的快捷键设置
+const handleHotkeySet = (e: KeyboardEvent) => {
+  // 功能：捕获用户按下的键，验证是否有效
+  // 逻辑：检查键是否在 validHotkeys 中，更新 tempHotkey
+  // 注意：使用 e.code 而非 e.key，确保跨浏览器一致性
+  const key = e.code;
+  if (validHotkeys.includes(key)) {
+    tempHotkey.value = key;
+  } else {
+    message.warning('请选择有效快捷键（如字母、数字）');
+  }
+};
+
+// 保存快捷键
+const saveHotkey = () => {
+  // 功能：将临时快捷键保存为当前快捷键，关闭弹窗
+  // 逻辑：检查 tempHotkey 是否非空，更新 voiceHotkey
+  // 注意：可扩展为将快捷键保存到本地存储或后台
+  if (tempHotkey.value) {
+    voiceHotkey.value = tempHotkey.value;
+    showShortcutModal.value = false;
+    message.success(`快捷键已设置为 ${tempHotkey.value}`);
+    tempHotkey.value = '';
+  } else {
+    message.error('请先选择一个快捷键');
+  }
+};
 
 const getHumanVoiceFiles = async () => {
   try {
@@ -1826,6 +2036,41 @@ const ReplaceText= async (text) => {
 </script>
 
 <style scoped lang="scss">
+.voice-controls .recording {
+  animation: pulse 1.5s infinite;
+  background-color: #fef0f0;
+  border-color: #fde2e2;
+  color: #f56c6c;
+  position: relative;
+}
+
+@keyframes pulse {
+  0% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.8;
+    transform: scale(1.03);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.voice-controls .n-button {
+  transition: all 0.3s ease;
+}
+
+.voice-controls .n-button:not(.recording):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.voice-controls .n-button:not(.recording):active {
+  transform: translateY(1px);
+}
 
 .gd-bg{
   background-color: v-bind(themeThinkBg);
