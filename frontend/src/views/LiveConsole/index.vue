@@ -1633,7 +1633,7 @@ const BarrageComment= async (module,newuuil) => {
             await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
         }
         while (EnterBarrageContent.value == "") { //弹幕内容
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            await new Promise(resolve => setTimeout(resolve, 2000))
         }
         if (model_api.value == "") { //是否改写
             console.log("请选择模型");
@@ -1652,6 +1652,25 @@ const BarrageComment= async (module,newuuil) => {
             )
             console.log("apidata:",apidata);
             content = apidata
+        if (module.retAi) { //是否改写
+            if (model_api.value == "") { //是否改写
+              console.log("请选择模型");
+              await new Promise(resolve => setTimeout(resolve, 4000))
+              continue
+            }
+           let prompt = await  ReplaceText(promptText.value) //提示词 赋值变量
+           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
+           const  apidata =  await DisposableSendApi(
+            model_api.value,
+            parameters_api.value,
+            new_content, //文本
+            prompt, //提示词
+            supplierName_api.value, //供应商名称
+          )
+          console.log("apidata:",apidata);
+          content = apidata  //替换
+        }
+
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
