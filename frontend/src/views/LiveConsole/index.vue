@@ -333,17 +333,8 @@
       <n-card title="观众互动" style="" :segmented="{content: true,footer:true}"
                     header-style="padding:10px;font-size:14px"
                     footer-style="padding:10px" content-style="padding:10px;height:100%">
-      
-        <!-- <template #header-extra>
-          <n-switch 
-            v-model:value="autoReadMode" 
-          >
-            <template #checked>自动朗读</template>
-            <template #unchecked>关闭朗读</template>
-          </n-switch>
-        </template> -->
-        <div class="setting-item" >
-        <n-text depth="3" style="margin-right: 8px;">直播弹幕接入</n-text>
+                    <template #header-extra>
+                      <div class="setting-item" >
         <n-input 
           v-model:value="streamUrl"
           placeholder="输入直播间链接"
@@ -370,7 +361,15 @@
           </template>
         </n-input>
       </div>
-      <n-divider style="height: 1px;margin: 12px 0;"></n-divider>
+        </template>
+        <!-- <template #header-extra>
+          <n-switch 
+            v-model:value="autoReadMode" 
+          >
+            <template #checked>自动朗读</template>
+            <template #unchecked>关闭朗读</template>
+          </n-switch>
+        </template> -->
             <div style="">
                 <n-checkbox-group v-model:value="selectedFilters">
                   <div style="margin-bottom: 16px;">
