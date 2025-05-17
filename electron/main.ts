@@ -228,10 +228,10 @@ async function initializeApp() {
       });  
       console.log('py7072 run ...');
       await startGoService();//启动go
-    //   console.log('py7073 run ...');
-    //   await startPy7073Service(); //启动 7073
-    //   console.log('py7074 run ...');
-    //   await startPy7074Service();//启动 7074
+      console.log('py7073 run ...');
+      await startPy7073Service(); //启动 7073
+      console.log('py7074 run ...');
+      await startPy7074Service();//启动 7074
       
       // 关闭加载窗口
     //   loadingWindow.close();

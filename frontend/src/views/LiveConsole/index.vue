@@ -118,6 +118,23 @@
           style="width: 100px;"
         />
       </div>
+      <div class="setting-item">
+        <div style="display: flex; align-items: center;">
+          <n-text depth="3" style="margin-right: 8px;">并发数<n-popover trigger="click">
+            <template #trigger>
+              <i class="i-tdesign:help-circle mt-5 cursor-pointer text-[var(--n-text-color)]"></i>
+            </template>
+            <span>取决与显卡性能，并行执行次数</span>
+          </n-popover></n-text>
+        </div>
+        <n-input-number
+          v-model:value="MAX_CONCURRENT"
+          :min="1"
+          :max="100"
+          :step="1"
+          style="width: 100px;"
+        />
+      </div>
       <!-- speedModelOptions2 -->
     </div>
     </div>
@@ -1710,31 +1727,40 @@ let generateLock = Promise.resolve(); // 初始化为已解决的Promise
 const temperature = ref(0.6)
 const top_p = ref(0.8)
 const top_k = ref(50)
+
+const MAX_CONCURRENT = ref(1); // 最大并发数设为1，即串行执行
+let activeRequests = 0;
+let queue: Array<() => Promise<void>> = [];
 const generate_wav_api = async (_text:string,
     _language:string,
     _filename:string,
     _speaker_wav:string,
     _speed: number,
     _volume: number) => {
-    const myLock = generateLock; // 获取当前锁状态
-    let releaseLock;
-    generateLock = new Promise(resolve => releaseLock = resolve); // 创建新锁
-    
-    await myLock; // 等待之前的锁释放
-    try {
-    // generate_wav_api_runing = true;
+      return new Promise((resolve, reject) => {
+    const execute = async () => {
+      if (activeRequests >= MAX_CONCURRENT.value || queue.length === 0) return;
+      
+      activeRequests++;
+      const task = queue.shift();
+      try {
+        await task?.();
+        activeRequests--;
+        execute(); // 处理下一个任务
+      } catch (err) {
+        activeRequests--;
+        execute();
+        throw err;
+      }
+    };
+    queue.push(async () => {
+      try {
         const response = await fetch('http://127.0.0.1:7074/generate_wav', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ 
-                // text: _text,
-                // language: _language,
-                // filename : _filename,
-                // speaker_wav: _speaker_wav,
-                // speed: _speed,// 1,
-                // volume: _volume// 0.5
                 "refer_wav_path": _speaker_wav,
                 "prompt_text": get_human_voice_files_text_map.value[_speaker_wav],
                 "prompt_language": "zh",
@@ -1750,11 +1776,41 @@ const generate_wav_api = async (_text:string,
                 "sample_rate" : 22050//
             }),
         });
-      // generate_wav_api_runing = false;
-      return response.ok;
-    }finally {
-        releaseLock(); // 释放锁
-    }
+        resolve(response.ok);
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    execute();
+  });
+    // try {
+    // // generate_wav_api_runing = true;
+    //     const response = await fetch('http://127.0.0.1:7074/generate_wav', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({ 
+    //             "refer_wav_path": _speaker_wav,
+    //             "prompt_text": get_human_voice_files_text_map.value[_speaker_wav],
+    //             "prompt_language": "zh",
+    //             "text": _text,
+    //             "text_language": _language,//目标音频
+    //             "cut_punc": "",
+    //             "top_k": top_k.value, // *
+    //             "top_p": top_p.value, // *
+    //             "temperature": temperature.value,// 采样温度，控制生成的随机性，值越低越保守 // *
+    //             "speed": _speed,
+    //             "filename": _filename,
+    //             "volume" : _volume,//
+    //             "sample_rate" : 22050//
+    //         }),
+    //     });
+    //   // generate_wav_api_runing = false;
+    //   return response.ok;
+    // }finally {
+    // }
     
 }
 
