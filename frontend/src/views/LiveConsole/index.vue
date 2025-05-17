@@ -741,7 +741,6 @@ import {
   NScrollbar
 } from 'naive-ui'
 import { io } from "socket.io-client"
-import { log } from 'mermaid/dist/logger.js'
 import KnowledgeChoosePanel from "@/views/KnowleadgeStore/components/KnowledgeChoosePanel.vue";
 import { getKnowledgeStoreData } from "../KnowleadgeStore/store";
 import { getHeaderStoreData } from '../Header/store';
@@ -838,7 +837,7 @@ const selectedSpeechModel = ref('')
 const selectedSpeechModel2 = ref('')
 const handleLanguageChange = async (value) => {
   try {
-    const response = await fetch('http://192.168.1.10:7073/set_config', {
+    const response = await fetch('http://127.0.0.1:7073/set_config', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -865,7 +864,7 @@ const initializeSpeechModel = async () => {
   loading2.value = true
 
   try {
-   const response = await fetch('http://192.168.1.10:7074/set_model', {
+   const response = await fetch('http://127.0.0.1:7074/set_model', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1021,7 +1020,7 @@ const audioDeviceOptions = ref([])
 
 const getAudioDevices = async () => {
   try {
-    const response = await fetch('http://192.168.1.10:7073/get_sound_cards', {
+    const response = await fetch('http://127.0.0.1:7073/get_sound_cards', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -1047,7 +1046,7 @@ const speedModelOptions2 = ref([])
 
 const getSpeedModels = async () => {
   try {
-    const response = await fetch('http://192.168.1.10:7074/get_model_filenames', {
+    const response = await fetch('http://127.0.0.1:7074/get_model_filenames', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -1134,7 +1133,7 @@ onMounted(() => {
     //       'g': 礼物名称,
     //       'gn': 礼物数量,
     //  }
-  socket.value = io('ws://192.168.1.10:7073', {
+  socket.value = io('ws://127.0.0.1:7073', {
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
     reconnectionDelay: 5,
@@ -1706,7 +1705,7 @@ function shuffleArray(array) {
 // let generate_wav_api_runing = false // 运行在
 let generateLock = Promise.resolve(); // 初始化为已解决的Promise
 
-// http://192.168.1.10:7073/generate_wav
+// http://127.0.0.1:7073/generate_wav
 // 生成wav文件
 const temperature = ref(0.6)
 const top_p = ref(0.8)
@@ -1724,7 +1723,7 @@ const generate_wav_api = async (_text:string,
     await myLock; // 等待之前的锁释放
     try {
     // generate_wav_api_runing = true;
-        const response = await fetch('http://192.168.1.10:7074/generate_wav', {
+        const response = await fetch('http://127.0.0.1:7074/generate_wav', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1770,7 +1769,7 @@ const generate_wav_api = async (_text:string,
 
 // 播放任务
 const play_task_voice_api = async (_filename:string,play_mode:string) => {
-    const response = await fetch('http://192.168.1.10:7073/play_task_voice', {
+    const response = await fetch('http://127.0.0.1:7073/play_task_voice', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1949,7 +1948,7 @@ const saveHotkey = () => {
 
 const getHumanVoiceFiles = async () => {
   try {
-    const response = await fetch('http://192.168.1.10:7073/get_human_voice_files', {
+    const response = await fetch('http://127.0.0.1:7073/get_human_voice_files', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -2028,7 +2027,7 @@ const ReplaceText= async (text) => {
     newText = newText.replace('{弹幕用户}', EnterBarrageUserName.value) //替换
   }
   try {
-    const response = await fetch('http://192.168.1.10:7073/get_combined_time_info', {
+    const response = await fetch('http://127.0.0.1:7073/get_combined_time_info', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

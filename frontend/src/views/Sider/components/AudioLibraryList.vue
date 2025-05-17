@@ -158,7 +158,6 @@ import { openKnowledgeStore } from "@/views/KnowleadgeStore/controller"
 import { getKnowledgeStoreData } from '@/views/KnowleadgeStore/store';
 import { useI18n } from "vue-i18n";
 import { message, useDialog } from "@/utils/naive-tools"
-import { log } from "mermaid/dist/logger.js";
 const { t: $t } = useI18n()
 const { knowledgeList, addingKnowledge, activeKnowledge, } = getKnowledgeStoreData()
 
@@ -171,7 +170,7 @@ onMounted(async () => {
 });
 
 const api_names = async () => {
-    const response = await fetch('http://192.168.1.10:7073/get_human_voice_files', {
+    const response = await fetch('http://127.0.0.1:7073/get_human_voice_files', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -255,7 +254,7 @@ const handleConfirm = async () => {
             formData.append('file', selectedFiles.value[0]);
             formData.append('filename', selectedFiles.value[0].name); // 确保文件名也被发送
         }
-        const response = await fetch('http://192.168.1.10:7073/convert_and_save_audio_text', {
+        const response = await fetch('http://127.0.0.1:7073/convert_and_save_audio_text', {
             method: 'POST',
             body: formData,
         });

@@ -67,20 +67,13 @@ function startGoService() {
             const req = http.request(options, (res) => {
                 if (res.statusCode === 200) {
                     clearInterval(pingInterval);
-                    console.log('control-go服务启动完成');
+                    console.log('7072 run ok');
                     resolve();
                 }
             });
             req.on('error', () => {});
             req.end();
         }, 1000);
-
-        // 30秒超时检测
-        setTimeout(() => {
-            clearInterval(pingInterval);
-            console.error('错误：无法连接control-go服务，可能缺少必要文件');
-            require('electron').app.quit();
-        }, 30000);
     });
 }
 
@@ -94,15 +87,22 @@ function startPy7073Service() {
     return new Promise<void>((resolve) => {
         const pythonExePath = path.resolve(pub.get_resource_path(), 'exe/py7073-env/python.exe');
         const pythonScriptPath = path.resolve(pub.get_resource_path(), 'exe/py7073-code/run.py');
-        const dataPath = path.join(pub.get_resource_path(), 'exe/py7073-data');
+        const dataPath = path.join(pub.get_resource_path(), 'exe/py7074-code/data');
         if (!fs.existsSync(dataPath)) { //创建目录
             fs.mkdirSync(dataPath, { recursive: true });
             console.log('已创建目录:', dataPath);
         }
+        // D:\\androidWork\\AingDesk\\build\\extraResources\\exe\\py7073-data\\wav\\task_voice\\59ce4dff-0a43-411d-8334-283e097a12ff_1747418025042.wav"
         py7073Process = spawn(pythonExePath, [pythonScriptPath, '-p', dataPath], {
             cwd: path.dirname(pythonExePath)
         });
-
+        py7073Process.stdout.on('data', (data) => {
+            console.log(`[py7073 stdout]: ${data}`);
+        });
+        py7073Process.stderr.on('data', (data) => {
+            console.error(`[py7073 stderr]: ${data}`);
+        });
+        console.log('启动py7073指令:', pythonExePath, pythonScriptPath, '-p', dataPath);
         const pingInterval = setInterval(() => {
             const http = require('http');
             const options = {
@@ -115,7 +115,7 @@ function startPy7073Service() {
             const req = http.request(options, (res) => {
                 if (res.statusCode === 200) {
                     clearInterval(pingInterval);
-                    console.log('py7073服务启动完成');
+                    console.log('py7073 run ok');
                     resolve();
                 }
             });
@@ -131,15 +131,26 @@ let py7074Process;
 function startPy7074Service() {
     return new Promise<void>((resolve) => {
       // .\runtime2\python.exe api.py -a 0.0.0.0 -p 7074 -s D:\pythonWork\GPT-SoVITS-v3\data\models\ -g D:\pythonWork\GPT-SoVITS-v3\data\models\ 
-        const pythonExePath = path.resolve(pub.get_resource_path(), 'exe/py7074-env/python.exe');
+        const pythonExePath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/runtime2/python.exe');
         const pythonScriptPath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/api.py');
-        const dataPathS = path.join(pub.get_resource_path(), 'exe/py7074-data-s');
-        const dataPathG = path.join(pub.get_resource_path(), 'exe/py7074-data-g');
-        
+        const dataPathS = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
+        const dataPathG = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
+//         [py7074 stderr]: Traceback (most recent call last):
+//   File "D:\androidWork\AingDesk\build\extraResources\exe\py7074-code\api.py", line 163, in <module>
+//     from feature_extractor import cnhubert
+// ModuleNotFoundError: No module named 'feature_extractor'
+        // 打印启动指令
+        console.log('启动py7074指令:', pythonExePath, pythonScriptPath, '-a', "0.0.0.0", '-p', "7074", '-s', dataPathS, "-g", dataPathG);
         py7074Process = spawn(pythonExePath, [pythonScriptPath, '-a', "0.0.0.0" ,'-p', "7074",'-s',dataPathS , "-g",dataPathG], {
-            cwd: path.dirname(pythonExePath)
+            cwd: path.resolve(pub.get_resource_path(), 'exe/py7074-code')
         });
-
+        
+        py7074Process.stdout.on('data', (data) => {
+            console.log(`[py7074 stdout]: ${data}`);
+        });
+        py7074Process.stderr.on('data', (data) => {
+            console.error(`[py7074 stderr]: ${data}`);
+        });
         const pingInterval = setInterval(() => {
             const http = require('http');
             const options = {
@@ -189,19 +200,19 @@ function startPy7074Service() {
 // 修改应用启动流程
 async function initializeApp() {
   try {
-      const { BrowserWindow } = require('electron');
-      // 创建加载提示窗口
-      const loadingWindow = new BrowserWindow({
-          width: 300,
-          height: 200,
-          frame: false,
-          transparent: true,
-          alwaysOnTop: true,
-          webPreferences: {
-              nodeIntegration: true
-          }
-      });
-      loadingWindow.loadFile('loading.html');
+    //   const { BrowserWindow } = require('electron');
+    //   // 创建加载提示窗口
+    //   const loadingWindow = new BrowserWindow({
+    //       width: 300,
+    //       height: 200,
+    //       frame: false,
+    //       transparent: true,
+    //       alwaysOnTop: true,
+    //       webPreferences: {
+    //           nodeIntegration: true
+    //       }
+    //   });
+    //   loadingWindow.loadFile('loading.html');
       
       app.register("before-close", () => {
         life.beforeClose();
@@ -215,11 +226,15 @@ async function initializeApp() {
           py7074Process.kill();
         }
       });  
-      await startPy7074Service();//启动 7074
-      await startPy7073Service(); //启动 7073
+      console.log('py7072 run ...');
       await startGoService();//启动go
+      console.log('py7073 run ...');
+      await startPy7073Service(); //启动 7073
+      console.log('py7074 run ...');
+      await startPy7074Service();//启动 7074
+      
       // 关闭加载窗口
-      loadingWindow.close();
+    //   loadingWindow.close();
       
       // 服务启动完成后再注册生命周期和GUI相关逻辑
       app.register("ready", life.ready);

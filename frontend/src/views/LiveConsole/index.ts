@@ -82,7 +82,7 @@ function shuffleArray(array) {
     return array;
 }
 
-// http://192.168.1.10:7073/generate_wav
+// http://127.0.0.1:7073/generate_wav
 // 生成wav文件
 const generate_wav_api = async (_text:string,
     _language:string,
@@ -90,7 +90,7 @@ const generate_wav_api = async (_text:string,
     _speaker_wav:string,
     _speed: number,
     _volume: number) => {
-    const response = await fetch('http://192.168.1.10:7073/generate_wav', {
+    const response = await fetch('http://127.0.0.1:7073/generate_wav', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -107,10 +107,10 @@ const generate_wav_api = async (_text:string,
     await response.json();
 }
 
-// http://192.168.1.10:7073/play_task_voice
+// http://127.0.0.1:7073/play_task_voice
 // 播放任务
 const play_task_voice_api = async (_filename:string,play_mode:string) => {
-    const response = await fetch('http://192.168.1.10:7073/play_task_voice', {
+    const response = await fetch('http://127.0.0.1:7073/play_task_voice', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

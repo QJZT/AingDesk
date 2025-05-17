@@ -157,7 +157,6 @@ import logoDark from "@/assets/images/logo-dark.png"
 import { getSiderStoreData } from "../Sider/store/index.ts";
 import { useI18n } from "vue-i18n";
 import { set } from "@vueuse/core";
-import { log } from "mermaid/dist/logger.js";
 const { t: $t } = useI18n()
 
 const { siderBg } = getGlobalStore()
