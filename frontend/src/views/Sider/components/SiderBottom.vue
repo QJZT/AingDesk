@@ -1,11 +1,11 @@
 <template>
     <ul class="recent-list">
-        <li @click="openAgent">
+        <!-- <li @click="openAgent">
             <div class="flex items-center justify-start">
                 <i class="i-ph:star-four w-16 h-16 ml-8 mr-10 text-[var(--bt-tit-color-secondary)]"></i>
                 <span>{{ $t("智能体") }}</span>
             </div>
-        </li>
+        </li> -->
         <li @click="openThirdPartyModel">
             <div class="flex items-center justify-start">
                 <i class="i-hugeicons:api w-16 h-16 ml-8 mr-10 text-[var(--bt-tit-color-secondary)]"></i>
