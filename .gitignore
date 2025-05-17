@@ -25,3 +25,13 @@ public/electron
 api/control-go/control-go.exe
 api/control-go/control-go
 api/control-go/test.db
+
+build/extraResources/exe/py7073-code
+build/extraResources/exe/py7073-data
+build/extraResources/exe/py7073-env
+build/extraResources/exe/py7074-code
+
+out
+out/
+
+public/dist

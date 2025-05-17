@@ -41,11 +41,8 @@
   "win": {
     "icon": "build/icons/icon.ico",
     "artifactName": "${productName}-${os}-${version}-${arch}.${ext}",
-    "target": [
-      {
-        "target": "nsis"
-      }
-    ],
+    "target": "nsis",
+    "sign": false,
     "certificateSubjectName":""
   }
 }

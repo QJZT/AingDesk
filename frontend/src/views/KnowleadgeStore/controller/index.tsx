@@ -71,6 +71,12 @@ function knowledgeIsOpen() {
 	knowledgeSiderWidth.value = 240;
 }
 
+// 知识库展开状态
+function knowledgeIsNoOpen() {
+	const { knowledgeSiderWidth } = getKnowledgeStoreData();
+	knowledgeSiderWidth.value = 0;
+}
+
 /**
  * @description currentChat和currentKnowledge只能存在一个
  */
