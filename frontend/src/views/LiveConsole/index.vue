@@ -1661,15 +1661,15 @@ const BarrageComment= async (module,newuuil) => {
         let content = "" // 
         let prompt = await ReplaceText(module.script_content[0]) //提示词
           let ai_user_content = await  ReplaceText(EnterBarrageContent.value) //弹幕内容作为ai输入
-            const  apidata =  await DisposableSendApi(
+            const  apidata2 =  await DisposableSendApi(
               model_api.value,
               parameters_api.value,
               ai_user_content, //文本
               prompt, //提示词
               supplierName_api.value, //供应商名称
             )
-            console.log("apidata:",apidata);
-            content = apidata
+            console.log("apidata:",apidata2);
+            content = apidata2
         if (module.retAi) { //是否改写
             if (model_api.value == "") { //是否改写
               console.log("请选择模型");
@@ -1677,7 +1677,7 @@ const BarrageComment= async (module,newuuil) => {
               continue
             }
            let prompt = await  ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
+           let new_content = await ReplaceText(content) //内容赋值变量
            const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
