@@ -1033,7 +1033,7 @@ const getAudioDevices = async () => {
   const selectedMicrophoneDriver = ref('');// 麦克风使用的音频驱动
   const getMicrophoneDevices = async () => {
     try {
-      const response = await fetch('http://192.168.1.10:7073/get_sound_cards', {
+      const response = await fetch('http://127.0.0.1:7073/get_sound_cards', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -1339,10 +1339,10 @@ const playListConsumption= async () => {
             const item = playList.value.shift() //出队
             console.log("jie:",playList.value);
             if (item) {
-                uesPlayList.value.push(item) //已播放列表
-                if (uesPlayList.value.length > 100) {
-                    uesPlayList.value.shift() //删除第一条
-                }
+                // uesPlayList.value.push(item) //已播放列表
+                // if (uesPlayList.value.length > 100) {
+                //     uesPlayList.value.shift() //删除第一条
+                // }
                 let data = await play_task_voice_api(item.filename, item.play_mode); //播放
                 // await new Promise(resolve => setTimeout(resolve, data.duration * 1000)) //等待
             }
@@ -1376,7 +1376,7 @@ const SceneLoop= async (module,newuuil) => {
         }
 
         let content = module.script_content[index] 
-        while (playList.value.length >= 15) { //等待队列 消费完探入
+        while (playList.value.length >= 5) { //等待队列 消费完探入
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
         // 是否改写
@@ -1433,8 +1433,6 @@ const SceneLoop= async (module,newuuil) => {
     } while (start.value && newuuil == startUUID.value);
 }
 
-// 进入直播间 模块
-const EnterLiveRoomUserName = ref("")  //进入直播间用户名
 
 // 点赞 Like
 const EnterSupportRoomUserName = ref("")  //点赞直播间 用户名
@@ -1561,7 +1559,8 @@ const SendGift= async (module,newuuil) => {
     } while (start.value && newuuil == startUUID.value);
 }
 
-
+// 进入直播间 模块
+const EnterLiveRoomUserName = ref("")  //进入直播间用户名
 //进入直播间 EnterLiveRoom
 const includesEnterLiveRoom= async (module,newuuil) => {
     let index = 0 //当前播放索引
@@ -1580,7 +1579,7 @@ const includesEnterLiveRoom= async (module,newuuil) => {
             const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
             await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
         }
-        while (EnterGiftUserName.value == "") { //等待有用户送礼物
+        while (EnterLiveRoomUserName.value == "") { //
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
         let content = module.script_content[index] 
@@ -1930,7 +1929,7 @@ const isRecording = ref(false);
   
     try {
       // 发起 POST 请求到后端 API，开始录音
-      const response = await fetch('http://192.168.1.10:7073/start_recording', {
+      const response = await fetch('http://127.0.0.1:7073/start_recording', {
         method: 'POST', // 请求方法为 POST
         headers: { 'Content-Type': 'application/json' }, // 设置请求头，表明发送的是 JSON 数据
         body: JSON.stringify({
@@ -1969,7 +1968,7 @@ const isRecording = ref(false);
 
   try {
     // 发起 POST 请求到后端 API，停止录音
-    const response = await fetch('http://192.168.1.10:7073/stop_recording', {
+    const response = await fetch('http://127.0.0.1:7073/stop_recording', {
       method: 'POST', // 请求方法为 POST
       headers: { 'Content-Type': 'application/json' }, // 设置请求头，表明发送的是 JSON 数据
       body: JSON.stringify({})
@@ -2100,6 +2099,9 @@ const ReplaceText= async (text) => {
   }
   if (text.includes('{点赞用户名}')){ //是否包含
     newText = newText.replace('{点赞用户名}', EnterSupportRoomUserName.value) //替换
+  }
+  if (text.includes('{进入直播间用户名}')){ //是否包含
+    newText = newText.replace('{进入直播间用户名}', EnterLiveRoomUserName.value) //替换
   }
   if (text.includes('{分享直播间用户名}')){ //是否包含
     // newText = newText.replace('{分享直播间用户名}', selectedLanguageLabel.value) //替换
