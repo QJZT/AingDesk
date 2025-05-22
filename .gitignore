@@ -35,3 +35,4 @@ out
 out/
 
 public/dist
+build/extraResources/exe.zip
