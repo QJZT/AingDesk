@@ -33,7 +33,7 @@
 
         <!-- 新建对话按钮 -->
         <div class="flex justify-center items-center">
-            <n-button type="primary" ghost style="width:100%" @click="makeNewChat">
+            <n-button type="primary" ghost style="width:100%" @click="">
                 <!-- <template #icon>
                     <i class="i-tdesign:chat-add w-16 h-16"></i>
                 </template> -->
@@ -41,7 +41,7 @@
             </n-button>
         </div>
         <div class="flex justify-center items-center">
-            <n-button type="primary" ghost style="width:100%" @click="makeNewChat">
+            <n-button type="primary" ghost style="width:100%" @click="">
                 <!-- <template #icon>
                     <i class="i-tdesign:chat-add w-16 h-16"></i>
                 </template> -->
@@ -157,6 +157,7 @@ import logoDark from "@/assets/images/logo-dark.png"
 import { getSiderStoreData } from "../Sider/store/index.ts";
 import { useI18n } from "vue-i18n";
 import { set } from "@vueuse/core";
+import { knowledgeIsClose } from "@/views/KnowleadgeStore/controller"
 const { t: $t } = useI18n()
 
 const { siderBg } = getGlobalStore()
@@ -170,6 +171,7 @@ const { currentView } = getSiderStoreData()
 
 const setCurrentView = (viewName: string) => {
     set(currentView, viewName)
+    knowledgeIsClose()
 }
 const logo = computed(() => {
     if (themeMode.value == "light") {
@@ -199,7 +201,7 @@ const handleUpdateValue =  (value: string) => {
 .layout-sider-wrapper {
     display: grid;
     // grid-template-rows: 50px 22px 2fr 22px 1fr 140px;
-    grid-template-rows: 50px 50px 50px 50px 50px 25px 22px 1fr 35px  1fr 170px;
+    grid-template-rows: 50px 50px 50px 50px 50px 25px 22px 1fr 35px  1fr 110px;
     height: 100%;
     box-sizing: border-box;
     padding: var(--bt-pd-small);

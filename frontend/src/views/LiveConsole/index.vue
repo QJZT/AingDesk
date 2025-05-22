@@ -118,6 +118,23 @@
           style="width: 100px;"
         />
       </div>
+      <div class="setting-item">
+        <div style="display: flex; align-items: center;">
+          <n-text depth="3" style="margin-right: 8px;">并发数<n-popover trigger="click">
+            <template #trigger>
+              <i class="i-tdesign:help-circle mt-5 cursor-pointer text-[var(--n-text-color)]"></i>
+            </template>
+            <span>取决与显卡性能，并行执行次数</span>
+          </n-popover></n-text>
+        </div>
+        <n-input-number
+          v-model:value="MAX_CONCURRENT"
+          :min="1"
+          :max="100"
+          :step="1"
+          style="width: 100px;"
+        />
+      </div>
       <!-- speedModelOptions2 -->
     </div>
     </div>
@@ -550,53 +567,53 @@
     
     
    <!-- 发送消息卡片 -->
-   <div class="live-console" :style="{backgroundColor: themeThinkBg}">
-    <!-- 用户消息卡片 -->
-    <div style="padding: 12px;">
+        <!-- 用户消息和语音输入卡片的容器 -->
+        <div class="message-voice-container">
+      <!-- 用户消息卡片 -->
       <n-card 
         title="用户消息" 
         :segmented="{content: true, footer: true}"
         header-style="padding:10px;font-size:14px"
         footer-style="padding:10px" 
-        content-style="padding:10px;height:100%"
+        content-style="padding:10px;"
+        class="message-card"
       >
-        <!-- 控制区域：音量、语速、人声选择 -->
         <div class="control-block">
-          <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
-            <div style="display: flex; align-items: center; gap: 8px; width: 30%;">
-              <div style="width: 80px; font-size: 12px;">音量: {{ announcementVolume }}%</div>
+          <div class="control-row">
+            <div class="control-item">
+              <div class="control-label">音量: {{ announcementVolume }}%</div>
               <n-slider
                 v-model:value="announcementVolume"
                 :min="10"
                 :max="100"
                 :step="1"
-                style="flex: 1;"
+                class="control-slider"
                 tooltip
                 placement="bottom"
                 :format-tooltip="(value) => `音量: ${value}%`"
                 aria-label="消息音量调整"
               />
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; width: 30%;">
-              <div style="width: 80px; font-size: 12px;">音速: {{ announcementSpeed }}x</div>
+            <div class="control-item">
+              <div class="control-label">语速: {{ announcementSpeed }}x</div>
               <n-slider
                 v-model:value="announcementSpeed"
                 :min="0.5"
                 :max="2"
                 :step="0.01"
-                style="flex: 1;"
+                class="control-slider"
                 tooltip
                 placement="bottom"
-                :format-tooltip="(value) => `音速: ${value}x`"
+                :format-tooltip="(value) => `语速: ${value}x`"
                 aria-label="消息语速调整"
               />
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; width: 40%;">
-              <div style="width: 80px; font-size: 12px;">人声</div>
+            <div class="control-item">
+              <div class="control-label">人声</div>
               <n-select 
                 v-model:value="announcementVoice"
                 :options="humanVoiceOptions"
-                style="flex: 1;"
+                class="control-select"
                 placeholder="选择人声"
                 clearable
                 size="small"
@@ -607,40 +624,9 @@
           </div>
         </div>
         <div style="height: 10px;"></div>
-        <!-- 消息输入和语音控制区域 -->
         <div class="message-input">
-          <div class="voice-shortcut" style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-            <n-button
-              text
-              size="small"
-              @click="showShortcutModal = true"
-              style="padding: 0;"
-              aria-label="设置按键说话快捷键"
-            >
-              <template #icon>
-                <i class="i-tdesign:keyboard w-16 h-16"></i>
-              </template>
-              按键说话快捷键：{{ voiceHotkey || '未设置' }}
-            </n-button>
-            <!-- 切换输入模式按钮 -->
-            <n-button
-              text
-              size="small"
-              @click="toggleInputMode"
-              style="padding: 0;"
-              aria-label="切换输入模式"
-            >
-              <template #icon>
-                <i :class="isVoiceMode ? 'i-tdesign:keyboard w-16 h-16' : 'i-tdesign:microphone-1 w-16 h-16'"></i>
-              </template>
-              {{ isVoiceMode ? '文本输入' : '语音输入' }}
-            </n-button>
-          </div>
           <n-input-group>
-            <!-- 文本输入模式 -->
             <n-input 
-              v-if="!isVoiceMode"
-              ref="messageInput"
               v-model:value="announcementMessage"
               type="textarea"
               :placeholder="`输入消息后按 Enter 发送`"
@@ -650,28 +636,12 @@
               style="flex: 1; min-width: 0;"
               aria-label="输入消息"
             />
-            <!-- 语音输入模式 -->
-            <n-button 
-              v-if="isVoiceMode"
-              :type="isRecording ? 'warning' : 'default'"
-              :class="{ 'recording': isRecording }"
-              style="flex: 1; min-width: 0; padding: 0 16px;"
-              @click="handleVoiceButtonClick"
-              @keydown.prevent.space="handleVoiceButtonClick"
-              :aria-pressed="isRecording"
-              :aria-label="isRecording ? '停止录音' : '开始录音'"
-            >
-              <template #icon>
-                <i :class="isRecording ? 'i-tdesign:stop w-20 h-20' : 'i-tdesign:microphone-1 w-20 h-20'"></i>
-              </template>
-              <span>{{ isRecording ? '录音中' : `按 ${voiceHotkey || 'Space'} 录音` }}</span>
-            </n-button>
-            <!-- 发送按钮 -->
             <n-button 
               type="primary" 
               @click="sendUserMessage"
-              :disabled="(!announcementMessage.trim() && !isVoiceMode) || !announcementVoice"
+              :disabled="!announcementMessage.trim() || !announcementVoice"
               aria-label="发送消息"
+              class="send-button"
             >
               <template #icon>
                 <i class="i-tdesign:send w-20 h-20"></i>
@@ -679,28 +649,50 @@
               发送
             </n-button>
           </n-input-group>
-          <!-- 快捷键设置弹窗 -->
-          <n-modal v-model:show="showShortcutModal">
-            <n-card style="width: 400px" title="设置按键说话快捷键" aria-modal="true">
-              <n-input
-                v-model:value="tempHotkey"
-                placeholder="按下键盘按键以设置录音快捷键"
-                readonly
-                @keydown.stop.prevent="handleHotkeySet"
-                aria-label="输入录音快捷键"
-              />
-              <template #footer>
-                <div style="text-align: right;">
-                  <n-button @click="showShortcutModal = false" style="margin-right: 8px;" aria-label="取消">取消</n-button>
-                  <n-button type="primary" @click="saveHotkey" aria-label="确认">确定</n-button>
-                </div>
-              </template>
-            </n-card>
-          </n-modal>
         </div>
       </n-card>
+
+      <!-- 语音输入卡片 -->
+      <n-card 
+        title="语音输入" 
+        :segmented="{content: true, footer: true}"
+        header-style="padding:10px;font-size:14px"
+        footer-style="padding:10px" 
+        content-style="padding:10px;"
+        class="voice-card"
+      >
+        <n-input-group class="voice-input-group">
+          <n-button 
+            :type="isRecording ? 'warning' : 'default'"
+            :class="{ 'recording': isRecording }"
+            class="voice-button"
+            @mousedown="startVoiceInput"
+            @mouseup="stopVoiceInput"
+            @mouseleave="isRecording && stopVoiceInput()"
+            :focusable="false"
+            :aria-pressed="isRecording"
+            :aria-label="isRecording ? '停止录音' : '开始录音'"
+          >
+            <template #icon>
+              <i :class="isRecording ? 'i-tdesign:stop w-18 h-18' : 'i-tdesign:microphone-1 w-18 h-18'"></i>
+            </template>
+            {{ isRecording ? '录音中' : '语音' }}
+          </n-button>
+          <div class="mic-select">
+            <n-text depth="3" class="mic-label">麦克风：</n-text>
+            <n-select 
+              v-model:value="selectedMicrophoneDriver"
+              :options="audioDeviceOptions"
+              placeholder="选择麦克风"
+              class="mic-select-input"
+              @update:value="handleLanguageChange"
+              @click="getMicrophoneDevices"
+            />
+          </div>
+        </n-input-group>
+      </n-card>
     </div>
-  </div>
+
 
 
     <!-- 弹窗 -->
@@ -832,7 +824,7 @@ const getPromptRewrite =async  () => {
 const selectedTimezone = ref('')
 const selectedLanguage = ref('')
 const selectedLanguageLabel = ref('')
-const selectedAudioDriver = ref('')
+const selectedAudioDriver = ref('')// 音频驱动
 const selectedSpeechModel = ref('')
 const selectedSpeechModel2 = ref('')
 const handleLanguageChange = async (value) => {
@@ -845,7 +837,9 @@ const handleLanguageChange = async (value) => {
       body: JSON.stringify({ 
         timeZone: selectedTimezone.value,
         language:selectedLanguage.value,
-        soundCard:selectedAudioDriver.value
+        soundCard:selectedAudioDriver.value,
+        backgroundSoundCard: "耳机 (Q38-2 Stereo)",
+        microphone: selectedMicrophoneDriver.value,//麦克风
        })
     })
     const data = await response.json()
@@ -946,14 +940,8 @@ let reconnectAttempts = 0
 const MAX_RECONNECT_ATTEMPTS = Infinity // 设置为无限重连
 const modules = ref([])
 
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeyDown);
-  document.removeEventListener('keyup', handleKeyUp);
-  if (socket.value) {
-    socket.value.disconnect()
-    socket.value = null
-  }
-})
+
+
 
 const messages = ref<Array<{content: string,data_types: string , id?: string}>>([])
   const filterOptions = ref([
@@ -1041,6 +1029,30 @@ const getAudioDevices = async () => {
   }
 }
 
+  //getMicrophoneDevices 麦克风  selectedMicrophoneDriver
+  const selectedMicrophoneDriver = ref('');// 麦克风使用的音频驱动
+  const getMicrophoneDevices = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:7073/get_sound_cards', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      audioDeviceOptions.value = data.map(item => ({
+        label: item,
+        value: item
+      }));
+      const cable = audioDeviceOptions.value.find(opt => opt.label === 'CABLE Output (VB-Audio Virtual Cable)');
+      if (cable) {
+        selectedMicrophoneDriver.value = cable.value;
+      }
+    } catch (error) {
+      console.error('获取音频设备失败:', error);
+    }
+  };
+
+
+
 const speedModelOptions = ref([])
 const speedModelOptions2 = ref([])
 
@@ -1118,7 +1130,6 @@ onMounted(() => {
   // 功能：组件挂载时设置事件监听器和初始焦点
   // 逻辑：添加 keydown 监听器，聚焦 textarea
   document.addEventListener('keydown', handleKeyDown);
-  document.addEventListener('keyup', handleKeyUp);
   nextTick(() => {
     messageInput.value?.$.el.focus();
   });
@@ -1215,6 +1226,14 @@ onMounted(() => {
     //           addMessage({content: message})
     // });
 })
+
+onUnmounted(() => {
+    document.removeEventListener('keydown', handleKeyDown);
+    if (socket.value) {
+      socket.value.disconnect();
+      socket.value = null;
+    }
+  });
 
 const toggleFilter = (value) => {
   const index = selectedFilters.value.indexOf(value)
@@ -1320,10 +1339,10 @@ const playListConsumption= async () => {
             const item = playList.value.shift() //出队
             console.log("jie:",playList.value);
             if (item) {
-                uesPlayList.value.push(item) //已播放列表
-                if (uesPlayList.value.length > 100) {
-                    uesPlayList.value.shift() //删除第一条
-                }
+                // uesPlayList.value.push(item) //已播放列表
+                // if (uesPlayList.value.length > 100) {
+                //     uesPlayList.value.shift() //删除第一条
+                // }
                 let data = await play_task_voice_api(item.filename, item.play_mode); //播放
                 // await new Promise(resolve => setTimeout(resolve, data.duration * 1000)) //等待
             }
@@ -1357,7 +1376,7 @@ const SceneLoop= async (module,newuuil) => {
         }
 
         let content = module.script_content[index] 
-        while (playList.value.length >= 15) { //等待队列 消费完探入
+        while (playList.value.length >= 5) { //等待队列 消费完探入
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
         // 是否改写
@@ -1414,8 +1433,6 @@ const SceneLoop= async (module,newuuil) => {
     } while (start.value && newuuil == startUUID.value);
 }
 
-// 进入直播间 模块
-const EnterLiveRoomUserName = ref("")  //进入直播间用户名
 
 // 点赞 Like
 const EnterSupportRoomUserName = ref("")  //点赞直播间 用户名
@@ -1542,7 +1559,8 @@ const SendGift= async (module,newuuil) => {
     } while (start.value && newuuil == startUUID.value);
 }
 
-
+// 进入直播间 模块
+const EnterLiveRoomUserName = ref("")  //进入直播间用户名
 //进入直播间 EnterLiveRoom
 const includesEnterLiveRoom= async (module,newuuil) => {
     let index = 0 //当前播放索引
@@ -1561,7 +1579,7 @@ const includesEnterLiveRoom= async (module,newuuil) => {
             const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
             await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
         }
-        while (EnterGiftUserName.value == "") { //等待有用户送礼物
+        while (EnterLiveRoomUserName.value == "") { //
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
         let content = module.script_content[index] 
@@ -1642,15 +1660,15 @@ const BarrageComment= async (module,newuuil) => {
         let content = "" // 
         let prompt = await ReplaceText(module.script_content[0]) //提示词
           let ai_user_content = await  ReplaceText(EnterBarrageContent.value) //弹幕内容作为ai输入
-            const  apidata =  await DisposableSendApi(
+            const  apidata2 =  await DisposableSendApi(
               model_api.value,
               parameters_api.value,
               ai_user_content, //文本
               prompt, //提示词
               supplierName_api.value, //供应商名称
             )
-            console.log("apidata:",apidata);
-            content = apidata
+            console.log("apidata:",apidata2);
+            content = apidata2
         if (module.retAi) { //是否改写
             if (model_api.value == "") { //是否改写
               console.log("请选择模型");
@@ -1658,7 +1676,7 @@ const BarrageComment= async (module,newuuil) => {
               continue
             }
            let prompt = await  ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
+           let new_content = await ReplaceText(content) //内容赋值变量
            const  apidata =  await DisposableSendApi(
             model_api.value,
             parameters_api.value,
@@ -1710,31 +1728,40 @@ let generateLock = Promise.resolve(); // 初始化为已解决的Promise
 const temperature = ref(0.6)
 const top_p = ref(0.8)
 const top_k = ref(50)
+
+const MAX_CONCURRENT = ref(1); // 最大并发数设为1，即串行执行
+let activeRequests = 0;
+let queue: Array<() => Promise<void>> = [];
 const generate_wav_api = async (_text:string,
     _language:string,
     _filename:string,
     _speaker_wav:string,
     _speed: number,
     _volume: number) => {
-    const myLock = generateLock; // 获取当前锁状态
-    let releaseLock;
-    generateLock = new Promise(resolve => releaseLock = resolve); // 创建新锁
-    
-    await myLock; // 等待之前的锁释放
-    try {
-    // generate_wav_api_runing = true;
+      return new Promise((resolve, reject) => {
+    const execute = async () => {
+      if (activeRequests >= MAX_CONCURRENT.value || queue.length === 0) return;
+      
+      activeRequests++;
+      const task = queue.shift();
+      try {
+        await task?.();
+        activeRequests--;
+        execute(); // 处理下一个任务
+      } catch (err) {
+        activeRequests--;
+        execute();
+        throw err;
+      }
+    };
+    queue.push(async () => {
+      try {
         const response = await fetch('http://127.0.0.1:7074/generate_wav', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ 
-                // text: _text,
-                // language: _language,
-                // filename : _filename,
-                // speaker_wav: _speaker_wav,
-                // speed: _speed,// 1,
-                // volume: _volume// 0.5
                 "refer_wav_path": _speaker_wav,
                 "prompt_text": get_human_voice_files_text_map.value[_speaker_wav],
                 "prompt_language": "zh",
@@ -1750,11 +1777,41 @@ const generate_wav_api = async (_text:string,
                 "sample_rate" : 22050//
             }),
         });
-      // generate_wav_api_runing = false;
-      return response.ok;
-    }finally {
-        releaseLock(); // 释放锁
-    }
+        resolve(response.ok);
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    execute();
+  });
+    // try {
+    // // generate_wav_api_runing = true;
+    //     const response = await fetch('http://127.0.0.1:7074/generate_wav', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({ 
+    //             "refer_wav_path": _speaker_wav,
+    //             "prompt_text": get_human_voice_files_text_map.value[_speaker_wav],
+    //             "prompt_language": "zh",
+    //             "text": _text,
+    //             "text_language": _language,//目标音频
+    //             "cut_punc": "",
+    //             "top_k": top_k.value, // *
+    //             "top_p": top_p.value, // *
+    //             "temperature": temperature.value,// 采样温度，控制生成的随机性，值越低越保守 // *
+    //             "speed": _speed,
+    //             "filename": _filename,
+    //             "volume" : _volume,//
+    //             "sample_rate" : 22050//
+    //         }),
+    //     });
+    //   // generate_wav_api_runing = false;
+    //   return response.ok;
+    // }finally {
+    // }
     
 }
 
@@ -1782,67 +1839,14 @@ const play_task_voice_api = async (_filename:string,play_mode:string) => {
     await response.json();
 }
 
-// --- 快捷键管理 ---
-// 有效快捷键列表：限制用户可选的键，防止冲突
-const validHotkeys = [
-  'Space','Tab', 'Backspace',
-  'KeyA', 'KeyB', 'KeyC', 'KeyD', 'KeyE', 'KeyF', 'KeyG', 'KeyH', 'KeyI', 'KeyJ',
-  'KeyK', 'KeyL', 'KeyM', 'KeyN', 'KeyO', 'KeyP', 'KeyQ', 'KeyR', 'KeyS', 'KeyT',
-  'KeyU', 'KeyV', 'KeyW', 'KeyX', 'KeyY', 'KeyZ',
-  'Digit0', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'
-];
 
 
-// 占位方法：处理录音按钮点击和快捷键触发
-const handleVoiceButtonClick = () => {
-  // 功能：切换录音状态并调用后台 API（由您实现）
-  // 使用场景：点击录音按钮或按下快捷键时触发
-  // 注意：isRecording 用于更新界面，您需根据 API 响应更新状态
-    message.error("按下")
-    return
-  isRecording.value = !isRecording.value;
-  // 示例实现（请替换为您的后台 API 调用）：
-  // try {
-  //   await fetch('http://your-api-endpoint/record', {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify({ isRecording: isRecording.value })
-  //   });
-  //   message.info(isRecording.value ? '录音开始' : '录音停止');
-  // } catch (error) {
-  //   message.error('录音失败');
-  //   isRecording.value = false;
-  // }
-};
 
-const humanVoiceOptions = ref([])// 人声选项
-const showShortcutModal = ref(false)// 快捷键设置弹窗的可见性
-const tempHotkey = ref('')// 弹窗中临时存储的快捷键
-const get_human_voice_files_text_map = ref({}) // 音色文件map
-// 快捷键相关
-const voiceHotkey = ref('Space'); // 当前快捷键，默认空格键
-const isRecording = ref(false); // 录音状态
-const handleVoiceButtonDown = () => {
-  // 按下快捷键时触发
-  isRecording.value = true;
-  //message.info('开始录音');
-};
-const handleVoiceButtonUp = () => {
-  // 松开快捷键时触发
-  isRecording.value = false;
-  if (announcementMessage.value.trim()) {
-    message.warning('松开发送');
-    sendVoiceMessage(); // 调用独立的后台发送方法
-  } else {
-    message.warning('请输入消息内容后再松开快捷键');
-  }
-};
 
-const sendVoiceMessage = async () => {
-  // 占位方法：独立的后台发送逻辑
-  message.info('按键说话已发送：');
-  
-};
+
+
+
+
 
 
 // textarea 引用，用于检测焦点状态
@@ -1853,13 +1857,35 @@ const announcementMessage = ref(''); // 用户输入的消息文本
 const announcementVolume = ref(50); // 音量：10-100%，默认 50%
 const announcementSpeed = ref(1.0); // 语速：0.5-2x，默认 1x
 const announcementVoice = ref(''); // 选择的人声
-//发送消息
+
 const sendUserMessage = async () => {
   if (!announcementMessage.value.trim() || !announcementVoice.value) {
     message.error("发送消息请请输入消息并选择人声")
     return
   }
   try {
+      // 如果配置了 AI 改写
+  if (model_api.value) {
+        let prompt = await ReplaceText(promptText.value); // 提示词
+        let ai_user_content = await ReplaceText(announcementMessage.value); // 用户输入的消息文本
+
+        const apidata = await DisposableSendApi(
+          model_api.value,
+          parameters_api.value,
+          ai_user_content, // 文本
+          prompt, // 提示词
+          supplierName_api.value // 供应商名称
+        );
+
+        if (apidata) {
+          announcementMessage.value = apidata; // 使用 AI 处理后的文本更新消息
+        } else {
+          message.error("AI 处理失败");
+          return;
+        }
+      }
+
+    
     const newFileName = crypto.randomUUID() + "_" + Date.now() + '.wav'
     const ok = await generate_wav_api(
       announcementMessage.value,//文本
@@ -1874,10 +1900,10 @@ const sendUserMessage = async () => {
       return
     }
     
-    playList.value.push({
-      content: announcementMessage.value,
-      filename: newFileName,
-      play_mode: "serial"
+    playList.value.unshift({
+      content: "[插话]"+announcementMessage.value,
+      filename: newFileName, // 文件名
+      play_mode: "serial" // 播放模式
     })
     message.success("消息已发送")
   } catch (error) {
@@ -1887,65 +1913,125 @@ const sendUserMessage = async () => {
   announcementMessage.value = ''
 }
 
+const isRecording = ref(false);
 
 
-
-
-// --- 快捷键触发 ---
-const handleKeyDown = (e: KeyboardEvent) => {
-  // 功能：监听快捷键按下，触发录音或准备发送消息
-  // 逻辑：仅在输入框未聚焦且弹窗未打开时，匹配 voiceHotkey 并调用 handleVoiceButtonDown
-  if (document.activeElement !== messageInput.value && !showShortcutModal.value) {
-    if (e.code === voiceHotkey.value && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-      e.preventDefault();
-      handleVoiceButtonDown();
+  //录制开始
+  const startVoiceInput = async () => {
+    // 检查是否已经在录音状态，如果是，则直接返回
+    if (isRecording.value) return;
+  
+    // 将录音状态设置为 true，表示开始录音
+    isRecording.value = true;
+  
+    // 提示用户开始录音
+    message.info('开始语音输入');
+  
+    try {
+      // 发起 POST 请求到后端 API，开始录音
+      const response = await fetch('http://127.0.0.1:7073/start_recording', {
+        method: 'POST', // 请求方法为 POST
+        headers: { 'Content-Type': 'application/json' }, // 设置请求头，表明发送的是 JSON 数据
+        body: JSON.stringify({
+          microphone: selectedMicrophoneDriver.value,//麦克风
+        }) // 发送一个空的 JSON 对象作为请求体
+      });
+  
+      // 检查响应状态，如果响应状态不是 2xx，则抛出错误
+      if (!response.ok) {
+        throw new Error('Start recording failed');
+      }
+  
+      // 解析响应数据
+      const data = await response.json();
+      console.log('Start recording response:', data);
+    } catch (error) {
+      // 如果发生错误，提示用户开始录音失败
+      message.error('开始录音失败');
+      console.error('Start recording error:', error);
+  
+      // 提示用户检查网络连接和链接的合法性
+      message.warning('请检查网络连接和链接的合法性，适当重试。');
+      isRecording.value = false; // 将录音状态恢复为 false
     }
-  }
-};
-// --- 快捷键松开 ---
-const handleKeyUp = (e: KeyboardEvent) => {
-  // 功能：监听快捷键松开，触发发送消息
-  // 逻辑：仅在输入框未聚焦且弹窗未打开时，匹配 voiceHotkey 并调用 handleVoiceButtonUp
-  if (document.activeElement !== messageInput.value && !showShortcutModal.value) {
-    if (e.code === voiceHotkey.value) {
-      e.preventDefault();
-      handleVoiceButtonUp();
+  };
+  //录制结束
+  const stopVoiceInput = async () => {
+  // 如果当前没有在录音状态，直接返回，不做任何操作
+  if (!isRecording.value) return;
+
+  // 将录音状态设置为 false，表示停止录音
+  isRecording.value = false;
+
+  // 提示用户停止录音
+  message.info('停止语音输入');
+
+  try {
+    // 发起 POST 请求到后端 API，停止录音
+    const response = await fetch('http://127.0.0.1:7073/stop_recording', {
+      method: 'POST', // 请求方法为 POST
+      headers: { 'Content-Type': 'application/json' }, // 设置请求头，表明发送的是 JSON 数据
+      body: JSON.stringify({})
+    });
+
+    // 检查响应状态，如果响应状态不是 2xx，则抛出错误
+    if (!response.ok) {
+      throw new Error('Stop recording failed');
     }
+
+    // 解析响应数据
+    const data = await response.json();
+    console.log('Stop recording response:', data);
+
+    // 检查返回的 message 字段是否表示成功
+    if (data.message === "Recording stopped and processed") {
+      // 如果返回的 message 表示成功，处理成功逻辑
+      message.success('语音已转录'); // 提示用户语音已成功转录
+
+      // 如果返回的 filename 存在，将其添加到播放列表
+      if (data.filename) {
+        playList.value.unshift({
+          content: "[语音消息]", // 内容
+          filename: data.filename, // 文件名
+          play_mode: "serial" // 播放模式
+        });
+      }
+    } else {
+      // 如果返回的 message 不表示成功，抛出错误
+      throw new Error('Stop recording failed');
+    }
+  } catch (error) {
+    // 如果发生错误，提示用户停止录音失败
+    message.error('停止录音失败');
+    console.error('Stop recording error:', error);
+
+    // 提示用户检查网络连接和链接的合法性
+    message.warning('请检查网络连接和链接的合法性，适当重试。');
   }
 };
 
+  
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (
+      document.activeElement?.tagName !== 'INPUT' &&
+      document.activeElement?.tagName !== 'TEXTAREA'
+    ) {
+      if (e.code === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendUserMessage();
+      }
+    }
+  };
 
 
 
 
-// 处理弹窗中的快捷键设置
-const handleHotkeySet = (e: KeyboardEvent) => {
-  // 功能：捕获用户按下的键，验证是否有效
-  // 逻辑：检查键是否在 validHotkeys 中，更新 tempHotkey
-  // 注意：使用 e.code 而非 e.key，确保跨浏览器一致性
-  const key = e.code;
-  if (validHotkeys.includes(key)) {
-    tempHotkey.value = key;
-  } else {
-    message.warning('请选择有效快捷键（如字母、数字）');
-  }
-};
 
-// 保存快捷键
-const saveHotkey = () => {
-  // 功能：将临时快捷键保存为当前快捷键，关闭弹窗
-  // 逻辑：检查 tempHotkey 是否非空，更新 voiceHotkey
-  // 注意：可扩展为将快捷键保存到本地存储或后台
-  if (tempHotkey.value) {
-    voiceHotkey.value = tempHotkey.value;
-    showShortcutModal.value = false;
-    message.success(`快捷键已设置为 ${tempHotkey.value}`);
-    tempHotkey.value = '';
-  } else {
-    message.error('请先选择一个快捷键');
-  }
-};
 
+
+
+const humanVoiceOptions = ref([]);
+const get_human_voice_files_text_map = ref({});
 const getHumanVoiceFiles = async () => {
   try {
     const response = await fetch('http://127.0.0.1:7073/get_human_voice_files', {
@@ -2014,6 +2100,9 @@ const ReplaceText= async (text) => {
   if (text.includes('{点赞用户名}')){ //是否包含
     newText = newText.replace('{点赞用户名}', EnterSupportRoomUserName.value) //替换
   }
+  if (text.includes('{进入直播间用户名}')){ //是否包含
+    newText = newText.replace('{进入直播间用户名}', EnterLiveRoomUserName.value) //替换
+  }
   if (text.includes('{分享直播间用户名}')){ //是否包含
     // newText = newText.replace('{分享直播间用户名}', selectedLanguageLabel.value) //替换
   }
@@ -2053,94 +2142,208 @@ const ReplaceText= async (text) => {
 </script>
 
 <style scoped lang="scss">
-.voice-controls .recording {
-  animation: pulse 1.5s infinite;
-  background-color: #fef0f0;
-  border-color: #fde2e2;
-  color: #f56c6c;
-  position: relative;
-}
-
-@keyframes pulse {
-  0% { 
-    opacity: 1;
-    transform: scale(1);
+  .live-console {
+    height: calc(100vh - 20px);
+    padding-bottom: 20px;
+    background-color: v-bind(themeThinkBg);
   }
-  50% { 
-    opacity: 0.8;
-    transform: scale(1.03);
+  
+  .message-voice-container {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
-  100% { 
-    opacity: 1;
-    transform: scale(1);
+  
+  .message-card, .voice-card {
+    background: var(--n-color-embedded);
+    border-radius: var(--n-border-radius);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
-}
-
-.voice-controls .n-button {
-  transition: all 0.3s ease;
-}
-
-.voice-controls .n-button:not(.recording):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.voice-controls .n-button:not(.recording):active {
-  transform: translateY(1px);
-}
-
-.gd-bg{
-  background-color: v-bind(themeThinkBg);
-}
-// .n-slider-handle {
-//   --n-handle-size: 5px !important;
-//   width: var(--n-handle-size) !important;
-//   height: var(--n-handle-size) !important;
-//   transform: translateX(-50%) translateY(-50%) !important;
-// }
-.live-console {
-  // height: calc(100% - 130px);
-  height: calc(100vh - 20px); padding-bottom: 20px;
-  .three-column-layout {
-    padding: 0px  12px;
-    display: grid;
-    // grid-template-columns: repeat(3, 1fr);
-    grid-template-columns: 2fr 3fr;  // 中间列宽度是两侧的1.5倍
+  
+  .message-card:hover, .voice-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .message-input {
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .message-input .n-input-group {
+    display: flex;
+    align-items: flex-start;
     gap: 8px;
-    // height: 50%;
-    
-    .n-card {
-      // padding: 12px 0px;
-      // height: 100%;
-      display: flex;
-      flex-direction: column;
-      &-header {
-        flex-shrink: 0;
-        padding: 8px 12px;  
-      }
-      
-      &-content {
-        flex: 1;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
+  }
+  
+  .message-input .n-input {
+    flex: 1;
+    min-width: 0;
+    border-radius: 6px;
+  }
+  
+  .message-input .send-button {
+    height: 50px;
+    padding: 0 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+  
+  .message-input .send-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .message-input .send-button:active {
+    transform: translateY(1px);
+  }
+  
+  .voice-button {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    margin-right: 12px;
+  }
+  
+  .voice-button:not(.recording):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .voice-button:not(.recording):active {
+    transform: translateY(1px);
+  }
+  
+  .voice-button.recording {
+    animation: recordingPulse 1.2s infinite;
+    background-color: #fef0f0;
+    border-color: #fde2e2;
+    color: #f56c6c;
+  }
+  
+  @keyframes recordingPulse {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(245, 108, 108, 0.4);
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 0.9;
+      box-shadow: 0 0 0 8px rgba(245, 108, 108, 0.2);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(245, 108, 108, 0);
     }
   }
   
-  .control-panel {
-    grid-column: 1 / 3;
+  .control-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
   }
   
-  .status-row {
+  .control-item {
+    flex: 1;
+    min-width: 200px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    gap: 8px;
   }
   
-  .settings-row {
-    margin-top: 10px;
+  .control-label {
+    width: 80px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  
+  .control-slider {
+    flex: 1;
+  }
+  
+  .control-select {
+    flex: 1;
+  }
+  
+  .mic-select {
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+  
+  .mic-label {
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+  
+  .mic-select-input {
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .three-column-layout {
+    padding: 0px 12px;
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    gap: 8px;
+  }
+  
+  .settings-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    background: var(--n-color-embedded);
+    border-radius: var(--n-border-radius);
+  }
+  
+  .control-block {
+    padding: 8px;
+    border-radius: 4px;
+  }
+  
+  .message-card .n-card-header,
+  .voice-card .n-card-header {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 8px;
+    font-weight: 600;
+  }
+  
+  .control-block {
+    padding: 12px;
+  }
+  
+  .control-block div {
+    font-size: 13px;
+  }
+  
+  .live-console .three-column-layout .n-card {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .live-console .three-column-layout .n-card-header {
+    flex-shrink: 0;
+    padding: 8px 12px;
+  }
+  
+  .live-console .three-column-layout .n-card-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   
   .stats-grid {
@@ -2151,128 +2354,52 @@ const ReplaceText= async (text) => {
   
   .message-item {
     padding: 3px 0;
-    // border-bottom: 1px solid #f0f0f0;
-    
-    .username {
-      font-weight: bold;
-      margin-right: 8px;
-      color: var(--bt-theme-color);
-    }
   }
   
-  .message-input {
-    padding: 5px;
-    background: #f8fafc;
-    border-radius: 8px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    
-    .n-input-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      
-      .n-input {
-        flex: 1;
-        min-width: 0;
-      }
-      
-      .n-button {
-        flex-shrink: 0;
-        margin: 0;
-      }
-    }
-    
-    .mode-switch {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .voice-button {
-      flex: 1;
-      padding: 0 16px;
-      min-width: 0;
-      
-      span {
-        margin-left: 8px;
-        white-space: nowrap;
-      }
-    }
+  .message-input .mode-switch {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-}
-
-.control-blocks {
-  // display: grid;
-  // gap: 10px;  // 减小间距
-}
-
-.control-block {
-  padding: 8px;  // 减小内边距
-  border-radius: 4px;
   
-  .block-header {
+  .message-input .voice-button {
+    flex: 1;
+    padding: 0 16px;
+    min-width: 0;
+  }
+  
+  .message-input .voice-button span {
+    margin-left: 8px;
+    white-space: nowrap;
+  }
+  
+  .control-block .block-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;  // 减小间距
-    
-    h4 {
-      font-size: 14px;  // 减小标题字号
-      margin: 0;
-    }
+    margin-bottom: 4px;
   }
   
-  .block-content {
-    padding-top: 4px;  // 减小间距
-  }
-}
-
-.audio-blocks {
-  display: grid;
-  gap: 12px;
-}
-
-.audio-block {
-  padding: 0px;
-  // border: 1px solid #f0f0f0;
-  border-radius: 4px;
-  
-  .audio-info {
-    margin-bottom: 1px;
-    
-    h4 {
-      margin: 0 0 4px 0;
-      font-size: 14px;
-    }
-    
-    p {
-      margin: 0;
-      font-size: 12px;
-      color: #666;
-    }
+  .control-block .block-header h4 {
+    font-size: 14px;
+    margin: 0;
   }
   
-  audio {
-    width: 100%;
-    height: 24px;
+  .control-block .block-content {
+    padding-top: 4px;
   }
-}
-.settings-bar {
-  display: flex;
-  flex-wrap: wrap;  // 允许换行
-  align-items: center;
-  gap: 10px;  // 统一间距
-  // padding: 12px;
-  background: var(--n-color-embedded);
-  border-radius: var(--n-border-radius);
   
-  .n-input-group {
+  .settings-bar .n-input-group {
     display: flex;
     align-items: center;
     gap: 8px;
   }
-}
-
-</style>
+  
+  .mic-select {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+  }
+  </style>

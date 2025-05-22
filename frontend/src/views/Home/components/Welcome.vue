@@ -5,10 +5,10 @@
             <div class="welcome-content">
                 <div class="logo-wrapper">
                     <NImage :src="logo" class="logo" width="100px" />
-                    <span class="brand">AingDesk</span>
-                    <span class="slogan">{{ $t("简单好用的AI助手") }}</span>
+                    <span class="brand">无人直播</span>
+                    <span class="slogan">AI无人直播语音版本</span>
                 </div>
-                <div class="desc-wrapper">
+                <!-- <div class="desc-wrapper">
                     <div class="desc-item"><i
                             class="i-si:check-circle-duotone w-20 h-20 text-[var(--bt-theme-color)]"></i>{{
                                 $t("免费开源无限制") }}</div>
@@ -20,7 +20,7 @@
                             class="i-si:check-circle-duotone w-20 h-20 text-[var(--bt-theme-color)]"></i>{{
                                 $t("支持联网搜索和知识库") }}
                     </div>
-                </div>
+                </div> -->
                 <div class="btns">
                     <NButton type="primary" style="width: 100%;" @click="useThirdPartyApi">{{ $t("使用第三方模型") }}</NButton>
                     <NButton ghost type="default" style="width: 100%;" @click="useOllama">{{ $t("使用本地模型") }}</NButton>

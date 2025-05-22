@@ -1,7 +1,7 @@
 <template>
     <div class="settings-wrapper">
         <n-list>
-            <n-list-item>
+            <!-- <n-list-item>
                 <div class="theme-setting w-100%">
                     <div class="flex-between">
                         <span>{{ $t("新手指引") }} </span>
@@ -9,7 +9,7 @@
                             @update:value="guideChange"></n-switch>
                     </div>
                 </div>
-            </n-list-item>
+            </n-list-item> -->
             <n-list-item>
                 <div class="theme-setting w-100%">
                     <div class="flex-between">
@@ -52,7 +52,7 @@
                 </div>
             </n-list-item>
             <n-list-item>
-                <div class="flex justify-between items-center">
+                <!-- <div class="flex justify-between items-center">
                     <span>Github</span>
                     <n-button-group>
                         <n-button @click="toStar">
@@ -69,20 +69,20 @@
                             {{ $t("反馈") }}
                         </n-button>
                     </n-button-group>
-                </div>
+                </div> -->
             </n-list-item>
-            <n-list-item>
+            <!-- <n-list-item>
                 <div class="flex justify-center flex-col items-center gap-2.5">
                     <span>{{ $t("加入AingDesk交流群") }}</span>
                     <n-image :src="wechat" width="100px" />
                 </div>
-            </n-list-item>
-            <n-list-item>
+            </n-list-item> -->
+            <!-- <n-list-item>
                 <div class="flex justify-center gap-2.5 text-[#5c5c5c]">
                     <span>{{ $t("当前版本") }}: v{{ version }}</span>
                     <span @click="jumpToTutorial" class="underline text-green-6 cursor-pointer">{{ $t("文档教程") }}</span>
                 </div>
-            </n-list-item>
+            </n-list-item> -->
         </n-list>
     </div>
 
