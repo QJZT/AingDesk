@@ -739,6 +739,7 @@ import { getHeaderStoreData } from '../Header/store';
 import { getSoftSettingsStoreData } from '@/views/SoftSettings/store';
 const {  showModelList } = getHeaderStoreData()
 import { message, useDialog } from "@/utils/naive-tools"
+import { v4 as uuidv4 } from 'uuid';
 const {
     themeColors,
     themeMode
@@ -752,6 +753,7 @@ const themeThinkBg = computed(() => {
         }
     }
 })
+
 const autoReadMode = ref(false)
 const selectedModel = ref('') // 当前选中的模型
 const isLive = ref(false)
@@ -954,6 +956,18 @@ const messages = ref<Array<{content: string,data_types: string , id?: string}>>(
 ])
 const selectedFilters = ref(['CommentEvent', 'GiftEvent','JoinEvent','ShareEvent',"FollowEvent","LikeEvent"]) // 默认选中的过滤项
 
+const messageStats = ref<Record<string, number>>({
+  comment_event: 0,
+  gift_event: 0,
+  join_event: 0,
+  share_event: 0,
+  follow_event: 0,
+  like_event: 0,
+  // 其他类型可按需添加
+}) // 消息统计
+
+
+
 function addMessage(message: {content: string , data_types: string , id?: string}) {
   const newMsg = {
     ...message,
@@ -1051,7 +1065,24 @@ const getAudioDevices = async () => {
     }
   };
 
-
+async function syncStatsToBackend() {
+  try {
+    const response = await fetch('http://127.0.0.1:7072/save_message_stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        live_url: streamUrl.value,
+        ...messageStats.value
+      })
+    })
+    const data = await response.json()
+    // 可选：根据 data 处理后端返回
+    // if (data.message) message.success(data.message)
+  } catch (error) {
+    console.error('统计数据同步失败:', error)
+    // 可选：message.error('统计数据同步失败')
+  }
+}
 
 const speedModelOptions = ref([])
 const speedModelOptions2 = ref([])
@@ -1171,6 +1202,8 @@ onMounted(() => {
     socket.value.on('CommentEvent', function(message) {//弹幕消息
       EnterBarrageUserName.value = message.u //弹幕用户名
       EnterBarrageContent.value = message.c //弹幕内容
+      // 先统计
+      messageStats.value.comment_event++
       if (!selectedFilters.value.includes("CommentEvent")){
         return;
       }
@@ -1181,6 +1214,8 @@ onMounted(() => {
       EnterGiftUserName.value = message.u //送礼物的用户名
       EnterGiftGoodsName.value = message.g // 礼物名称
       EnterGiftNum.value = message.gn //礼物数量
+      // 先统计
+      messageStats.value.gift_event += message.gn
       if (!selectedFilters.value.includes("GiftEvent")){
         return;
       }
@@ -1189,6 +1224,8 @@ onMounted(() => {
     });
     socket.value.on('JoinEvent', function(message) {// 进入直播间
       EnterLiveRoomUserName.value = message.u
+      // 先统计
+      messageStats.value.join_event++
       if (!selectedFilters.value.includes("JoinEvent")){
         return;
       }
@@ -1196,6 +1233,8 @@ onMounted(() => {
               addMessage({content: message.s,data_types: "JoinEvent"})
     });
     socket.value.on('ShareEvent', function(message) { //分享
+       // 先统计
+      messageStats.value.share_event++
       if (!selectedFilters.value.includes("ShareEvent")){
         return;
       }
@@ -1203,6 +1242,8 @@ onMounted(() => {
               addMessage({content: message.s,data_types: "ShareEvent"})
     });
     socket.value.on('FollowEvent', function(message) { //关注
+      // 先统计
+      messageStats.value.follow_event++
       if (!selectedFilters.value.includes("FollowEvent")){
         return;
       }
@@ -1211,6 +1252,8 @@ onMounted(() => {
     });
     socket.value.on('LikeEvent', function(message) { //点赞
       EnterSupportRoomUserName.value = message.u
+      // 先统计
+      messageStats.value.like_event++
       if (!selectedFilters.value.includes("LikeEvent")){
         return;
       }
@@ -1243,11 +1286,20 @@ const toggleFilter = (value) => {
     selectedFilters.value.push(value)
   }
 }
+
+const syncStatsInterval = ref<number | null>(null) // 定时器ID
 function toggleLive() {
   loading.value = true
   setTimeout(() => {
     isLive.value = !isLive.value
     loading.value = false
+    // 开启定时器 30s
+    if (isLive.value) {
+      //syncStatsToBackend() // 立即同步一次
+      syncStatsInterval.value = window.setInterval(() => {
+        syncStatsToBackend()
+      }, 30000)
+    }
   }, 1000)
   socket.value.emit('sync_tk', { id: streamUrl.value });
 }
@@ -1257,6 +1309,12 @@ function outToggleLive() {
   setTimeout(() => {
     isLive.value = !isLive.value
     loading.value = false
+    // 关闭弹幕时清除定时器并同步一次
+    if (syncStatsInterval.value) {
+      clearInterval(syncStatsInterval.value)
+      syncStatsInterval.value = null
+    }
+    syncStatsToBackend() // 关闭时再同步一次
   }, 1000)
   socket.value.emit('sync_tk', { id: "" });
 }
