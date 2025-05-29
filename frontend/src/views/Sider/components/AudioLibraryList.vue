@@ -245,32 +245,79 @@ const handleFileSelect = ({ fileList: files }) => {
     selectedFiles.value = files.map(file => file.file);
     console.log(selectedFiles.value);
 };
+// 处理音频文件上传确认的异步函数
 const handleConfirm = async () => {
-    console.log(selectedFiles.value[0]);
-    try {
-        const formData = new FormData();
-        formData.append('text', koubowenan.value);
-        if (selectedFiles.value.length > 0) {
-            formData.append('file', selectedFiles.value[0]);
-            formData.append('filename', selectedFiles.value[0].name); // 确保文件名也被发送
-        }
-        const response = await fetch('http://127.0.0.1:7073/convert_and_save_audio_text', {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to set audio name');
-        }
-        message.success("上传成功！")
-        showModal.value = false;
-        koubowenan.value = '';
-        api_names() // 刷新列表?
-        // 可以在这里添加刷新列表的逻辑
-    } catch (error) {
-        console.error('Error setting audio name:', error);
+  try {
+    // 验证口播文案是否已输入
+    if (!koubowenan.value) {
+      message.error('请输入口播文案');
+      return;
     }
+
+    // 验证是否已选择音频文件
+    if (selectedFiles.value.length === 0) {
+      message.error('请上传一个音频文件');
+      return;
+    }
+
+    // 创建表单数据对象，用于文件上传
+    const formData = new FormData();
+    // 添加口播文案到表单
+    formData.append('text', koubowenan.value);
+    // 添加音频文件到表单
+    formData.append('file', selectedFiles.value[0]);
+    // 添加文件名到表单
+    formData.append('filename', selectedFiles.value[0].name);
+
+    // 发送POST请求到后端接口，上传音频文件和文案
+    const response = await fetch('http://127.0.0.1:7073/convert_and_save_audio_text', {
+      method: 'POST',
+      body: formData,
+    });
+
+    // 检查响应状态，如果不成功则抛出错误
+    if (!response.ok) throw new Error('音频文件上传失败');
+
+    // 上传成功后的处理
+    message.success("上传成功！");
+    showModal.value = false;           // 关闭上传模态框
+    koubowenan.value = '';            // 清空口播文案输入
+    selectedFiles.value = [];          // 清空已选择的文件列表
+    api_names();                      // 刷新音频文件列表
+
+  } catch (error) {
+    // 错误处理：打印错误日志并显示错误提示
+    console.error('音频文件上传出错:', error);
+    message.error('上传失败，请重试');
+  }
 };
+
+// const handleConfirm = async () => {
+//     console.log(selectedFiles.value[0]);
+//     try {
+//         const formData = new FormData();
+//         formData.append('text', koubowenan.value);
+//         if (selectedFiles.value.length > 0) {
+//             formData.append('file', selectedFiles.value[0]);
+//             formData.append('filename', selectedFiles.value[0].name); // 确保文件名也被发送
+//         }
+//         const response = await fetch('http://127.0.0.1:7073/convert_and_save_audio_text', {
+//             method: 'POST',
+//             body: formData,
+//         });
+
+//         if (!response.ok) {
+//             throw new Error('Failed to set audio name');
+//         }
+//         message.success("上传成功！")
+//         showModal.value = false;
+//         koubowenan.value = '';
+//         api_names() // 刷新列表?
+//         // 可以在这里添加刷新列表的逻辑
+//     } catch (error) {
+//         console.error('Error setting audio name:', error);
+//     }
+// };
 
 const createNewKnowledgeStore = () => {
     showModal.value = true;

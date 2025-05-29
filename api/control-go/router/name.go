@@ -57,7 +57,7 @@ func SetupNameRoutes(r *gin.Engine, db *gorm.DB) {
 	})
 
 	//获取指定文件夹下的音频文件列表
-	r.POST("/get_name_list", func(c *gin.Context) {
+	r.POST("/1get_name_list", func(c *gin.Context) {
 		var data = struct {
 			Id int `json:"id"`
 		}{}
@@ -70,6 +70,7 @@ func SetupNameRoutes(r *gin.Engine, db *gorm.DB) {
 		c.JSON(http.StatusOK, gin.H{"message": "name delete successfully", "list": list})
 	})
 
+	//upload
 	r.POST("/upload", func(c *gin.Context) {
 
 		// 获取关联的ID

@@ -975,8 +975,8 @@ const getMessageColor = (type) => {
 }
 
 const handleVolumeChange = (block) => {
-  console.log("block----------------------------");
-  console.log(block);
+  // console.log("block----------------------------");
+  // console.log(block);
   setModulesKv(String(block.id),block)
 }
 
@@ -1053,6 +1053,7 @@ const getAudioDevices = async () => {
 
 
 
+
 const speedModelOptions = ref([])
 const speedModelOptions2 = ref([])
 
@@ -1121,12 +1122,12 @@ const fetchModules = async () => {
 }
 
 onMounted(() => {
-  fetchModules()
-  getMames()
-  getPromptRewrite()
-  getAudioDevices()
-  getHumanVoiceFiles()
-  getSpeedModels()
+  fetchModules()      // 获取模块列表
+  getMames()          // 获取名称列表
+  getPromptRewrite()  // 获取提示词重写配置
+  getAudioDevices()   // 获取音频设备列表
+  getHumanVoiceFiles() // 获取人声文件列表
+  getSpeedModels()    // 获取语速模型列表
   // 功能：组件挂载时设置事件监听器和初始焦点
   // 逻辑：添加 keydown 监听器，聚焦 textarea
   document.addEventListener('keydown', handleKeyDown);
@@ -1150,6 +1151,7 @@ onMounted(() => {
     reconnectionDelay: 5,
     randomizationFactor: 5
   })
+  // WebSocket 连接事件处理
     socket.value.on('connect', () => {
       reconnectAttempts = 0
       console.log('Socket.IO连接成功')
@@ -1168,6 +1170,7 @@ onMounted(() => {
               console.log("ConnectEvent:",message);
               addMessage({content: message.s ,data_types: "ConnectEvent"})
     });
+    //弹幕回答题
     socket.value.on('CommentEvent', function(message) {//弹幕消息
       EnterBarrageUserName.value = message.u //弹幕用户名
       EnterBarrageContent.value = message.c //弹幕内容
@@ -1177,6 +1180,7 @@ onMounted(() => {
               console.log("CommentEvent:",message);
               addMessage({content: message.s,data_types: "CommentEvent"})
     });
+
     socket.value.on('GiftEvent', function(message) { //礼物消息
       EnterGiftUserName.value = message.u //送礼物的用户名
       EnterGiftGoodsName.value = message.g // 礼物名称
@@ -1187,21 +1191,25 @@ onMounted(() => {
               console.log("GiftEvent:",message);
               addMessage({content: message.s,data_types: "GiftEvent"})
     });
+    
+
     socket.value.on('JoinEvent', function(message) {// 进入直播间
-      EnterLiveRoomUserName.value = message.u
+      EnterLiveRoomUserName.value = message.u //进入直播间的用户名
+      
       if (!selectedFilters.value.includes("JoinEvent")){
         return;
       }
               console.log("JoinEvent:",message);
               addMessage({content: message.s,data_types: "JoinEvent"})
     });
-    socket.value.on('ShareEvent', function(message) { //分享
-      if (!selectedFilters.value.includes("ShareEvent")){
-        return;
-      }
-              console.log("ShareEvent:",message);
-              addMessage({content: message.s,data_types: "ShareEvent"})
-    });
+
+    // socket.value.on('ShareEvent', function(message) { //分享
+    //   if (!selectedFilters.value.includes("ShareEvent")){
+    //     return;
+    //   }
+    //           console.log("ShareEvent:",message);
+    //           addMessage({content: message.s,data_types: "ShareEvent"})
+    // });
     socket.value.on('FollowEvent', function(message) { //关注
       if (!selectedFilters.value.includes("FollowEvent")){
         return;
@@ -1217,6 +1225,38 @@ onMounted(() => {
               console.log("LikeEvent:",message);
               addMessage({content: message.s,data_types: "LikeEvent"})
     });
+
+    socket.value.on('ShareEvent', function(message) { // 分享直播间事件
+      ShareRoomUserName.value = message.u; // 更新分享用户名
+      if (!selectedFilters.value.includes("ShareEvent")) {
+          return;
+      }
+      console.log("ShareEvent:", message);
+      addMessage({ content: message.s, data_types: "ShareEvent" });
+    });
+
+    socket.value.on('FollowEvent', function(message) { // 关注直播间事件
+        FollowRoomUserName.value = message.u; // 更新关注用户名
+        if (!selectedFilters.value.includes("FollowEvent")) {
+            return;
+        }
+        console.log("FollowEvent:", message);
+        addMessage({ content: message.s, data_types: "FollowEvent" });
+    });
+    // 模拟 ShareEvent
+  // setTimeout(() => {
+  //   ShareRoomUserName.value = "UserA";
+  //   addMessage({ content: "UserA 分享了直播间", data_types: "ShareEvent" });
+  //   console.log("Simulated ShareEvent: UserA");
+  // }, 21000);
+
+  // // 模拟 FollowEvent
+  // setTimeout(() => {
+  //   FollowRoomUserName.value = "UserB";
+  //   addMessage({ content: "UserB 关注了直播间", data_types: "FollowEvent" });
+  //   console.log("Simulated FollowEvent: UserB");
+  // }, 10000);
+
     // socket.value.on('LiveEndEvent', function(message) { //直播结束
     //           console.log("LiveEndEvent:",message);
     //           addMessage({content: message})
@@ -1311,17 +1351,26 @@ const registerModules = async () => {
               BarrageComment(module,newuuid)
           }
           //送礼物 SendGift
-          if (module.trigger_conditions.includes("SendGift")) {
+          if (module.trigger_conditions.includes("SendGift")) { // 送礼物：是否自动发送礼物
             SendGift(module,newuuid)
           }
           //点赞 Like
-          if (module.trigger_conditions.includes("Like")) {
+          if (module.trigger_conditions.includes("Like")) {// 点赞：是否自动点赞
             includesLike(module,newuuid)
           }
           //进入直播间 EnterLiveRoom
-          if (module.trigger_conditions.includes("EnterLiveRoom")) {
+          if (module.trigger_conditions.includes("EnterLiveRoom")) {// 进入直播间：是否自动进入直播间
             includesEnterLiveRoom(module,newuuid)
           }
+          // 分享直播间 ShareRoom
+          if (module.trigger_conditions.includes("ShareRoom")) { // 分享直播间：是否自动分享直播间
+                ShareRoom(module, newuuid);
+            }
+            // 关注直播间 FollowRoom
+            if (module.trigger_conditions.includes("FollowRoom")) { // 关注直播间：是否自动关注直播间
+                FollowRoom(module, newuuid);
+            }
+          
         }
         
         //     TriggerShareRoom     = "ShareRoom"     // 分享直播间
@@ -1329,8 +1378,10 @@ const registerModules = async () => {
     }
     playListConsumption()
 }
+
 const intervalTime = ref(0) // 默认1000毫秒 1秒=1000毫秒
 //消费playList
+//定时播报
 const playListConsumption= async () => {
     do {
         if (playList.value.length > 0) { //队列消费
@@ -1457,6 +1508,25 @@ const includesLike= async (module,newuuil) => {
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
         let content = await ReplaceText(module.script_content[index] ) //内容赋值变量
+        // 添加 AI 改写逻辑
+        if (module.retAi) { // 是否启用 AI 改写
+              if (model_api.value == "") { // 检查是否选择了模型
+                console.log("请选择模型");
+                await new Promise(resolve => setTimeout(resolve, 4000));
+                continue;
+              }
+              let prompt = await ReplaceText(promptText.value); // 提示词赋值变量 
+              const apidata = await DisposableSendApi(
+                model_api.value,
+                parameters_api.value,
+                content, // 文本
+                prompt, // 提示词
+                supplierName_api.value // 供应商名称
+              );
+              console.log("apidata:", apidata);
+              content = apidata; // 替换为 AI 改写后的内容
+            }
+
         const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
         let ok = await generate_wav_api(
             content, //文本
@@ -1559,78 +1629,276 @@ const SendGift= async (module,newuuil) => {
     } while (start.value && newuuil == startUUID.value);
 }
 
-// 进入直播间 模块
-const EnterLiveRoomUserName = ref("")  //进入直播间用户名
-//进入直播间 EnterLiveRoom
-const includesEnterLiveRoom= async (module,newuuil) => {
-    let index = 0 //当前播放索引
-    const script_content_len = module.script_content.length //脚本长度
+const EnterLiveRoomUserName = ref(""); // 进入直播间用户名，初始为空字符串
+
+const includesEnterLiveRoom = async (module, newuuil) => {
+    let index = 0; // 当前播放索引，跟踪脚本内容的当前位置
+    const script_content_len = module.script_content.length; // 脚本内容的总长度，用于循环控制
+
     do {
         if (!module.isActive) { 
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          continue
-        }
-        if (module.read_step == "random") { //随机
-            if (index == 0) { 
-                module.script_content = shuffleArray(module.script_content)//将数组 打乱
-            }
-        }
-        if (module.interval_time_start != 0 && module.interval_time_end!= 0) { //间隔时间
-            const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
-            await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
-        }
-        while (EnterLiveRoomUserName.value == "") { //
-            await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-        let content = module.script_content[index] 
-        if (module.retAi) { //是否改写
-            if (model_api.value == "") { //是否改写
-              console.log("请选择模型");
-              await new Promise(resolve => setTimeout(resolve, 4000))
-              continue
-            }
-           let prompt = await  ReplaceText(promptText.value) //提示词 赋值变量
-           let new_content = await ReplaceText(module.script_content[index]) //内容赋值变量
-           const  apidata =  await DisposableSendApi(
-            model_api.value,
-            parameters_api.value,
-            new_content, //文本
-            prompt, //提示词
-            supplierName_api.value, //供应商名称
-          )
-          console.log("apidata:",apidata);
-          content = apidata  //替换
+            // 如果模块未激活，等待1秒后继续下一次循环，避免无谓的资源占用
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
         }
 
-        const newFileName =   crypto.randomUUID()+ "_" + Date.now() + '.wav' //生成文件名
+        if (module.read_step == "random") { // 检查是否为随机读取模式
+            if (index == 0) { 
+                // 仅在索引为0时（即循环开始）打乱脚本内容数组，确保随机性
+                module.script_content = shuffleArray(module.script_content);
+            }
+        }
+
+        if (module.interval_time_start != 0 && module.interval_time_end != 0) { 
+            // 如果设置了间隔时间范围，生成随机间隔时间（单位：秒）
+            const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+            await new Promise(resolve => setTimeout(resolve, randomTime * 1000)); // 等待随机时间
+        }
+
+        while (EnterLiveRoomUserName.value == "") { 
+            // 循环等待直到有用户进入直播间（EnterLiveRoomUserName.value 被 WebSocket 更新）
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 每1秒检查一次
+        }
+
+        let content = module.script_content[index]; 
+        // 初始从脚本内容中取值，准备替换变量
+
+        // 始终调用 ReplaceText 替换变量（包括 {进入直播间用户名}），无论是否启用AI改写
+        content = await ReplaceText(content); // 替换所有变量，如 {进入直播间用户名}
+
+        if (module.retAi) { // 如果启用了AI改写
+            if (model_api.value == "") { 
+                // 如果未选择模型，记录日志并等待4秒后继续，避免无效操作
+                console.log("请选择模型");
+                await new Promise(resolve => setTimeout(resolve, 4000));
+                continue;
+            }
+            let prompt = await ReplaceText(promptText.value); // 获取并替换提示词中的变量
+            const apidata = await DisposableSendApi(
+                model_api.value,
+                parameters_api.value,
+                content, // 使用已替换变量的 content
+                prompt, // 替换后的提示词
+                supplierName_api.value, // 供应商名称
+            );
+            console.log("apidata:", apidata); // 记录AI返回的数据
+            content = apidata; // 用AI处理后的内容替换原始内容
+        }
+
+        const newFileName = crypto.randomUUID() + "_" + Date.now() + '.wav'; // 生成唯一文件名
         let ok = await generate_wav_api(
-            content, //文本
-            selectedLanguage.value || "en",  //语种
-            newFileName, //生成文件名
-            module.selectedNameId, //音色文件名
-            module.speed, //生成速度
-            module.volume / 100 //生成音量
-          ) //生成音量
-        if (!ok) { //生成失败
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            continue
+            content, // 当前内容（已替换变量，可能经AI改写）
+            selectedLanguage.value || "en", // 语种，默认为英语
+            newFileName, // 生成的文件名
+            module.selectedNameId, // 音色文件名
+            module.speed, // 语速
+            module.volume / 100 // 音量（转换为0-1范围）
+        );
+        if (!ok) { // 如果音频生成失败
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
+            continue;
         }
-        // 插入到头部
-        playList.value.unshift({ //入队
-            content: "["+module.module_name+"]"+content, //内容
-            filename: newFileName, //文件名
-            play_mode: "serial", //播放模式
-        })    
-        EnterGiftUserName.value = "" //清空
-        EnterGiftNum.value = "" //清空
-        EnterGiftGoodsName.value = "" //清空
-        if (index == script_content_len - 1) { //循环
-            index = 0
+
+        // 插入到播放列表头部
+        playList.value.unshift({
+            content: "[" + module.module_name + "]" + content, // 内容前添加模块名称
+            filename: newFileName, // 文件名
+            play_mode: "serial", // 串行播放模式
+        });
+
+        // 清空变量，确保下次循环等待新用户
+        EnterLiveRoomUserName.value = ""; // 清空用户名
+        EnterGiftNum.value = ""; // 清空礼物数量
+        EnterGiftGoodsName.value = ""; // 清空礼物名称
+
+        if (index == script_content_len - 1) { // 如果到达脚本末尾
+            index = 0; // 重置索引，从头开始
         } else {
-            index = index + 1
+            index = index + 1; // 移动到下一条脚本
         }
-    } while (start.value && newuuil == startUUID.value);
-}
+    } while (start.value && newuuil == startUUID.value); // 持续运行直到停止或UUID变更
+};
+
+
+const ShareRoomUserName = ref(""); // 分享直播间用户名，初始为空字符串
+const ShareRoom = async (module, newuuid) => {
+    let index = 0; // 当前播放索引，跟踪脚本内容的当前位置
+    const script_content_len = module.script_content.length; // 脚本内容的总长度，用于循环控制
+
+    do {
+        if (!module.isActive) { 
+            // 如果模块未激活，等待1秒后继续下一次循环，避免无谓的资源占用
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+        }
+
+        if (module.read_step == "random") { // 检查是否为随机读取模式
+            if (index == 0) { 
+                // 仅在索引为0时（即循环开始）打乱脚本内容数组，确保随机性
+                module.script_content = shuffleArray(module.script_content);
+            }
+        }
+
+        if (module.interval_time_start != 0 && module.interval_time_end != 0) { 
+            // 如果设置了间隔时间范围，生成随机间隔时间（单位：秒）
+            const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+            await new Promise(resolve => setTimeout(resolve, randomTime * 1000)); // 等待随机时间
+        }
+
+        while (ShareRoomUserName.value == "") { 
+            // 循环等待直到有用户分享直播间（ShareRoomUserName.value 被 WebSocket 更新）
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 每1秒检查一次
+        }
+
+        let content = module.script_content[index]; 
+        // 初始从脚本内容中取值，准备替换变量
+
+        // 始终调用 ReplaceText 替换变量（包括 {分享直播间用户名}），无论是否启用AI改写
+        content = await ReplaceText(content); // 替换所有变量，如 {分享直播间用户名}
+
+        if (module.retAi) { // 如果启用了AI改写
+            if (model_api.value == "") { 
+                // 如果未选择模型，记录日志并等待4秒后继续，避免无效操作
+                console.log("请选择模型");
+                await new Promise(resolve => setTimeout(resolve, 4000));
+                continue;
+            }
+            let prompt = await ReplaceText(promptText.value); // 获取并替换提示词中的变量
+            const apidata = await DisposableSendApi(
+                model_api.value,
+                parameters_api.value,
+                content, // 使用已替换变量的 content
+                prompt, // 替换后的提示词
+                supplierName_api.value, // 供应商名称
+            );
+            console.log("apidata:", apidata); // 记录AI返回的数据
+            content = apidata; // 用AI处理后的内容替换原始内容
+        }
+
+        const newFileName = crypto.randomUUID() + "_" + Date.now() + '.wav'; // 生成唯一文件名
+        let ok = await generate_wav_api(
+            content, // 当前内容（已替换变量，可能经AI改写）
+            selectedLanguage.value || "en", // 语种，默认为英语
+            newFileName, // 生成的文件名
+            module.selectedNameId, // 音色文件名
+            module.speed, // 语速
+            module.volume / 100 // 音量（转换为0-1范围）
+        );
+        if (!ok) { // 如果音频生成失败
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
+            continue;
+        }
+
+        // 插入到播放列表头部
+        playList.value.unshift({
+            content: "[" + module.module_name + "]" + content, // 内容前添加模块名称
+            filename: newFileName, // 文件名
+            play_mode: "serial", // 串行播放模式
+        });
+
+        // 清空变量，确保下次循环等待新用户
+        ShareRoomUserName.value = ""; // 清空分享直播间用户名
+        EnterGiftNum.value = ""; // 清空礼物数量
+        EnterGiftGoodsName.value = ""; // 清空礼物名称
+
+        if (index == script_content_len - 1) { // 如果到达脚本末尾
+            index = 0; // 重置索引，从头开始
+        } else {
+            index = index + 1; // 移动到下一条脚本
+        }
+    } while (start.value && newuuid == startUUID.value); // 持续运行直到停止或UUID变更
+};
+
+
+const FollowRoomUserName = ref(""); // 关注直播间用户名，初始为空字符串
+const FollowRoom = async (module, newuuid) => {
+    let index = 0; // 当前播放索引，跟踪脚本内容的当前位置
+    const script_content_len = module.script_content.length; // 脚本内容的总长度，用于循环控制
+
+    do {
+        if (!module.isActive) { 
+            // 如果模块未激活，等待1秒后继续下一次循环，避免无谓的资源占用
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+        }
+
+        if (module.read_step == "random") { // 检查是否为随机读取模式
+            if (index == 0) { 
+                // 仅在索引为0时（即循环开始）打乱脚本内容数组，确保随机性
+                module.script_content = shuffleArray(module.script_content);
+            }
+        }
+
+        if (module.interval_time_start != 0 && module.interval_time_end != 0) { 
+            // 如果设置了间隔时间范围，生成随机间隔时间（单位：秒）
+            const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+            await new Promise(resolve => setTimeout(resolve, randomTime * 1000)); // 等待随机时间
+        }
+
+        while (FollowRoomUserName.value == "") { 
+            // 循环等待直到有用户关注直播间（FollowRoomUserName.value 被 WebSocket 更新）
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 每1秒检查一次
+        }
+
+        let content = module.script_content[index]; 
+        // 初始从脚本内容中取值，准备替换变量
+
+        // 始终调用 ReplaceText 替换变量（包括 {关注直播用户名}），无论是否启用AI改写
+        content = await ReplaceText(content); // 替换所有变量，如 {关注直播用户名}
+
+        if (module.retAi) { // 如果启用了AI改写
+            if (model_api.value == "") { 
+                // 如果未选择模型，记录日志并等待4秒后继续，避免无效操作
+                console.log("请选择模型");
+                await new Promise(resolve => setTimeout(resolve, 4000));
+                continue;
+            }
+            let prompt = await ReplaceText(promptText.value); // 获取并替换提示词中的变量
+            const apidata = await DisposableSendApi(
+                model_api.value,
+                parameters_api.value,
+                content, // 使用已替换变量的 content
+                prompt, // 替换后的提示词
+                supplierName_api.value, // 供应商名称
+            );
+            console.log("apidata:", apidata); // 记录AI返回的数据
+            content = apidata; // 用AI处理后的内容替换原始内容
+        }
+
+        const newFileName = crypto.randomUUID() + "_" + Date.now() + '.wav'; // 生成唯一文件名
+        let ok = await generate_wav_api(
+            content, // 当前内容（已替换变量，可能经AI改写）
+            selectedLanguage.value || "en", // 语种，默认为英语
+            newFileName, // 生成的文件名
+            module.selectedNameId, // 音色文件名
+            module.speed, // 语速
+            module.volume / 100 // 音量（转换为0-1范围）
+        );
+        if (!ok) { // 如果音频生成失败
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
+            continue;
+        }
+
+        // 插入到播放列表头部
+        playList.value.unshift({
+            content: "[" + module.module_name + "]" + content, // 内容前添加模块名称
+            filename: newFileName, // 文件名
+            play_mode: "serial", // 串行播放模式
+        });
+
+        // 清空变量，确保下次循环等待新用户
+        FollowRoomUserName.value = ""; // 清空关注直播间用户名
+        EnterGiftNum.value = ""; // 清空礼物数量
+        EnterGiftGoodsName.value = ""; // 清空礼物名称
+
+        if (index == script_content_len - 1) { // 如果到达脚本末尾
+            index = 0; // 重置索引，从头开始
+        } else {
+            index = index + 1; // 移动到下一条脚本
+        }
+    } while (start.value && newuuid == startUUID.value); // 持续运行直到停止或UUID变更
+};
+
 
 
 //弹幕评论数据
@@ -1826,6 +2094,7 @@ const generate_wav_api = async (_text:string,
 
 // 播放任务
 const play_task_voice_api = async (_filename:string,play_mode:string) => {
+  console.log(`请求参数: filename=${_filename}, play_mode=${play_mode}`);
     const response = await fetch('http://127.0.0.1:7073/play_task_voice', {
         method: 'POST',
         headers: {
@@ -2054,36 +2323,248 @@ const getHumanVoiceFiles = async () => {
 
 
 // 模型调用API
-const DisposableSendApi = async (model,parameters,user_content,system_prompt,supplier_name) => {
-  const response = await fetch('http://127.0.0.1:7072/disposable_send', {
+// const DisposableSendApi = async (model,parameters,user_content,system_prompt,supplier_name) => {
+//   const response = await fetch('http://127.0.0.1:7072/disposable_send', {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             },
+//             body: JSON.stringify({ 
+//               model: model, 
+//               parameters: parameters,
+//               user_content: user_content,
+//               system_prompt: system_prompt,
+//               supplier_name:supplier_name,
+//               }),
+//         });
+//         console.log(response);
+        
+//         const data = await response.text();
+//         if (data.includes('</think>')) {
+//           // 去除 <think>
+//           const endIndex = data.indexOf('</think>');
+//           // 截取endIndex 过后的字符串
+//           const result = data.substring(endIndex + 7); // 跳过 </think> 标签
+//           const result2 = result.replace(/\n/g, '');
+//           return result2;
+//         }
+//         return data;
+// }
+
+const DisposableSendApi = async (model, parameters, user_content, system_prompt, supplier_name) => {
+    try {
+        // 记录请求参数
+        console.log('请求参数:', {
+            model,
+            parameters,
+            user_content,
+            system_prompt,
+            supplier_name,
+            trigger_conditions: ['BarrageComment'], // 确保触发弹幕
+        });
+
+        // 设置 60 秒超时
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+        const response = await fetch('http://127.0.0.1:7072/disposable_send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 
-              model: model, 
-              parameters: parameters,
-              user_content: user_content,
-              system_prompt: system_prompt,
-              supplier_name:supplier_name,
-              }),
+            body: JSON.stringify({
+                model,
+                parameters,
+                user_content,
+                system_prompt,
+                supplier_name,
+                trigger_conditions: ['BarrageComment'], // 添加弹幕触发条件
+            }),
+            signal: controller.signal, // 支持超时中止
         });
-        console.log(response);
-        
-        const data = await response.text();
-        if (data.includes('</think>')) {
-          // 去除 <think>
-          const endIndex = data.indexOf('</think>');
-          // 截取endIndex 过后的字符串
-          const result = data.substring(endIndex + 7); // 跳过 </think> 标签
-          const result2 = result.replace(/\n/g, '');
-          return result2;
+
+        clearTimeout(timeoutId); // 清除超时定时器
+
+        // 记录响应状态
+        console.log('响应状态:', response.status, 'OK:', response.ok);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP 错误: ${response.status}, 详情: ${errorText}`);
         }
+
+        // 限制响应大小（10MB）
+        const data = await response.text();
+        if (data.length > 10 * 1024 * 1024) {
+            throw new Error('响应数据过大');
+        }
+
+        // 处理 <think> 标签
+        if (data.includes('</think>')) {
+            const endIndex = data.indexOf('</think>');
+            const result = data.substring(endIndex + 7).replace(/\n/g, '');
+            return result;
+        }
+
         return data;
-}
+    } catch (error) {
+        console.error('请求失败:', error);
+        throw error; // 抛出错误供测试捕获
+    }
+};
+
+
+
+// const DisposableSendApi = async (model,parameters,user_content,system_prompt,supplier_name) => {
+//     // 打印请求开始时间
+//     const startTime = Date.now();
+//     console.log('请求开始时间:', new Date(startTime).toLocaleString());
+//     console.log('请求参数:111111111111111111111111111111111', {
+//         model,
+//         parameters,
+//         user_content,
+//         system_prompt,
+//         supplier_name
+//     });
+
+//     try {
+//         const response = await fetch('http://127.0.0.1:7072/disposable_send', {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             },
+//             body: JSON.stringify({
+//                 model: model,
+//                 parameters: parameters,
+//                 user_content: user_content,
+//                 system_prompt: system_prompt,
+//                 supplier_name:supplier_name,
+//             }),
+//         });
+
+//         // 打印响应状态
+//         console.log('响应状态:', {
+//             status: response.status,
+//             statusText: response.statusText,
+//             headers: Object.fromEntries(response.headers.entries())
+//         });
+
+//         const data = await response.text();
+//         // 打印原始响应数据
+//         console.log('原始响应数据:', data);
+
+//         let result = data;
+//         if (data.includes('</think>')) {
+//             // 去除 <think>
+//             const endIndex = data.indexOf('</think>');
+//             // 截取endIndex 过后的字符串
+//             result = data.substring(endIndex + 7); // 跳过 </think> 标签
+//             result = result.replace(/\n/g, '');
+//         }
+
+//         // 打印处理后的结果
+//         console.log('处理后的结果:', result);
+
+//         // 计算并打印请求耗时
+//         const endTime = Date.now();
+//         console.log('请求结束时间:', new Date(endTime).toLocaleString());
+//         console.log('请求总耗时:', endTime - startTime, 'ms');
+
+//         return result;
+//     } catch (error) {
+//         // 打印错误信息
+//         console.error('请求发生错误:', {
+//             message: error.message,
+//             stack: error.stack
+//         });
+//         throw error;
+//     }
+// }
+
+// 模型调用API
+// const DisposableSendApi = async (model,parameters,user_content,system_prompt,supplier_name) => {
+//   try {
+//     // 参数验证
+//     if (!model) throw new Error('模型名称不能为空');
+//     if (!user_content) throw new Error('用户内容不能为空');
+
+//     console.log('开始调用模型API，参数：', {
+//       model,
+//       parameters,
+//       user_content,
+//       system_prompt,
+//       supplier_name
+//     });
+
+//     // 设置超时时间为30秒
+//     const controller = new AbortController();
+//     const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+//     try {
+//       const response = await fetch('http://127.0.0.1:7072/disposable_send', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({ 
+//           model: model, 
+//           parameters: parameters,
+//           user_content: user_content,
+//           system_prompt: system_prompt,
+//           supplier_name:supplier_name,
+//         }),
+//         signal: controller.signal
+//       });
+
+//       clearTimeout(timeoutId); // 清除超时计时器
+
+//       // 检查响应状态
+//       if (!response.ok) {
+//         throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+//       }
+
+//       console.log('API响应状态：', response.status, response.statusText);
+      
+//       const data = await response.text();
+//       if (!data) {
+//         throw new Error('API返回数据为空');
+//       }
+
+//       console.log('API原始响应数据：', data);
+
+//       if (data.includes('</think>')) {
+//         // 去除 <think>
+//         const endIndex = data.indexOf('</think>');
+//         // 截取endIndex 过后的字符串
+//         const result = data.substring(endIndex + 7); // 跳过 </think> 标签
+//         const result2 = result.replace(/
+// /g, '');
+//         console.log('处理后的响应数据：', result2);
+//         return result2;
+//       }
+
+//       console.log('未经处理的响应数据：', data);
+//       return data;
+
+//     } catch (error) {
+//       clearTimeout(timeoutId); // 确保清除超时计时器
+//       if (error.name === 'AbortError') {
+//         throw new Error('请求超时，请稍后重试');
+//       }
+//       throw error; // 重新抛出其他错误
+//     }
+
+//   } catch (error) {
+//     console.error('模型调用出错：', error);
+//     throw new Error(`模型调用失败: ${error.message}`);
+//   }
+// }
 
 // 替换文本 替换变量
 const ReplaceText= async (text) => {
+  console.log("原始文本：", text);
+    console.log("当前进入直播间用户名：", EnterLiveRoomUserName.value); // 添加日志
+
   let newText = text
   if (text.includes('{语种}')){ //是否包含
     newText = newText.replace('{语种}', selectedLanguageLabel.value) //替换
@@ -2104,10 +2585,10 @@ const ReplaceText= async (text) => {
     newText = newText.replace('{进入直播间用户名}', EnterLiveRoomUserName.value) //替换
   }
   if (text.includes('{分享直播间用户名}')){ //是否包含
-    // newText = newText.replace('{分享直播间用户名}', selectedLanguageLabel.value) //替换
+    newText = newText.replace('{分享直播间用户名}', ShareRoomUserName.value);
   }
   if (text.includes('{关注直播用户名}')){ //是否包含
-    // newText = newText.replace('{关注直播用户名}', selectedLanguageLabel.value) //替换
+    newText = newText.replace('{关注直播用户名}', FollowRoomUserName.value);
   }
   if (text.includes('{弹幕内容}')){ //是否包含
     newText = newText.replace('{弹幕内容}', EnterBarrageContent.value) //替换
@@ -2130,7 +2611,7 @@ const ReplaceText= async (text) => {
     }
   } catch (error) {
   }
-
+  console.log("替换后的文本：", newText); // 打印替换后的文本
   return newText;
 } 
 

@@ -54,7 +54,10 @@ function startGoService() {
         goProcess = spawn(goExePath, ['-p', dbPath,'-p1', goDataPath ,"-p2" , p2pPath], {
             cwd: path.dirname(goExePath)
         });
-
+        console.log('启动go指令:', '-p', dbPath,'-p1', goDataPath ,"-p2" , p2pPath);
+        goProcess.stdout.on('data', (data) => {
+            console.log(`[py7072 out]: ${data}`);
+        });
         const pingInterval = setInterval(() => {
             const http = require('http');
             const options = {
@@ -96,9 +99,9 @@ function startPy7073Service() {
         py7073Process = spawn(pythonExePath, [pythonScriptPath, '-p', dataPath], {
             cwd: path.dirname(pythonExePath)
         });
-        py7073Process.stdout.on('data', (data) => {
-            console.log(`[py7073 stdout]: ${data}`);
-        });
+        // py7073Process.stdout.on('data', (data) => {
+        //     console.log(`[py7073 stdout]: ${data}`);
+        // });
         py7073Process.stderr.on('data', (data) => {
             console.error(`[py7073 stderr]: ${data}`);
         });
@@ -145,9 +148,9 @@ function startPy7074Service() {
             cwd: path.resolve(pub.get_resource_path(), 'exe/py7074-code')
         });
         
-        py7074Process.stdout.on('data', (data) => {
-            console.log(`[py7074 stdout]: ${data}`);
-        });
+        // py7074Process.stdout.on('data', (data) => {
+        //     console.log(`[py7074 stdout]: ${data}`);
+        // });
         py7074Process.stderr.on('data', (data) => {
             console.error(`[py7074 stderr]: ${data}`);
         });
@@ -228,10 +231,10 @@ async function initializeApp() {
       });  
       console.log('py7072 run ...');
       await startGoService();//启动go
-      console.log('py7073 run ...');
-      await startPy7073Service(); //启动 7073
-      console.log('py7074 run ...');
-      await startPy7074Service();//启动 7074
+      //console.log('py7073 run ...');
+      //await startPy7073Service(); //启动 7073
+      //console.log('py7074 run ...');
+      //await startPy7074Service();//启动 7074
       
       // 关闭加载窗口
     //   loadingWindow.close();

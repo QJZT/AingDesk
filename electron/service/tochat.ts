@@ -344,7 +344,7 @@ export class ToChatService {
         system_prompt?: string, //系统提示词
     }, event: any): Promise<any> {
         let { context_id: uuid, model: modelName, parameters, user_content, search, regenerate_id, supplierName, images, doc_files, temp_chat, rag_results, search_results, compare_id, mcp_servers,system_prompt } = args;
-        logger.info('chat args:', args);
+        // logger.info('chat args:', args);
         
         if (!supplierName) {
             supplierName = 'ollama';
@@ -457,8 +457,8 @@ export class ToChatService {
                 }
             }
         }
-        logger.info("-------------------------");
-        logger.info('history:', history);
+        // logger.info("-------------------------");
+        // logger.info('history:', history);
         handleDocuments(letHistory, modelName, user_content);
         handleImages(letHistory, isVision);
         if (letHistory.tool_calls !== undefined) {
