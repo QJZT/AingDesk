@@ -134,7 +134,7 @@ let py7074Process;
 function startPy7074Service() {
     return new Promise<void>((resolve) => {
       // .\runtime2\python.exe api.py -a 0.0.0.0 -p 7074 -s D:\pythonWork\GPT-SoVITS-v3\data\models\ -g D:\pythonWork\GPT-SoVITS-v3\data\models\ 
-        const pythonExePath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/runtime/python.exe');
+        const pythonExePath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/runtime2/python.exe');
         const pythonScriptPath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/api.py');
         const dataPathS = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
         const dataPathG = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
@@ -231,10 +231,10 @@ async function initializeApp() {
       });  
       console.log('py7072 run ...');
       await startGoService();//启动go
-      //console.log('py7073 run ...');
-      //await startPy7073Service(); //启动 7073
-      //console.log('py7074 run ...');
-      //await startPy7074Service();//启动 7074
+      console.log('py7073 run ...');
+      await startPy7073Service(); //启动 7073
+      console.log('py7074 run ...');
+      await startPy7074Service();//启动 7074
       
       // 关闭加载窗口
     //   loadingWindow.close();

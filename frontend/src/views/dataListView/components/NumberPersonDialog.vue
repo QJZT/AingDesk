@@ -180,7 +180,7 @@ const handleAddDigitalHuman = async () => {
     operationSuccess.value = true;
     
     // 调用Electron主进程执行批处理文件
-    const result = await ipcRenderer.invoke('execute-bat-file', 'd:\\androidWork\\AingDesk\\build\\extraResources\\exe\\QimuDHweb\\01提取视频检查点.bat');
+    const result = await ipcRenderer.invoke('execute-bat-file', 'exe/QimuDHweb/01提取视频检查点.bat');
     
     console.log('新增数字人程序启动结果:', result);
     operationMessage.value = '新增数字人程序已启动';
@@ -206,7 +206,7 @@ const handleStartDigitalHuman = async () => {
     operationSuccess.value = true;
     
     // 执行批处理文件
-    const result = await ipcRenderer.invoke('execute-bat-file', 'd:\\androidWork\\AingDesk\\build\\extraResources\\exe\\QimuDHweb\\02启动webapp.bat');
+    const result = await ipcRenderer.invoke('execute-bat-file', 'exe/QimuDHweb/02启动webapp.bat');
     
     console.log('数字人程序启动结果:', result);
     operationMessage.value = '数字人程序已启动 ✅';

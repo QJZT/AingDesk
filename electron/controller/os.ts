@@ -181,59 +181,75 @@ export default OsController;
 
 // 在现有的ipcMain处理程序中添加
 // 修改 execute-bat-file 处理函数
-ipcMain.handle('execute-bat-file', async (event, batFilePath) => {
+ipcMain.handle('execute-bat-file', async (event, relativePath) => {
   return new Promise((resolve, reject) => {
-    // 确保批处理文件存在
-    if (!fs.existsSync(batFilePath)) {
-      return reject(new Error(`批处理文件不存在: ${batFilePath}`));
-    }
-    
-    // 获取批处理文件所在目录作为工作目录
-    const workingDir = path.dirname(batFilePath);
-    
-    // 使用 spawn 替代 exec
-    const childProcess = spawn('cmd.exe', ['/c', batFilePath], {
-      windowsVerbatimArguments: true,
-      detached: true,         // 分离子进程
-      windowsHide: false,     // 显示窗口，便于调试
-      cwd: workingDir,        // 设置工作目录
-      env: process.env,       // 传递完整的环境变量
-      shell: true             // 使用shell
-    });
-    
-    let stdoutData = '';
-    let stderrData = '';
-    
-    // 收集输出信息
-    if (childProcess.stdout) {
-      childProcess.stdout.on('data', (data) => {
-        const dataStr = data.toString();
-        stdoutData += dataStr;
-        console.log(`批处理输出: ${dataStr}`);
-      });
-    }
-    
-    if (childProcess.stderr) {
-      childProcess.stderr.on('data', (data) => {
-        const dataStr = data.toString();
-        stderrData += dataStr;
-        console.error(`批处理错误: ${dataStr}`);
-      });
-    }
-    
-    childProcess.on('error', (error) => {
-      console.error(`执行批处理文件错误: ${error}`);
-      reject(error);
-    });
-    
-    childProcess.on('exit', (code) => {
-      console.log(`批处理进程退出，退出码: ${code}`);
-      if (code === 0) {
-        resolve({ success: true, stdout: stdoutData, stderr: stderrData });
-      } else {
-        reject(new Error(`进程退出，退出码: ${code}\n${stderrData}`));
+    try {
+      // 获取正确的资源路径
+      const resourcesPath = electronApp.isPackaged 
+        ? path.join(process.resourcesPath, 'extraResources')
+        : path.join(__dirname, '../../../build/extraResources'); // 修改这里，从 ../../ 改为 ../../../
+      
+      // 拼接完整路径
+      const batFilePath = path.join(resourcesPath, relativePath);
+      
+      console.log('执行批处理文件路径:', batFilePath);
+      console.log('资源基础路径:', resourcesPath);
+      
+      // 确保批处理文件存在
+      if (!fs.existsSync(batFilePath)) {
+        return reject(new Error(`批处理文件不存在: ${batFilePath}`));
       }
-    });
+      
+      // 获取批处理文件所在目录作为工作目录
+      const workingDir = path.dirname(batFilePath);
+      
+      // 使用 spawn 替代 exec
+      const childProcess = spawn('cmd.exe', ['/c', batFilePath], {
+        windowsVerbatimArguments: true,
+        detached: true,         // 分离子进程
+        windowsHide: false,     // 显示窗口，便于调试
+        cwd: workingDir,        // 设置工作目录
+        env: process.env,       // 传递完整的环境变量
+        shell: true             // 使用shell
+      });
+      
+      let stdoutData = '';
+      let stderrData = '';
+      
+      // 收集输出信息
+      if (childProcess.stdout) {
+        childProcess.stdout.on('data', (data) => {
+          const dataStr = data.toString();
+          stdoutData += dataStr;
+          console.log(`批处理输出: ${dataStr}`);
+        });
+      }
+      
+      if (childProcess.stderr) {
+        childProcess.stderr.on('data', (data) => {
+          const dataStr = data.toString();
+          stderrData += dataStr;
+          console.error(`批处理错误: ${dataStr}`);
+        });
+      }
+      
+      childProcess.on('error', (error) => {
+        console.error(`执行批处理文件错误: ${error}`);
+        reject(error);
+      });
+      
+      childProcess.on('exit', (code) => {
+        console.log(`批处理进程退出，退出码: ${code}`);
+        if (code === 0) {
+          resolve({ success: true, stdout: stdoutData, stderr: stderrData, path: batFilePath });
+        } else {
+          reject(new Error(`进程退出，退出码: ${code}\n${stderrData}`));
+        }
+      });
+    } catch (error) {
+      console.error('execute-bat-file 处理错误:', error);
+      reject(error);
+    }
   });
 });
     
