@@ -1,7 +1,20 @@
 import fs from 'fs';
 import path from 'path';
-import { app as electronApp, dialog, shell } from 'electron';
+// 在文件顶部确保已导入 shell
+import { app as electronApp, dialog, shell, ipcMain } from 'electron';
+
+// 在文件末尾添加
+ipcMain.handle('open-external-url', async (event, url) => {
+  try {
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (error) {
+    console.error(`打开URL错误: ${error}`);
+    throw error;
+  }
+});
 import { windowService } from '../service/os/window';
+import { exec, spawn } from 'child_process';
 
 /**
  * example
@@ -165,3 +178,62 @@ class OsController {
 OsController.toString = () => '[class OsController]';
 
 export default OsController;
+
+// 在现有的ipcMain处理程序中添加
+// 修改 execute-bat-file 处理函数
+ipcMain.handle('execute-bat-file', async (event, batFilePath) => {
+  return new Promise((resolve, reject) => {
+    // 确保批处理文件存在
+    if (!fs.existsSync(batFilePath)) {
+      return reject(new Error(`批处理文件不存在: ${batFilePath}`));
+    }
+    
+    // 获取批处理文件所在目录作为工作目录
+    const workingDir = path.dirname(batFilePath);
+    
+    // 使用 spawn 替代 exec
+    const childProcess = spawn('cmd.exe', ['/c', batFilePath], {
+      windowsVerbatimArguments: true,
+      detached: true,         // 分离子进程
+      windowsHide: false,     // 显示窗口，便于调试
+      cwd: workingDir,        // 设置工作目录
+      env: process.env,       // 传递完整的环境变量
+      shell: true             // 使用shell
+    });
+    
+    let stdoutData = '';
+    let stderrData = '';
+    
+    // 收集输出信息
+    if (childProcess.stdout) {
+      childProcess.stdout.on('data', (data) => {
+        const dataStr = data.toString();
+        stdoutData += dataStr;
+        console.log(`批处理输出: ${dataStr}`);
+      });
+    }
+    
+    if (childProcess.stderr) {
+      childProcess.stderr.on('data', (data) => {
+        const dataStr = data.toString();
+        stderrData += dataStr;
+        console.error(`批处理错误: ${dataStr}`);
+      });
+    }
+    
+    childProcess.on('error', (error) => {
+      console.error(`执行批处理文件错误: ${error}`);
+      reject(error);
+    });
+    
+    childProcess.on('exit', (code) => {
+      console.log(`批处理进程退出，退出码: ${code}`);
+      if (code === 0) {
+        resolve({ success: true, stdout: stdoutData, stderr: stderrData });
+      } else {
+        reject(new Error(`进程退出，退出码: ${code}\n${stderrData}`));
+      }
+    });
+  });
+});
+    

@@ -158,6 +158,7 @@ import { openKnowledgeStore } from "@/views/KnowleadgeStore/controller"
 import { getKnowledgeStoreData } from '@/views/KnowleadgeStore/store';
 import { useI18n } from "vue-i18n";
 import { message, useDialog } from "@/utils/naive-tools"
+import { log } from "mermaid/dist/logger.js";
 const { t: $t } = useI18n()
 const { knowledgeList, addingKnowledge, activeKnowledge, } = getKnowledgeStoreData()
 
@@ -281,21 +282,23 @@ const createNewKnowledgeStore = () => {
  */
  const dealPopOperation = async (val: string, item: any) => {
     if (val == "delChat") {
-        try {
-        const response = await fetch('http://127.0.0.1:7072/del_name', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id: item.id }),
-        });
-        if (!response.ok) {
-            throw new Error('Failed to set audio name');
-        }
-        api_names() // 刷新列表
-    } catch (error) {
-        console.error('Error setting audio name:', error);
-    }
+    //     try {
+    //     const response = await fetch('http://127.0.0.1:7072/del_name', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({ id: item.id }),
+    //     });
+    //     if (!response.ok) {
+    //         throw new Error('Failed to set audio name');
+    //     }
+    //     api_names() // 刷新列表
+    // } catch (error) {
+    //     console.error('Error setting audio name:', error);
+    // }
+    console.log(item);
+    await handleDeleteText(item);
     }
 }
 
@@ -378,7 +381,7 @@ const handleRetry = (options) => {
 
 const handleDelete = async (file: any) => {
     try {
-        const response = await fetch(`http://127.0.0.1:7072/delete_file/${file.associated_id}/${file.file_name}`);
+        const response = await fetch(`http://127.0.0.1:7072/delete_audio_text/${file.associated_id}/${file.file_name}`);
         if (!response.ok) {
             throw new Error('Failed to delete file');
         }
@@ -389,6 +392,26 @@ const handleDelete = async (file: any) => {
     }
 };
 
+
+const handleDeleteText = async (file: any) => {
+    
+    try {
+        const response = await fetch('http://127.0.0.1:7073/delete_audio_text', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ filename: file }),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to delete file');
+        }
+        // 刷新文件列表
+        api_names
+    } catch (error) {
+        console.error('Error deleting file:', error);
+    }
+};
 </script>
 
 <style scoped lang="scss">

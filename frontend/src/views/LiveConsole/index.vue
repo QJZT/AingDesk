@@ -135,6 +135,17 @@
           style="width: 100px;"
         />
       </div>
+      <div class="mic-select"> 
+            <n-text depth="3" class="mic-label">背景音乐声卡：</n-text> 
+            <n-select 
+              v-model:value="selectedBgmDriver" 
+              :options="audioDeviceOptions" 
+              placeholder="选择声卡" 
+              class="mic-select-input" 
+              @update:value="handleLanguageChange" 
+              @click="getMicrophoneDevices" 
+            /> 
+          </div> 
       <!-- speedModelOptions2 -->
     </div>
     </div>
@@ -691,6 +702,67 @@
           </div>
         </n-input-group>
       </n-card>
+
+      <!-- <n-card 
+        title="背景音乐" 
+        :segmented="{content: true, footer: true}" 
+        header-style="padding:10px;font-size:14px" 
+        footer-style="padding:10px" 
+        content-style="padding:10px;" 
+        class="voice-card" 
+      > 
+        <n-input-group class="voice-input-group"> 
+          <div class="mic-select"> 
+            <n-text depth="3" class="mic-label">声卡：</n-text> 
+            <n-select 
+              v-model:value="selectedBgmDriver" 
+              :options="audioDeviceOptions" 
+              placeholder="选择声卡" 
+              class="mic-select-input" 
+              @update:value="handleLanguageChange" 
+              @click="getMicrophoneDevices" 
+            /> 
+          </div> 
+          <div class="mic-select"> 
+            <n-text depth="3" class="mic-label">背景音乐：</n-text> 
+            <n-select 
+              v-model:value="selectedBackgroundMusic" 
+              :options="bgmOptions" 
+              placeholder="选择背景音乐" 
+              class="mic-select-input" 
+              @click="getBackgroundMusicList" 
+            /> 
+          </div> 
+          <div class="control-item">
+              <div class="control-label">音量: {{ bgmVolume }}%</div>
+              <n-slider
+                v-model:value="bgmVolume"
+                :min="10"
+                :max="100"
+                :step="1"
+                class="control-slider"
+                tooltip
+                placement="bottom"
+                :format-tooltip="(value) => `音量: ${value}%`"
+                aria-label="消息音量调整"
+              />
+            </div>
+            <div class="control-item">
+              <div class="control-label">播放模式: {{ playMode ? '循环' : '单次' }}</div>
+              <n-switch v-model:value="playMode" size="small">
+                <template #checked>
+                  循环
+                </template>
+                <template #unchecked>
+                  单次
+                </template>
+              </n-switch>
+            </div>
+           
+          <n-button @click="playBackgroundMusic">播放背景音乐</n-button>
+          <n-button @click="stopBackgroundMusic">停止背景音乐</n-button>
+        </n-input-group>  -->
+      <!-- </n-card> -->
     </div>
 
 
@@ -840,7 +912,7 @@ const handleLanguageChange = async (value) => {
         timeZone: selectedTimezone.value,
         language:selectedLanguage.value,
         soundCard:selectedAudioDriver.value,
-        backgroundSoundCard: "耳机 (Q38-2 Stereo)",
+        backgroundSoundCard: selectedBgmDriver.value,
         microphone: selectedMicrophoneDriver.value,//麦克风
        })
     })
@@ -850,6 +922,7 @@ const handleLanguageChange = async (value) => {
     console.error('语言设置失败:', error)
   }
 }
+
 const loading2 = ref(false)
 const initializeSpeechModel = async () => {
   // 加上logding
@@ -1020,6 +1093,11 @@ const getModulesKv =async  (id) => {
 // 新增：音频设备下拉选项
 const audioDeviceOptions = ref([])
 
+const selectedBackgroundMusic = ref('')
+const playMode = ref(false)
+const bgmVolume = ref(100)
+const bgmOptions = ref([])
+
 const getAudioDevices = async () => {
   try {
     const response = await fetch('http://127.0.0.1:7073/get_sound_cards', {
@@ -1045,6 +1123,7 @@ const getAudioDevices = async () => {
 
   //getMicrophoneDevices 麦克风  selectedMicrophoneDriver
   const selectedMicrophoneDriver = ref('');// 麦克风使用的音频驱动
+  const selectedBgmDriver = ref('');// 背景使用的音频驱动
   const getMicrophoneDevices = async () => {
     try {
       const response = await fetch('http://127.0.0.1:7073/get_sound_cards', {
@@ -1064,6 +1143,53 @@ const getAudioDevices = async () => {
       console.error('获取音频设备失败:', error);
     }
   };
+
+const getBackgroundMusicList = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:7073/get_bgm_voice', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    bgmOptions.value = data.files.map(item => ({
+      label: item,
+      value: item
+    }));
+  } catch (error) {
+    console.error('获取背景音乐列表失败:', error);
+  }
+};
+
+
+
+const playBackgroundMusic = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:7073/play_background_music', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filename: selectedBackgroundMusic.value,
+        loop: playMode.value,
+        volume: bgmVolume.value / 100 // 转换为 0-1 的范围
+      })
+    });
+  }
+  catch (error) {
+    console.error('播放背景音乐失败:', error);
+  }
+};
+
+const stopBackgroundMusic = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:7073/stop_background_music', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  catch (error) {
+    console.error('停止背景音乐失败:', error);
+  }
+}
 
 async function syncStatsToBackend() {
   try {
