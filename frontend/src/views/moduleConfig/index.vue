@@ -26,7 +26,7 @@
 
           <!-- 数字人模块 -->
           <div class="module-card">
-            <div class="card-placeholder">+</div>
+            <div class="card-placeholder" @click="handleNumberPersonModuleClick">+</div>
             <h3>数字人模块</h3>
             <p>说明：数字人对口型对接说明</p>
           </div>
@@ -86,6 +86,16 @@
       @save="handleAudioModuleSave"
       :initial-data="editingAudioModule"
     />
+
+    <!-- 数字人模块配置弹窗 -->
+    <NumberPersonDialog
+      :show="showNumberPersonModule"
+      @update:show="showNumberPersonModule = $event"
+      @exit="handleNumberPersonModuleExit"
+      @save="handleNumberPersonModuleSave"
+      :initial-data="editingNumberPersonModule"
+    />
+    
   </div>
 </template>
 
@@ -94,6 +104,7 @@ import { ref, onMounted } from 'vue';
 import { NCard, NButton, NScrollbar } from 'naive-ui';
 import BasicModuleDialog from '@/views/ModuleConfig/components/BasicModuleDialog.vue';
 import AudioModuleDialog from '@/views/ModuleConfig/components/AudioModuleDialog.vue';
+import NumberPersonDialog from '@/views/dataListView/components/NumberPersonDialog.vue';
 
 // 后端 API 基础 URL
 const API_BASE_URL = 'http://localhost:7072';
@@ -114,6 +125,7 @@ enum TriggerCondition {
 enum ModuleType {
   Base = "base",
   Audio = "audio",
+  NumberPerson = "numberPerson",
 }
 
 // 读取步骤枚举
@@ -149,6 +161,10 @@ const editingModule = ref<Module | null>(null);
 // 控制音频交互模块弹窗的显示
 const showAudioModule = ref(false);
 const editingAudioModule = ref<Module | null>(null);
+
+// 控制数字人模块弹窗的显示
+const showNumberPersonModule = ref(false);
+const editingNumberPersonModule = ref<Module | null>(null);
 
 // 模块数据
 const modules = ref<Module[]>([]);
@@ -476,12 +492,69 @@ function handleAudioModuleSave(formData: any) {
   saveModule(module, !!formData.id);
 }
 
+// 点击"数字人模块"卡片时打开弹窗
+function handleNumberPersonModuleClick() {
+  console.log('打开数字人模块弹窗');
+  editingNumberPersonModule.value = null; // 新增时设为 null
+  showNumberPersonModule.value = true;
+}
+
+// 处理数字人模块弹窗退出时的提示
+function handleNumberPersonModuleExit(formData: any) {
+  console.log('数字人模块退出，当前表单数据:', formData);
+}
+
+// 处理数字人模块弹窗保存时的逻辑
+function handleNumberPersonModuleSave(formData: any) {
+  console.log('数字人模块保存，当前表单数据:', formData);
+  const module: Module = {
+    id: formData.id || 0,
+    moduleType: ModuleType.NumberPerson,
+    orderNum: 0, // 新增时设为 0，由后端生成
+    moduleName: formData.moduleName || '数字人模块',
+    intervalTimeStart: formData.intervalTimeStart,
+    intervalTimeEnd: formData.intervalTimeEnd,
+    triggerConditions: formData.triggerConditions.map((condition: string) => {
+      switch (condition) {
+        case 'SceneLoop':
+          return TriggerCondition.SceneLoop;
+        case 'IntervalLoop':
+          return TriggerCondition.IntervalLoop;
+        case 'BarrageComment':
+          return TriggerCondition.BarrageComment;
+        case 'SendGift':
+          return TriggerCondition.SendGift;
+        case 'Like':
+          return TriggerCondition.Like;
+        case 'EnterLiveRoom':
+          return TriggerCondition.EnterLiveRoom;
+        case 'ShareRoom':
+          return TriggerCondition.ShareRoom;
+        case 'FollowRoom':
+          return TriggerCondition.FollowRoom;
+        default:
+          console.warn('未知触发条件:', condition);
+          return condition as TriggerCondition;
+      }
+    }),
+    readStep: (formData.readStep || 'random') as ReadStep,
+    scriptContent: formData.scriptContent || [],
+    isModelRewrite: formData.isModelRewrite || false,
+    rewriteFrequency: formData.rewriteFrequency || 0,
+  };
+  console.log('构造的 Module 对象:', module);
+  saveModule(module, !!formData.id);
+}
+
 // 编辑模块
 function editModule(module: Module) {
   console.log('编辑模块:', module);
   if (module.moduleType === ModuleType.Audio) {
     editingAudioModule.value = { ...module };
     showAudioModule.value = true;
+  } else if (module.moduleType === ModuleType.NumberPerson) {
+    editingNumberPersonModule.value = { ...module };
+    showNumberPersonModule.value = true;
   } else {
     editingModule.value = { ...module };
     showBasicModule.value = true;

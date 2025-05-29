@@ -25,6 +25,7 @@
             </n-layout-content>
             <LiveConsole v-show="currentView == 'LiveConsole'" />
             <ModuleConfig v-if="currentView == 'ModuleConfig'" />
+            <DataListView v-if="currentView == 'DataListView'" />
         </n-layout>
     </n-layout>
 
@@ -70,6 +71,7 @@ import Sider from "../Sider/index.vue";
 import Header from "@/views/Header/index.vue";
 import ChatContent from "@/views/ChatContent/index.vue";
 import ModuleConfig from '@/views/moduleConfig/index.vue'
+import DataListView from '@/views/dataListView/index.vue'
 import LiveConsole from '@/views/LiveConsole/index.vue'
 import KnowledgeStore from "@/views/KnowleadgeStore/index.vue";
 import Welcome from "./components/Welcome.vue";

@@ -30,8 +30,12 @@ build/extraResources/exe/py7073-code
 build/extraResources/exe/py7073-data
 build/extraResources/exe/py7073-env
 build/extraResources/exe/py7074-code
+build/extraResources/exe/QimuDHweb
+
 
 out
 out/
 
 public/dist
+build/extraResources/exe.zip
+build/extraResources/exe/QimuDHweb
