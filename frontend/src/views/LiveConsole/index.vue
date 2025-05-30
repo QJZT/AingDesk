@@ -315,6 +315,7 @@
               />
             </div>
             <div style="height: 5px;"></div>
+            
             <div style="display: flex; align-items: center; gap: 8px; width: 100%;" v-if="block.module_type == 'base'">
               <div style="width: 30%;font-size: 12px">
                 音速:{{block.speed}}x
@@ -1161,7 +1162,7 @@ const getBackgroundMusicList = async () => {
 };
 
 
-
+//背景音乐
 const playBackgroundMusic = async () => {
   try {
     const response = await fetch('http://127.0.0.1:7073/play_background_music', {
@@ -1247,6 +1248,7 @@ const setModulesKv =async  (id,kv) => {
         });
 }
 const loadingModules = ref(false)
+// 获取模块数据
 const fetchModules = async () => {
   loadingModules.value = true
   try {
@@ -1254,7 +1256,7 @@ const fetchModules = async () => {
     let  newList   =[]
     const response = await fetch('http://127.0.0.1:7072/base-modules')
     let list = await response.json()
-    console.log("lis23132t:",list);
+    console.log("模块列表:",list);
     for (const  [index, module] of list.entries()) {
       console.log("module.id:",module.id);
       let  kv = await getModulesKv(module.id)
@@ -1554,11 +1556,649 @@ const registerModules = async () => {
           
         }
         
+
+        // 添加音频模块 (module_type: "audio") 的触发逻辑
+        if (module.module_type == "audio") { // 处理音频模块
+          if (module.trigger_conditions.includes("SceneLoop")) {
+            AudioSceneLoop(module, newuuid); // 音频场景循环
+          }
+          if (module.trigger_conditions.includes("IntervalLoop")) {
+            AudioIntervalLoop(module, newuuid); // 音频间隔循环
+          }
+          if (module.trigger_conditions.includes("BarrageComment")) {
+            AudioBarrageComment(module, newuuid); // 音频弹幕评论
+          }
+          if (module.trigger_conditions.includes("SendGift")) {
+            AudioSendGift(module, newuuid); // 音频送礼物
+          }
+          if (module.trigger_conditions.includes("Like")) {
+            AudioLike(module, newuuid); // 音频点赞
+          }
+          if (module.trigger_conditions.includes("EnterLiveRoom")) {
+            AudioEnterLiveRoom(module, newuuid); // 音频进入直播间
+          }
+          if (module.trigger_conditions.includes("ShareRoom")) {
+            AudioShareRoom(module, newuuid); // 音频分享直播间
+          }
+          if (module.trigger_conditions.includes("FollowRoom")) {
+            AudioFollowRoom(module, newuuid); // 音频关注直播间
+          }
+        }
         //     TriggerShareRoom     = "ShareRoom"     // 分享直播间
 //     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
     }
     playListConsumption()
 }
+
+/**
+ * 音频模块的场景循环触发函数
+ * 
+ * 该函数用于处理音频模块 (`module_type == "audio"`) 的场景循环触发逻辑。
+ * 它会持续循环播放指定的音频文件，直到 `start.value` 为 false 或 `uuid` 不匹配。
+ * 
+ * 主要逻辑：
+ * 1. 检查模块是否激活 (`isActive`)，未激活则暂停 1 秒后继续。
+ * 2. 根据 `interval_time_start` 和 `interval_time_end` 设置随机播放间隔。
+ * 3. 限制播放队列长度（不超过 5），等待队列消费。
+ * 4. 调用 `playAudioModuleBackgroundMusic` 播放音频。
+ * 5. 将播放记录加入 `playList` 队列。
+ * 
+ * @param {Object} module - 音频模块对象，包含以下关键字段：
+ *   - `audio_path` (string): 音频文件路径。
+ *   - `isActive` (boolean): 模块是否激活。
+ *   - `interval_time_start` (number): 最小间隔时间（秒）。
+ *   - `interval_time_end` (number): 最大间隔时间（秒）。
+ *   - `module_name` (string): 模块名称，用于日志和播放记录。
+ *   - `volume` (number): 音量值（0-100）。
+ * @param {string} uuid - 当前任务的唯一标识符，用于控制循环。
+ */
+ const AudioSceneLoop = async (module, uuid) => {
+  let index = 0; // 当前播放索引（单文件时恒为 0）
+  const audioPaths = Array.isArray(module.audio_path) ? module.audio_path : [module.audio_path]; // 确保 audio_path 为数组
+  const audioPathLen = audioPaths.length; // 音频路径长度（当前为 1）
+
+  do {
+    console.log("音频场景循环模块：", module); // 打印模块信息，便于调试
+
+    if (!module.isActive) {
+      console.log("模块未激活，暂停 1 秒...");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
+      continue;
+    }
+
+    if (module.interval_time_start != 0 && module.interval_time_end != 0) { // 设置随机间隔
+      const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+      console.log("随机间隔时间（秒）：", randomTime);
+      await new Promise(resolve => setTimeout(resolve, randomTime * 1000)); // 等待随机时间（转换为毫秒）
+    }
+
+    const currentAudioPath = audioPaths[index]; // 获取当前音频路径（单文件时不变）
+    while (playList.value.length >= 5) { // 限制播放队列长度
+      console.log("播放队列已满，等待消费...");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
+    }
+
+    // 调用 API 音乐频
+    const ok = await playAudioModuleBackgroundMusic(module);
+    if (!ok) {
+      console.log("播放失败，暂停 1 秒后重试...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    // 加入播放队列（尾部）
+    playList.value.push({
+      content: `[${module.module_name}] 播放音频 ${currentAudioPath}`,
+      filename: currentAudioPath,
+      play_mode: "serial",
+    });
+
+    if (index == audioPathLen - 1) { // 循环控制（单文件时始终重置为 0）
+      index = 0;
+    } else {
+      index = index + 1;
+    }
+  } while (start.value && uuid == startUUID.value); // 循环条件
+};
+
+/**
+ * 音频模块的间隔循环触发函数
+ * 
+ * 该函数用于处理音频模块 (`module_type == "audio"`) 的间隔循环触发逻辑。
+ * 它会持续循环播放指定的音频文件，直到 `start.value` 为 false 或 `uuid` 不匹配。
+ * 与 `AudioSceneLoop` 不同的是，播放记录会插入到 `playList` 队列头部（插队播放）。
+ * 
+ * 主要逻辑：
+ * 1. 检查模块是否激活 (`isActive`)，未激活则暂停 1 秒后继续。
+ * 2. 根据 `interval_time_start` 和 `interval_time_end` 设置随机播放间隔。
+ * 3. 限制播放队列长度（不超过 5），等待队列消费。
+ * 4. 调用 `playAudioModuleBackgroundMusic` 播放音频。
+ * 5. 将播放记录加入 `playList` 队列。
+ * 
+ * @param {Object} module - 音频模块对象，包含以下关键字段：
+ *   - `audio_path` (string): 音频文件路径。
+ *   - `isActive` (boolean): 模块是否激活。
+ *   - `interval_time_start` (number): 最小间隔时间（秒）。
+ *   - `interval_time_end` (number): 最大间隔时间（秒）。
+ *   - `module_name` (string): 模块名称，用于日志和播放记录。
+ *   - `volume` (number): 音量值（0-100）。
+ * @param {string} uuid - 当前任务的唯一标识符，用于控制循环。
+ */
+ const AudioIntervalLoop = async (module, uuid) => {
+  let index = 0; // 当前播放索引（单文件时恒为 0）
+  const audioPaths = Array.isArray(module.audio_path) ? module.audio_path : [module.audio_path]; // 确保 audio_path 为数组
+  const audioPathLen = audioPaths.length; // 音频路径长度（当前为 1）
+
+  do {
+    console.log("音频间隔循环模块：", module); // 打印模块信息，便于调试
+
+    if (!module.isActive) {
+      console.log("模块未激活，暂停 1 秒...");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
+      continue;
+    }
+
+    if (module.interval_time_start != 0 && module.interval_time_end != 0) { // 设置随机间隔
+      const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+      console.log("随机间隔时间（秒）：", randomTime);
+      await new Promise(resolve => setTimeout(resolve, randomTime * 1000)); // 等待随机时间（转换为毫秒）
+    }
+
+    const currentAudioPath = audioPaths[index]; // 获取当前音频路径（单文件时不变）
+    while (playList.value.length >= 5) { // 限制播放队列长度
+      console.log("播放队列已满，等待消费...");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
+    }
+
+    // 调用 API 播放背景音乐
+    const ok = await playAudioModuleBackgroundMusic(module);
+    if (!ok) {
+      console.log("播放失败，暂停 1 秒后重试...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    // 加入播放队列
+    playList.value.push({
+      content: `[${module.module_name}] 播放音频 ${currentAudioPath}`,
+      filename: currentAudioPath,
+      play_mode: "serial",
+    });
+
+    if (index == audioPathLen - 1) { // 循环控制（单文件时始终重置为 0）
+      index = 0;
+    } else {
+      index = index + 1;
+    }
+  } while (start.value && uuid == startUUID.value); // 循环条件
+};
+
+/**
+ * 音频模块的弹幕评论触发函数
+ * 
+ * 该函数用于处理音频模块 (`module_type == "audio"`) 的弹幕评论触发逻辑。
+ * 它会持续循环播放指定的音频文件，直到 `start.value` 为 false 或 `uuid` 不匹配。
+ * 播放记录会添加到 `playList` 队列尾部。
+ * 
+ * 主要逻辑：
+ * 1. 检查模块是否激活 (`isActive`)，未激活则暂停 1 秒后继续。
+ * 2. 根据 `interval_time_start` 和 `interval_time_end` 设置随机播放间隔。
+ * 3. 限制播放队列长度（不超过 5），等待队列消费。
+ * 4. 调用 `playAudioModuleBackgroundMusic` 播放音频。
+ * 5. 将播放记录添加到 `playList` 队列头部。
+ * 
+ * @param {Object} module - 音频模块对象，包含以下关键字段：
+ *   - `audio_path` (string): 音频文件路径。
+ *   - `isActive` (boolean): 模块是否激活。
+ *   - `interval_time_start` (number): 最小间隔时间（秒）。
+ *   - `interval_time_end` (number): 最大间隔时间（秒）。
+ *   - `module_name` (string): 模块名称，用于日志和播放记录。
+ *   - `volume` (number): 音量值（0-100）。
+ * @param {string} uuid - 当前任务的唯一标识符，用于控制循环。
+ */
+ const AudioBarrageComment = async (module, uuid) => {
+  let index = 0; // 当前播放索引（单文件时恒为 0）
+  const audioPaths = Array.isArray(module.audio_path) ? module.audio_path : [module.audio_path]; // 确保 audio_path 为数组
+  const audioPathLen = audioPaths.length; // 音频路径长度（当前为 1）
+
+  do {
+    console.log("音频弹幕评论模块：", module); // 打印模块信息，便于调试
+
+    if (!module.isActive) {
+      console.log("模块未激活，暂停 1 秒...");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
+      continue;
+    }
+
+    if (module.interval_time_start != 0 && module.interval_time_end != 0) { // 设置随机间隔
+      const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+      console.log("随机间隔时间（秒）：", randomTime);
+      await new Promise(resolve => setTimeout(resolve, randomTime * 1000)); // 等待随机时间（转换为毫秒）
+    }
+
+    const currentAudioPath = audioPaths[index]; // 获取当前音频路径（单文件时不变）
+    while (playList.value.length >= 5) { // 限制播放队列长度
+      console.log("播放队列已满，等待消费...");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
+    }
+
+    // 调用 API 播放背景音乐
+    const ok = await playAudioModuleBackgroundMusic(module);
+    if (!ok) {
+      console.log("播放失败，暂停 1 秒后重试...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    // 加入播放队列（头部）
+    playList.value.unshift({
+      content: `[${module.module_name}] 播放音频 ${currentAudioPath}`,
+      filename: currentAudioPath,
+      play_mode: "serial",
+    });
+
+    if (index == audioPathLen - 1) { // 循环控制（单文件时始终重置为 0）
+      index = 0;
+    } else {
+      index = index + 1;
+    }
+  } while (start.value && uuid == startUUID.value); // 循环条件
+};
+
+/**
+ * 音频模块的送礼物触发函数
+ * 
+ * 该函数用于处理音频模块 (`module_type == "audio"`) 的送礼物触发逻辑。
+ * 它会持续循环播放指定的音频文件，直到 `start.value` 为 false 或 `uuid` 不匹配。
+ * 播放记录会添加到 `playList` 队列尾部。
+ * 
+ * 主要逻辑：
+ * 1. 检查模块是否激活 (`isActive`)，未激活则暂停 1 秒后继续。
+ * 2. 根据 `interval_time_start` 和 `interval_time_end` 设置随机播放间隔。
+ * 3. 限制播放队列长度（不超过 5），等待队列消费。
+ * 4. 调用 `playAudioModuleBackgroundMusic` 播放音频。
+ * 5. 将播放记录添加到 `playList` 队列头部
+ * 
+ * @param {Object} module - 音频模块对象，包含以下关键字段：
+ *   - `audio_path` (string): 音频文件路径。
+ *   - `isActive` (boolean): 模块是否激活。
+ *   - `interval_time_start` (number): 最小间隔时间（秒）。
+ *   - `interval_time_end` (number): 最大间隔时间（秒）。
+ *   - `module_name` (string): 模块名称，用于日志和播放记录。
+ *   - `volume` (number): 音量值（0-100）。
+ * @param {string} uuid - 当前任务的唯一标识符，用于控制循环。
+ */
+const AudioSendGift = async (module, uuid) => {
+  let index = 0;
+  const audioPaths = Array.isArray(module.audio_path) ? module.audio_path : [module.audio_path];
+  const audioPathLen = audioPaths.length;
+
+  do {
+    console.log("音频送礼物模块：", module);
+
+    if (!module.isActive) {
+      console.log("模块未激活，暂停 1 秒...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    if (module.interval_time_start != 0 && module.interval_time_end != 0) {
+      const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+      console.log("随机间隔时间（秒）：", randomTime);
+      await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
+    }
+
+    const currentAudioPath = audioPaths[index];
+    while (playList.value.length >= 5) {
+      console.log("播放队列已满，等待消费...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const ok = await playAudioModuleBackgroundMusic(module);
+    if (!ok) {
+      console.log("播放失败，暂停 1 秒后重试...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    playList.value.unshift({
+      content: `[${module.module_name}] 播放音频 ${currentAudioPath}`,
+      filename: currentAudioPath,
+      play_mode: "serial",
+    });
+
+    if (index == audioPathLen - 1) {
+      index = 0;
+    } else {
+      index = index + 1;
+    }
+  } while (start.value && uuid == startUUID.value);
+};
+
+/**
+ * 音频模块的点赞触发函数
+ * 
+ * 该函数用于处理音频模块 (`module_type == "audio"`) 的点赞触发逻辑。
+ * 它会持续循环播放指定的音频文件，直到 `start.value` 为 false 或 `uuid` 不匹配。
+ * 播放记录会添加到 `playList` 队列尾部。
+ * 
+ * 主要逻辑：
+ * 1. 检查模块是否激活 (`isActive`)，未激活则暂停 1 秒后继续。
+ * 2. 根据 `interval_time_start` 和 `interval_time_end` 设置随机播放间隔。
+ * 3. 限制播放队列长度（不超过 5），等待队列消费。
+ * 4. 调用 `playAudioModuleBackgroundMusic` 播放音频。
+ * 5. 将播放记录添加到 `playList` 队列头部。
+ * 
+ * @param {Object} module - 音频模块对象，包含以下关键字段：
+ *   - `audio_path` (string): 音频文件路径。
+ *   - `isActive` (boolean): 模块是否激活。
+ *   - `interval_time_start` (number): 最小间隔时间（秒）。
+ *   - `interval_time_end` (number): 最大间隔时间（秒）。
+ *   - `module_name` (string): 模块名称，用于日志和播放记录。
+ *   - `volume` (number): 音量值（0-100）。
+ * @param {string} uuid - 当前任务的唯一标识符，用于控制循环。
+ */
+const AudioLike = async (module, uuid) => {
+  let index = 0;
+  const audioPaths = Array.isArray(module.audio_path) ? module.audio_path : [module.audio_path];
+  const audioPathLen = audioPaths.length;
+
+  do {
+    console.log("音频点赞模块：", module);
+
+    if (!module.isActive) {
+      console.log("模块未激活，暂停 1 秒...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    if (module.interval_time_start != 0 && module.interval_time_end != 0) {
+      const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+      console.log("随机间隔时间（秒）：", randomTime);
+      await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
+    }
+
+    const currentAudioPath = audioPaths[index];
+    while (playList.value.length >= 5) {
+      console.log("播放队列已满，等待消费...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const ok = await playAudioModuleBackgroundMusic(module);
+    if (!ok) {
+      console.log("播放失败，暂停 1 秒后重试...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    playList.value.unshift({
+      content: `[${module.module_name}] 播放音频 ${currentAudioPath}`,
+      filename: currentAudioPath,
+      play_mode: "serial",
+    });
+
+    if (index == audioPathLen - 1) {
+      index = 0;
+    } else {
+      index = index + 1;
+    }
+  } while (start.value && uuid == startUUID.value);
+};
+
+/**
+ * 音频模块的进入直播间触发函数
+ * 
+ * 该函数用于处理音频模块 (`module_type == "audio"`) 的进入直播间触发逻辑。
+ * 它会持续循环播放指定的音频文件，直到 `start.value` 为 false 或 `uuid` 不匹配。
+ * 播放记录会添加到 `playList` 队列尾部。
+ * 
+ * 主要逻辑：
+ * 1. 检查模块是否激活 (`isActive`)，未激活则暂停 1 秒后继续。
+ * 2. 根据 `interval_time_start` 和 `interval_time_end` 设置随机播放间隔。
+ * 3. 限制播放队列长度（不超过 5），等待队列消费。
+ * 4. 调用 `playAudioModuleBackgroundMusic` 播放音频。
+ * 5. 将播放记录添加到 `playList` 队列头部。
+ * 
+ * @param {Object} module - 音频模块对象，包含以下关键字段：
+ *   - `audio_path` (string): 音频文件路径。
+ *   - `isActive` (boolean): 模块是否激活。
+ *   - `interval_time_start` (number): 最小间隔时间（秒）。
+ *   - `interval_time_end` (number): 最大间隔时间（秒）。
+ *   - `module_name` (string): 模块名称，用于日志和播放记录。
+ *   - `volume` (number): 音量值（0-100）。
+ * @param {string} uuid - 当前任务的唯一标识符，用于控制循环。
+ */
+const AudioEnterLiveRoom = async (module, uuid) => {
+  let index = 0;
+  const audioPaths = Array.isArray(module.audio_path) ? module.audio_path : [module.audio_path];
+  const audioPathLen = audioPaths.length;
+
+  do {
+    console.log("音频进入直播间模块：", module);
+
+    if (!module.isActive) {
+      console.log("模块未激活，暂停 1 秒...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    if (module.interval_time_start != 0 && module.interval_time_end != 0) {
+      const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+      console.log("随机间隔时间（秒）：", randomTime);
+      await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
+    }
+
+    const currentAudioPath = audioPaths[index];
+    while (playList.value.length >= 5) {
+      console.log("播放队列已满，等待消费...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const ok = await playAudioModuleBackgroundMusic(module);
+    if (!ok) {
+      console.log("播放失败，暂停 1 秒后重试...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    playList.value.unshift({
+      content: `[${module.module_name}] 播放音频 ${currentAudioPath}`,
+      filename: currentAudioPath,
+      play_mode: "serial",
+    });
+
+    if (index == audioPathLen - 1) {
+      index = 0;
+    } else {
+      index = index + 1;
+    }
+  } while (start.value && uuid == startUUID.value);
+};
+
+/**
+ * 音频模块的分享直播间触发函数
+ * 
+ * 该函数用于处理音频模块 (`module_type == "audio"`) 的分享直播间触发逻辑。
+ * 它会持续循环播放指定的音频文件，直到 `start.value` 为 false 或 `uuid` 不匹配。
+ * 播放记录会添加到 `playList` 队列尾部。
+ * 
+ * 主要逻辑：
+ * 1. 检查模块是否激活 (`isActive`)，未激活则暂停 1 秒后继续。
+ * 2. 根据 `interval_time_start` 和 `interval_time_end` 设置随机播放间隔。
+ * 3. 限制播放队列长度（不超过 5），等待队列消费。
+ * 4. 调用 `playAudioModuleBackgroundMusic` 播放音频。
+ * 5. 将播放记录添加到 `playList` 队列尾部。
+ * 
+ * @param {Object} module - 音频模块对象，包含以下关键字段：
+ *   - `audio_path` (string): 音频文件路径。
+ *   - `isActive` (boolean): 模块是否激活。
+ *   - `interval_time_start` (number): 最小间隔时间（秒）。
+ *   - `interval_time_end` (number): 最大间隔时间（秒）。
+ *   - `module_name` (string): 模块名称，用于日志和播放记录。
+ *   - `volume` (number): 音量值（0-100）。
+ * @param {string} uuid - 当前任务的唯一标识符，用于控制循环。
+ */
+const AudioShareRoom = async (module, uuid) => {
+  let index = 0;
+  const audioPaths = Array.isArray(module.audio_path) ? module.audio_path : [module.audio_path];
+  const audioPathLen = audioPaths.length;
+
+  do {
+    console.log("音频分享直播间模块：", module);
+
+    if (!module.isActive) {
+      console.log("模块未激活，暂停 1 秒...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    if (module.interval_time_start != 0 && module.interval_time_end != 0) {
+      const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+      console.log("随机间隔时间（秒）：", randomTime);
+      await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
+    }
+
+    const currentAudioPath = audioPaths[index];
+    while (playList.value.length >= 5) {
+      console.log("播放队列已满，等待消费...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const ok = await playAudioModuleBackgroundMusic(module);
+    if (!ok) {
+      console.log("播放失败，暂停 1 秒后重试...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    playList.value.unshift({
+      content: `[${module.module_name}] 播放音频 ${currentAudioPath}`,
+      filename: currentAudioPath,
+      play_mode: "serial",
+    });
+
+    if (index == audioPathLen - 1) {
+      index = 0;
+    } else {
+      index = index + 1;
+    }
+  } while (start.value && uuid == startUUID.value);
+};
+
+/**
+ * 音频模块的关注直播间触发函数
+ * 
+ * 该函数用于处理音频模块 (`module_type == "audio"`) 的关注直播间触发逻辑。
+ * 它会持续循环播放指定的音频文件，直到 `start.value` 为 false 或 `uuid` 不匹配。
+ * 播放记录会添加到 `playList` 队列尾部。
+ * 
+ * 主要逻辑：
+ * 1. 检查模块是否激活 (`isActive`)，未激活则暂停 1 秒后继续。
+ * 2. 根据 `interval_time_start` 和 `interval_time_end` 设置随机播放间隔。
+ * 3. 限制播放队列长度（不超过 5），等待队列消费。
+ * 4. 调用 `playAudioModuleBackgroundMusic` 播放音频。
+ * 5. 将播放记录添加到 `playList` 队列头部。
+ * 
+ * @param {Object} module - 音频模块对象，包含以下关键字段：
+ *   - `audio_path` (string): 音频文件路径。
+ *   - `isActive` (boolean): 模块是否激活。
+ *   - `interval_time_start` (number): 最小间隔时间（秒）。
+ *   - `interval_time_end` (number): 最大间隔时间（秒）。
+ *   - `module_name` (string): 模块名称，用于日志和播放记录。
+ *   - `volume` (number): 音量值（0-100）。
+ * @param {string} uuid - 当前任务的唯一标识符，用于控制循环。
+ */
+const AudioFollowRoom = async (module, uuid) => {
+  let index = 0;
+  const audioPaths = Array.isArray(module.audio_path) ? module.audio_path : [module.audio_path];
+  const audioPathLen = audioPaths.length;
+
+  do {
+    console.log("音频关注直播间模块：", module);
+
+    if (!module.isActive) {
+      console.log("模块未激活，暂停 1 秒...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    if (module.interval_time_start != 0 && module.interval_time_end != 0) {
+      const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
+      console.log("随机间隔时间（秒）：", randomTime);
+      await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
+    }
+
+    const currentAudioPath = audioPaths[index];
+    while (playList.value.length >= 5) {
+      console.log("播放队列已满，等待...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const ok = await playAudioModuleBackgroundMusic(module);
+    if (!ok) {
+      console.log("播放失败，暂停 1 秒后重试...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
+    }
+
+    playList.value.unshift({
+      content: `[${module.module_name}] 播放音频 ${currentAudioPath}`,
+      filename: currentAudioPath,
+      play_mode: "serial",
+    });
+
+    if (index == audioPathLen - 1) {
+      index = 0;
+    } else {
+      index = index + 1;
+    }
+  } while (start.value && uuid == startUUID.value);
+};
+
+//播放调用
+/**
+ * 播放音频模块的背景音乐
+ * 
+ * 该函数通过调用后端 API (`http://127.0.0.1:7073/play_background_music`) 播放音频模块指定的音频文件。
+ * 主要用于音频模块 (`module_type == "audio"`) 的触发逻辑，例如场景循环、弹幕评论等。
+ * 
+ * @param {Object} module - 音频模块对象，包含以下关键字段：
+ *   - `audio_path` (string): 音频文件的路径（例如 "D:\\path\\to\\file.m4a"）。
+ *   - `volume` (number): 音量值，范围 0-100，将被转换为 0-1 范围。
+ *   - `module_name` (string): 模块名称，用于日志记录。
+ * @returns {Promise<boolean>} - 返回播放是否成功的布尔值：
+ *   - `true`: 播放请求成功。
+ *   - `false`: 播放请求失败（例如网络错误或 API 返回非 200 状态）。
+ * @throws {Error} - 如果 API 请求失败，抛出错误并记录到控制台。
+ */
+ const playAudioModuleBackgroundMusic = async (module) => {
+  const volume = module.volume / 100; // 转换为 0-1 范围（API 要求音量值为 0-1）
+  const payload = {
+    file_path: module.audio_path, // 音频文件路径，直接使用 module.audio_path
+    volume: volume // 转换后的音量值
+  };
+
+  try {
+    const response = await fetch('http://127.0.0.1:7073/play_background_music', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error('播放请求失败'); // 检查 HTTP 状态码，非 200 抛出错误
+    }
+
+    console.log(`[播放成功] 模块 ${module.module_name}，文件: ${module.audio_path}, 音量: ${volume}`);
+    return true; // 成功返回 true
+  } catch (error) {
+    console.error(`[播放失败] 模块 ${module.module_name}:`, error); // 记录错误信息
+    return false; // 失败返回 false
+  }
+};
+
 
 const intervalTime = ref(0) // 默认1000毫秒 1秒=1000毫秒
 //消费playList
