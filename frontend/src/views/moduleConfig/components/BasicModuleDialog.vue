@@ -119,7 +119,7 @@
               v-model:value="basicForm.speechContents"
               :placeholder="$t('请输入话术文案')"
               :min="1"
-              :max="22"
+              :max="2000"
               :on-create="handleSpeechContentCreate"
               :on-remove="handleSpeechContentRemove"
             >
