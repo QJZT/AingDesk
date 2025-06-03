@@ -9,7 +9,7 @@
   >
     <template #header>
       <div style="display: flex; align-items: center; width: 100%; gap: 8px;">
-        <span style="font-size: 16px; font-weight: bold; color: #18a058;">模块11备注</span>
+        <span style="font-size: 16px; font-weight: bold; color: #18a058;">模块备注</span>
         <n-input
           v-model:value="basicForm.moduleName"
           placeholder="请输入模块名称"
