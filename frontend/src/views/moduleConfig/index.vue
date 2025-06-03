@@ -61,7 +61,18 @@
               </div>
               <div class="module-actions">
                 <n-button type="primary" @click="editModule(module)">编辑</n-button>
-                <n-button type="error" @click="deleteModule(module)">删除</n-button>
+                <!-- <n-button type="error" @click="deleteModule(module)">删除</n-button> -->
+                <n-popconfirm
+                  @positive-click="deleteModule(module)"
+                  @negative-click="cancelDelete"
+                  positive-text="确认"
+                  negative-text="取消"
+                >
+                  <template #trigger>
+                    <n-button type="error">删除</n-button>
+                  </template>
+                  确定要删除模块 "{{ module.moduleName }}" 吗？
+                </n-popconfirm>
               </div>
             </div>
           </div>
@@ -101,7 +112,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { NCard, NButton, NScrollbar } from 'naive-ui';
+import { NCard, NButton, NScrollbar, NPopconfirm } from 'naive-ui';
 import BasicModuleDialog from '@/views/ModuleConfig/components/BasicModuleDialog.vue';
 import AudioModuleDialog from '@/views/ModuleConfig/components/AudioModuleDialog.vue';
 import NumberPersonDialog from '@/views/dataListView/components/NumberPersonDialog.vue';
@@ -132,6 +143,12 @@ enum ModuleType {
 enum ReadStep {
   Random = "random",
   Sequential = "sequential"
+}
+
+// 处理取消删除的操作
+function cancelDelete() {
+  console.log('删除操作已取消');
+  window.$message?.info('已取消删除操作');
 }
 
 // 定义模块接口，与后端数据结构保持一致

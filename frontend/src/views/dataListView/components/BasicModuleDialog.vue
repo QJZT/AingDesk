@@ -151,7 +151,7 @@
     <template #action>
       <div style="text-align: right">
         <n-button type="warning" @click="handleExit">退出</n-button>
-        <n-button type="error" @click="handleSave" style="margin-left: 12px">保存</n-button>
+        <n-button type="primary" @click="handleSave" style="margin-left: 12px">保存</n-button>
       </div>
     </template>
   </n-modal>
