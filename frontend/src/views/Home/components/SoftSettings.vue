@@ -10,6 +10,7 @@
                     </div>
                 </div>
             </NListItem>
+            
             <NListItem>
                 <div class="theme-setting w-100%">
                     <div class="flex-between">
@@ -19,6 +20,7 @@
                     </div>
                 </div>
             </NListItem>
+
             <NListItem>
                 <div class="theme-setting w-100%">
                     <div class="flex-between">

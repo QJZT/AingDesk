@@ -14,7 +14,7 @@
           <span class="label">触发条件 *</span>
           <div class="trigger-conditions">
             <n-radio-group v-model:value="audioForm.selectedTrigger">
-              <n-radio value="SceneLoop">控场循环</n-radio>
+              <!-- <n-radio value="SceneLoop">控场循环</n-radio> -->
               <n-radio value="IntervalLoop">间隔循环</n-radio>
               <n-radio value="BarrageComment">弹幕评论</n-radio>
               <n-radio value="SendGift">送礼物</n-radio>
@@ -28,7 +28,7 @@
       </div>
 
       <!-- 时间间隔 -->
-      <div class="form-row" v-if="audioForm.selectedTrigger !== 'SceneLoop'">
+      <div class="form-row">
         <div class="form-item">
           <span class="label">时间间隔（秒）*</span>
           <div class="time-range">
@@ -113,7 +113,7 @@ const loadDraft = () => {
     : {
         minTime: 30,
         maxTime: 50,
-        selectedTrigger: 'SceneLoop',
+        selectedTrigger: 'IntervalLoop',
         audioFiles: [],
         audioName: '',
         audioPath: '',
@@ -134,7 +134,7 @@ watch(() => props.show, (newShow) => {
       audioForm.value = {
         minTime: props.initialData.intervalTimeStart || 30,
         maxTime: props.initialData.intervalTimeEnd || 50,
-        selectedTrigger: props.initialData.triggerConditions?.[0] || 'SceneLoop',
+        selectedTrigger: props.initialData.triggerConditions?.[0] || 'IntervalLoop',
         audioFiles: [],
         audioName: props.initialData.audioName || '',
         audioPath: props.initialData.audioPath || '',
@@ -144,7 +144,7 @@ watch(() => props.show, (newShow) => {
       audioForm.value = {
         minTime: 30,
         maxTime: 50,
-        selectedTrigger: 'SceneLoop',
+        selectedTrigger: 'IntervalLoop',
         audioFiles: [],
         audioName: '',
         audioPath: '',
@@ -164,7 +164,7 @@ watch(() => props.initialData, (newData) => {
     audioForm.value = {
       minTime: newData.intervalTimeStart || 30,
       maxTime: newData.intervalTimeEnd || 50,
-      selectedTrigger: newData.triggerConditions?.[0] || 'SceneLoop',
+      selectedTrigger: newData.triggerConditions?.[0] || 'IntervalLoop',
       audioFiles: [],
       audioName: newData.audioName || '',
       audioPath: newData.audioPath || '',
@@ -244,7 +244,7 @@ const handleExit = () => {
 
 // 保存
 enum TriggerCondition {
-  SceneLoop = "SceneLoop",
+  // SceneLoop = "SceneLoop",
   IntervalLoop = "IntervalLoop",
   BarrageComment = "BarrageComment",
   SendGift = "SendGift",
@@ -260,15 +260,13 @@ const handleSave = () => {
     return;
   }
 
-  if (audioForm.value.selectedTrigger !== 'SceneLoop') {
-    if (audioForm.value.minTime === undefined || audioForm.value.maxTime === undefined) {
-      window.$message?.error('保存失败：时间间隔不能为空');
-      return;
-    }
-    if (audioForm.value.minTime >= audioForm.value.maxTime) {
-      window.$message?.error('保存失败：最小时间必须小于最大时间');
-      return;
-    }
+  if (audioForm.value.minTime === undefined || audioForm.value.maxTime === undefined) {
+    window.$message?.error('保存失败：时间间隔不能为空');
+    return;
+  }
+  if (audioForm.value.minTime >= audioForm.value.maxTime) {
+    window.$message?.error('保存失败：最小时间必须小于最大时间');
+    return;
   }
 
   if (!audioForm.value.audioPath || !audioForm.value.audioPath.trim()) {
@@ -278,50 +276,13 @@ const handleSave = () => {
 
   console.log('保存前 audioPath:', audioForm.value.audioPath);
 
-  let intervalTimeStart = audioForm.value.minTime;
-  let intervalTimeEnd = audioForm.value.maxTime;
-  if (audioForm.value.selectedTrigger === 'SceneLoop') {
-    intervalTimeStart = 0;
-    intervalTimeEnd = 0;
-  }
-
-  let triggerCondition;
-  switch (audioForm.value.selectedTrigger) {
-    case 'SceneLoop':
-      triggerCondition = TriggerCondition.SceneLoop;
-      break;
-    case 'IntervalLoop':
-      triggerCondition = TriggerCondition.IntervalLoop;
-      break;
-    case 'BarrageComment':
-      triggerCondition = TriggerCondition.BarrageComment;
-      break;
-    case 'SendGift':
-      triggerCondition = TriggerCondition.SendGift;
-      break;
-    case 'Like':
-      triggerCondition = TriggerCondition.Like;
-      break;
-    case 'EnterLiveRoom':
-      triggerCondition = TriggerCondition.EnterLiveRoom;
-      break;
-    case 'ShareRoom':
-      triggerCondition = TriggerCondition.ShareRoom;
-      break;
-    case 'FollowRoom':
-      triggerCondition = TriggerCondition.FollowRoom;
-      break;
-    default:
-      triggerCondition = TriggerCondition.SceneLoop;
-  }
-
   const formData = {
     id: props.initialData?.id || 0,
     moduleType: 'audio',
-    moduleName: props.initialData?.moduleName || '音频模块',  // 保留原有模块名称
-    intervalTimeStart,
-    intervalTimeEnd,
-    triggerConditions: [triggerCondition],
+    moduleName: props.initialData?.moduleName || '音频模块',
+    intervalTimeStart: audioForm.value.minTime, // 修改 8：移除 SceneLoop 的 intervalTimeStart/End 设为 0 逻辑
+    intervalTimeEnd: audioForm.value.maxTime,
+    triggerConditions: [audioForm.value.selectedTrigger as TriggerCondition], // 修改 9：直接使用 selectedTrigger，无需 switch
     readStep: props.initialData?.readStep || '',
     scriptContent: props.initialData?.scriptContent || [],
     isModelRewrite: props.initialData?.isModelRewrite || false,

@@ -205,23 +205,13 @@ func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 				return
 			}
 
-			// 使用事务创建模块
-			tx := db.Begin()
-			if err := tx.Create(&baseModule).Error; err != nil {
+			// 使用事务创建模块 改
+			if err := db.Create(&baseModule).Error; err != nil {
 				log.Error().Err(err).Interface("module", baseModule).Msg("创建基础模块失败")
-				tx.Rollback()
 				respondWithError(c, 500, "创建基础模块失败："+err.Error())
 				return
 			}
-			log.Info().Interface("创建的模块", baseModule).Msg("基础模块在事务中创建成功")
-
-			if err := tx.Commit().Error; err != nil {
-				log.Error().Err(err).Msg("提交事务失败")
-				tx.Rollback()
-				respondWithError(c, 500, "提交事务失败")
-				return
-			}
-			log.Info().Msg("事务提交成功")
+			log.Info().Interface("创建的模块", baseModule).Msg("基础模块创建成功")
 
 			response := dto.ToBaseModuleResponse(baseModule)
 			log.Info().
@@ -335,23 +325,14 @@ func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 			baseModule.AudioName = updateModule.AudioName
 			baseModule.AudioPath = updateModule.AudioPath
 
-			// 使用事务更新模块
-			tx := db.Begin()
-			if err := tx.Save(&baseModule).Error; err != nil {
+			// 使用事务更新模块 改
+			// 直接更新模块
+			if err := db.Save(&baseModule).Error; err != nil {
 				log.Error().Err(err).Interface("module", baseModule).Msg("更新基础模块失败")
-				tx.Rollback()
 				respondWithError(c, 500, "更新基础模块失败")
 				return
 			}
-			log.Info().Interface("updated_module", baseModule).Msg("基础模块在事务中更新成功")
-
-			if err := tx.Commit().Error; err != nil {
-				log.Error().Err(err).Msg("提交事务失败")
-				tx.Rollback()
-				respondWithError(c, 500, "提交事务失败")
-				return
-			}
-			log.Info().Msg("事务提交成功")
+			log.Info().Interface("updated_module", baseModule).Msg("基础模块更新成功")
 
 			response := dto.ToBaseModuleResponse(baseModule)
 			log.Info().
@@ -380,23 +361,14 @@ func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 				return
 			}
 
-			// 使用事务删除模块
-			tx := db.Begin()
-			if err := tx.Delete(&baseModule).Error; err != nil {
+			// 使用事务删除模块 改
+			// 直接删除模块
+			if err := db.Delete(&baseModule).Error; err != nil {
 				log.Error().Err(err).Msg("删除基础模块失败")
-				tx.Rollback()
 				respondWithError(c, 500, "删除基础模块失败")
 				return
 			}
-			log.Info().Msg("基础模块在事务中删除成功")
-
-			if err := tx.Commit().Error; err != nil {
-				log.Error().Err(err).Msg("提交事务失败")
-				tx.Rollback()
-				respondWithError(c, 500, "提交事务失败")
-				return
-			}
-			log.Info().Msg("事务提交成功")
+			log.Info().Msg("基础模块删除成功")
 
 			log.Info().
 				Str("method", "DELETE").
@@ -468,23 +440,14 @@ func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 				return
 			}
 
-			// 使用事务创建模块
-			tx := db.Begin()
-			if err := tx.Create(&baseModule).Error; err != nil {
+			// 使用事务创建模块 改
+			// 直接创建模块
+			if err := db.Create(&baseModule).Error; err != nil {
 				log.Error().Err(err).Interface("module", baseModule).Msg("创建音频模块失败")
-				tx.Rollback()
 				respondWithError(c, 500, "创建音频模块失败："+err.Error())
 				return
 			}
-			log.Info().Interface("创建的模块", baseModule).Msg("音频模块在事务中创建成功")
-
-			if err := tx.Commit().Error; err != nil {
-				log.Error().Err(err).Msg("提交事务失败")
-				tx.Rollback()
-				respondWithError(c, 500, "提交事务失败")
-				return
-			}
-			log.Info().Msg("事务提交成功")
+			log.Info().Interface("创建的模块", baseModule).Msg("音频模块创建成功")
 
 			response := dto.ToBaseModuleResponse(baseModule)
 			log.Info().

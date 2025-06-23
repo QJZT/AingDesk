@@ -11,11 +11,11 @@
           </div>
 
           <!-- 工作流模块 -->
-          <div class="module-card">
+          <!-- <div class="module-card">
             <div class="card-placeholder">+</div>
             <h3>工作流对象</h3>
             <p>说明：支持coze，dify等主流工作流对接</p>
-          </div>
+          </div> -->
 
           <!-- 音文交互模块 -->
           <div class="module-card">

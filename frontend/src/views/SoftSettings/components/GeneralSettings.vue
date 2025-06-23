@@ -10,7 +10,8 @@
                     </div>
                 </div>
             </n-list-item> -->
-            <n-list-item>
+            <!-- 注释掉颜色选择 -->
+            <!-- <n-list-item>
                 <div class="theme-setting w-100%">
                     <div class="flex-between">
                         <span>{{ themeMode == 'light' ? $t("浅色模式") : $t("深色模式") }} </span>
@@ -18,7 +19,7 @@
                             v-model:value="themeMode" :on-update:value="changeThemeMode"></n-switch>
                     </div>
                 </div>
-            </n-list-item>
+            </n-list-item> -->
             <n-list-item>
                 <div class="theme-setting w-100%">
                     <div class="flex-between">
