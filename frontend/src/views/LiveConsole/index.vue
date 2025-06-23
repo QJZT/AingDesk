@@ -42,15 +42,16 @@
         />
       </div>
 
-      <div class="setting-item">
+      <div class="setting-item" >
         <n-text depth="3" style="margin-right: 8px;">语音模型(主)</n-text>
         <n-select 
           v-model:value="selectedSpeechModel"
           :options="speedModelOptions"
           :loading="loading2"
           placeholder="选择驱动"
-          style="width: 180px;"
+          style="width: 480px;"
           @update:value="initializeSpeechModel"
+           @focus="getSpeedModels"
         />
       </div>
     
@@ -61,8 +62,9 @@
           :options="speedModelOptions2"
           :loading="loading2"
           placeholder="选择驱动"
-          style="width: 180px;"
+          style="width: 480px;"
           @update:value="initializeSpeechModel"
+           @focus="getSpeedModels"
         />
       </div>
      
@@ -984,10 +986,10 @@ const timezoneOptions = [
   { label: '所罗门群岛', value: 'Pacific/Guadalcanal' },
   { label: '新西兰标准时间', value: 'Pacific/Auckland' }
 ]
-
+//'中文', '中文', '日文', '粤语', '韩文', '中英混合', '日英混合', '粤英混合', '韩英混合', '多语种混合', '多语种混合(粤语)']字符串Literal['中文', '中文', '日文', '粤语', '韩文', '中英混合', '日英混合', '粤英混合', '韩英混合', '多语种混合', '多语种混合(粤语)']字符串Literal['中文', '中文', '日文', '粤语', '韩文', '中英混合', '日英混合', '粤英混合', '韩英混合', '多语种混合', '多语种混合(粤语)']
 const languageOptions = [
-{ label: '英语', value: 'en' },
-{ label: '简体中文', value: 'zh' },
+{ label: '英文', value: '英文' },
+{ label: '中文', value: '中文' },
 
   // { label: '西班牙语', value: 'es' },
   // { label: '法语', value: 'fr' },
@@ -1216,6 +1218,8 @@ const speedModelOptions2 = ref([])
 
 const getSpeedModels = async () => {
   try {
+
+
     const response = await fetch('http://127.0.0.1:7074/get_model_filenames', {
       method: 'GET',
       headers: {

@@ -134,18 +134,23 @@ let py7074Process;
 function startPy7074Service() {
     return new Promise<void>((resolve) => {
       // .\runtime2\python.exe api.py -a 0.0.0.0 -p 7074 -s D:\pythonWork\GPT-SoVITS-v3\data\models\ -g D:\pythonWork\GPT-SoVITS-v3\data\models\ 
-        const pythonExePath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/runtime3/python.exe');
-        const pythonScriptPath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/api.py');
-        const dataPathS = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
-        const dataPathG = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
+        const pythonExePath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/runtime/python.exe');
+        const pythonScriptPath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/api_qjzt.py');
+        // const dataPathS = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
+        // const dataPathG = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
 //         [py7074 stderr]: Traceback (most recent call last):
 //   File "D:\androidWork\AingDesk\build\extraResources\exe\py7074-code\api.py", line 163, in <module>
 //     from feature_extractor import cnhubert
 // ModuleNotFoundError: No module named 'feature_extractor'
         // 打印启动指令
-        console.log('启动py7074指令:', pythonExePath, pythonScriptPath, '-a', "0.0.0.0", '-p', "7074", '-s', dataPathS, "-g", dataPathG);
-        py7074Process = spawn(pythonExePath, [pythonScriptPath, '-a', "0.0.0.0" ,'-p', "7074",'-s',dataPathS , "-g",dataPathG], {
-            cwd: path.resolve(pub.get_resource_path(), 'exe/py7074-code')
+        console.log('启动py7074指令:', pythonExePath, pythonScriptPath, '-a', "0.0.0.0", '-p', "7074");
+        py7074Process = spawn(pythonExePath, [pythonScriptPath, '-a', "0.0.0.0" ,'-p', "7074"], {
+            cwd: path.resolve(pub.get_resource_path(), 'exe/py7074-code'),
+            env: {
+                ...process.env,
+                PYTHONPATH: path.resolve(pub.get_resource_path(), 'exe/py7074-code'),
+                PYTHONIOENCODING: 'utf-8'
+            }
         });
         
         // py7074Process.stdout.on('data', (data) => {
@@ -176,6 +181,58 @@ function startPy7074Service() {
     });
 }
 
+
+// 修改startPy7073Service函数
+let py9872Process;
+function startPy9872Service() {
+    return new Promise<void>((resolve) => {
+      // .\runtime2\python.exe api.py -a 0.0.0.0 -p 7074 -s D:\pythonWork\GPT-SoVITS-v3\data\models\ -g D:\pythonWork\GPT-SoVITS-v3\data\models\ 
+        const pythonExePath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/runtime/python.exe');
+        const pythonScriptPath = path.resolve(pub.get_resource_path(), 'exe/py7074-code/GPT_SoVITS/inference_webui_fast.py');
+        // const dataPathS = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
+        // const dataPathG = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
+//         [py7074 stderr]: Traceback (most recent call last):
+//   File "D:\androidWork\AingDesk\build\extraResources\exe\py7074-code\api.py", line 163, in <module>
+//     from feature_extractor import cnhubert
+// ModuleNotFoundError: No module named 'feature_extractor'
+        // 打印启动指令
+        console.log('启动py9872指令:', pythonExePath, pythonScriptPath,);
+        py9872Process = spawn(pythonExePath, [pythonScriptPath,], {
+            cwd: path.resolve(pub.get_resource_path(), 'exe/py7074-code'),
+            env: {
+                ...process.env,
+                PYTHONPATH: path.resolve(pub.get_resource_path(), 'exe/py7074-code'),
+                PYTHONIOENCODING: 'utf-8'
+            }
+        });
+        
+        // py7074Process.stdout.on('data', (data) => {
+        //     console.log(`[py7074 stdout]: ${data}`);
+        // });
+        // py9872Process.stderr.on('data', (data) => {
+        //     console.error(`[py7074 stderr]: ${data}`);
+        // });
+        const pingInterval = setInterval(() => {
+            const http = require('http');
+            const options = {
+                hostname: 'localhost',
+                port: 9872,
+                path: '/',
+                method: 'GET',
+                timeout: 5000
+            };
+            const req = http.request(options, (res) => {
+                if (res.statusCode === 200) {
+                    clearInterval(pingInterval);
+                    console.log('py9872 run ok');
+                    resolve();
+                }
+            });
+            req.on('error', () => {});
+            req.end();
+        }, 1000);
+    });
+}
 // let xttsProcess;
 // function startXttsService() {
 //     const xttsExePath = path.resolve(pub.get_resource_path(), 'exe/xtts.exe');
@@ -228,6 +285,9 @@ async function initializeApp() {
         if (py7074Process && !py7074Process.killed) {
           py7074Process.kill();
         }
+        if (py9872Process && !py9872Process.killed) {
+            py9872Process.kill();
+          }
       });  
       console.log('py7072 run ...');
       await startGoService();//启动go
@@ -235,6 +295,8 @@ async function initializeApp() {
       await startPy7073Service(); //启动 7073
       console.log('py7074 run ...');
       await startPy7074Service();//启动 7074
+      console.log('py9872 run ...');
+      await startPy9872Service();//启动 7074
       
       // 关闭加载窗口
     //   loadingWindow.close();
