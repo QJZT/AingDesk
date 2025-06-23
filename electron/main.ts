@@ -6,6 +6,7 @@ import mcp from './controller/mcp';
 const { spawn } = require('child_process');
 import { pub } from './class/public';
 import * as path from 'path';
+import { ipcMain } from 'electron';
 // New app
 const app = new ElectronEgg();
 
@@ -233,6 +234,7 @@ function startPy9872Service() {
         }, 1000);
     });
 }
+
 // let xttsProcess;
 // function startXttsService() {
 //     const xttsExePath = path.resolve(pub.get_resource_path(), 'exe/xtts.exe');
@@ -254,6 +256,42 @@ function startPy9872Service() {
 //     });
 // }
 // startXttsService();
+
+// 添加服务控制的IPC处理程序
+ipcMain.handle('start-py9872-service', async () => {
+  try {
+    if (py9872Process && !py9872Process.killed) {
+      return { success: false, message: 'py9872服务已在运行中' };
+    }
+    await startPy9872Service();
+    return { success: true, message: 'py9872服务启动成功' };
+  } catch (error) {
+    console.error('启动py9872服务失败:', error);
+    return { success: false, message: `启动py9872服务失败: ${error.message}` };
+  }
+});
+
+ipcMain.handle('stop-py9872-service', async () => {
+  try {
+    if (!py9872Process || py9872Process.killed) {
+      return { success: false, message: 'py9872服务未运行' };
+    }
+    py9872Process.kill();
+    py9872Process = null;
+    return { success: true, message: 'py9872服务已停止' };
+  } catch (error) {
+    console.error('停止py9872服务失败:', error);
+    return { success: false, message: `停止py9872服务失败: ${error.message}` };
+  }
+});
+
+ipcMain.handle('get-py9872-service-status', async () => {
+  const isRunning = py9872Process && !py9872Process.killed;
+  return { 
+    isRunning, 
+    message: isRunning ? 'py9872服务正在运行' : 'py9872服务未运行' 
+  };
+});
 
 // Run
 

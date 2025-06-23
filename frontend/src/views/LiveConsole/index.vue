@@ -246,6 +246,7 @@
           </n-button>
         </n-input-group>
       </div>
+      
     </div>
     </n-card>   
      </div>
@@ -797,7 +798,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { 
   NCard, 
   NButton, 
@@ -1262,9 +1263,7 @@ const fetchModules = async () => {
     let list = await response.json()
     console.log("模块列表:",list);
     for (const  [index, module] of list.entries()) {
-      console.log("module.id:",module.id);
       let  kv = await getModulesKv(module.id)
-      console.log("kv:",kv);
       module.volume = kv.volume || 50
       module.isActive= kv.isActive || false
       module.retAi= kv.retAi || false
@@ -1499,6 +1498,11 @@ const playList = ref<PlayItem[]>([])//播放列表
 const uesPlayList = ref<PlayItem[]>([])//已播放列表
 const start = ref(false)//启动开关
 const startUUID = ref("")//启动开关
+
+// py9872服务控制相关变量
+const py9872ServiceRunning = ref(false) // 服务运行状态
+const py9872ServiceLoading = ref(false) // 服务操作加载状态
+const py9872ServiceStatus = ref('未知状态') // 服务状态文本
 //注册模块，
 
 const registerModules = async () => {
@@ -1622,10 +1626,8 @@ const registerModules = async () => {
   const audioPathLen = audioPaths.length; // 音频路径长度（当前为 1）
 
   do {
-    console.log("音频场景循环模块：", module); // 打印模块信息，便于调试
 
     if (!module.isActive) {
-      console.log("模块未激活，暂停 1 秒...");
       await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
       continue;
     }
@@ -1694,10 +1696,7 @@ const registerModules = async () => {
   const audioPathLen = audioPaths.length; // 音频路径长度（当前为 1）
 
   do {
-    console.log("音频间隔循环模块：", module); // 打印模块信息，便于调试
-
     if (!module.isActive) {
-      console.log("模块未激活，暂停 1 秒...");
       await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
       continue;
     }
@@ -2232,8 +2231,6 @@ const SceneLoop= async (module,newuuil) => {
     let index = 0 //当前播放索引
     const script_content_len = module.script_content.length //脚本长度
     do {
-      console.log("SceneLoop module:",module);
-      
         if (!module.isActive) { 
           await new Promise(resolve => setTimeout(resolve, 1000))
           continue
@@ -2284,6 +2281,9 @@ const SceneLoop= async (module,newuuil) => {
             module.speed, //生成速度
             module.volume / 100 //生成音量
           ) //生成音量
+
+          console.log("ok:",ok);
+          
         if (!ok) { //生成失败
             await new Promise(resolve => setTimeout(resolve, 1000))
             continue
@@ -2849,6 +2849,12 @@ const generate_wav_api = async (_text:string,
     };
     queue.push(async () => {
       try {
+        // 创建AbortController用于超时控制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 10000); // 30秒超时
+
         const response = await fetch('http://127.0.0.1:7074/generate_wav', {
             method: 'POST',
             headers: {
@@ -2869,13 +2875,25 @@ const generate_wav_api = async (_text:string,
                 "volume" : _volume,//
                 "sample_rate" : 22050//
             }),
+            signal: controller.signal // 添加信号用于取消请求
         });
+        
+        // 清除超时定时器
+        clearTimeout(timeoutId);
         resolve(response.ok);
       } catch (err) {
-        reject(err);
+        // 处理超时错误
+        if (err.name === 'AbortError') {
+          await stopPy9872Service()
+          await startPy9872Service()
+          initializeSpeechModel();
+          resolve(false);
+          // reject(new Error('请求超时，请稍后重试'));
+        } else {
+          resolve(false);
+        }
       }
     });
-
     execute();
   });
     // try {
@@ -2932,13 +2950,6 @@ const play_task_voice_api = async (_filename:string,play_mode:string) => {
     });
     await response.json();
 }
-
-
-
-
-
-
-
 
 
 
@@ -3440,10 +3451,77 @@ const ReplaceText= async (text) => {
   return newText;
 } 
 
+// py9872服务控制方法
+const { ipcRenderer } = window.require('electron');
 
+// 启动py9872服务
+const startPy9872Service = async () => {
+  try {
+    py9872ServiceLoading.value = true;
+    const result = await ipcRenderer.invoke('start-py9872-service');
+    
+    if (result.success) {
+      py9872ServiceRunning.value = true;
+      py9872ServiceStatus.value = result.message;
+      message.success(result.message);
+    } else {
+      py9872ServiceStatus.value = result.message;
+      message.error(result.message);
+    }
+  } catch (error) {
+    console.error('启动py9872服务失败:', error);
+    py9872ServiceStatus.value = '启动失败';
+    message.error(`启动py9872服务失败: ${error.message}`);
+  } finally {
+    py9872ServiceLoading.value = false;
+  }
+};
 
+// 停止py9872服务
+const stopPy9872Service = async () => {
+  try {
+    py9872ServiceLoading.value = true;
+    const result = await ipcRenderer.invoke('stop-py9872-service');
+    
+    if (result.success) {
+      py9872ServiceRunning.value = false;
+      py9872ServiceStatus.value = result.message;
+      message.success(result.message);
+    } else {
+      py9872ServiceStatus.value = result.message;
+      message.error(result.message);
+    }
+  } catch (error) {
+    console.error('停止py9872服务失败:', error);
+    py9872ServiceStatus.value = '停止失败';
+    message.error(`停止py9872服务失败: ${error.message}`);
+  } finally {
+    py9872ServiceLoading.value = false;
+  }
+};
 
+// 检查py9872服务状态
+const checkPy9872ServiceStatus = async () => {
+  try {
+    py9872ServiceLoading.value = true;
+    const result = await ipcRenderer.invoke('get-py9872-service-status');
+    
+    py9872ServiceRunning.value = result.isRunning;
+    py9872ServiceStatus.value = result.message;
+    message.info(result.message);
+  } catch (error) {
+    console.error('检查py9872服务状态失败:', error);
+    py9872ServiceStatus.value = '状态检查失败';
+    message.error(`检查py9872服务状态失败: ${error.message}`);
+  } finally {
+    py9872ServiceLoading.value = false;
+  }
+};
 
+// 页面加载时检查服务状态
+onMounted(() => {
+  checkPy9872ServiceStatus();
+});
 
 </script>
 
