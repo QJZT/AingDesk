@@ -8,7 +8,7 @@ const useSoftSettingsStore = defineStore("softSettings", () => {
 	// 软件设置弹窗
 	const softSettingsShow = ref(false);
 	// 风格模式
-	const themeMode = ref(storage.themeMode || 'dark');
+	const themeMode = ref('dark');
 	// 风格模式下相关背景色
 	const themeColors = ref({
 		// markdown代码部分背景
