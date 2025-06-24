@@ -68,7 +68,7 @@
         />
       </div>
      
-    <div class="settings-bar">
+      <div class="settings-bar" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
       <div class="setting-item">
         <n-text depth="3" style="margin-right: 8px;">Temperature ({{ temperature }})<n-popover trigger="click">
           <template #trigger>
@@ -85,6 +85,8 @@
           :format-tooltip="(value) => `Temperature: ${value}`"
         />
       </div>
+
+      
 
       <div class="setting-item">
         <n-text depth="3" style="margin-right: 8px;">TopP ({{ top_p }}) <n-popover trigger="click">
@@ -137,8 +139,8 @@
           style="width: 100px;"
         />
       </div>
-      <div class="mic-select"> 
-            <n-text depth="3" class="mic-label">背景音乐声卡：</n-text> 
+      <div class="mic-select" style="display: flex; flex-direction: column; gap: 6px; min-width: 200px; padding-left: 0; align-items: flex-start;">
+          <n-text depth="3" class="mic-label" style="text-align: left;">背景音乐声卡：</n-text> 
             <n-select 
               v-model:value="selectedBgmDriver" 
               :options="audioDeviceOptions" 
@@ -147,7 +149,8 @@
               @update:value="handleLanguageChange" 
               @click="getMicrophoneDevices" 
             /> 
-          </div> 
+      </div> 
+
       <!-- speedModelOptions2 -->
     </div>
     </div>
@@ -451,7 +454,7 @@
         </n-infinite-scroll>
         <n-divider title-placement="left" style="font-size: 15px;height: 1px;margin: 12px 0;">
           </n-divider>
-        <n-infinite-scroll style="height: 80px; overflow-y: auto;" :style="{backgroundColor: themeThinkBg}"  :distance="10">
+        <n-infinite-scroll style="height:210px; overflow-y: auto;" :style="{backgroundColor: themeThinkBg}"  :distance="10">
           <div >
             <div 
              v-for="(data, index) in playList"
@@ -474,8 +477,8 @@
           </div>
         </n-infinite-scroll>
         
-        弹幕检测：{{ EnterBarrageContent }}
-        <n-input type="text" v-model:value="EnterBarrageContent"/>
+        <!-- 弹幕检测：{{ EnterBarrageContent }}
+        <n-input type="text" v-model:value="EnterBarrageContent"/> -->
         <!-- <div class="setting-item">
         <n-input 
           v-model:value="EnterLiveRoomUserName"
@@ -639,8 +642,8 @@
           </div>
         </div>
         <div style="height: 10px;"></div>
-        <div class="message-input">
-          <n-input-group>
+        <div class="message-input" :style="{backgroundColor: themeThinkBg}">
+          <n-input-group style="display: flex; align-items: center; gap: 8px;">
             <n-input 
               v-model:value="announcementMessage"
               type="textarea"
