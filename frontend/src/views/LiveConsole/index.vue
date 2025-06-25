@@ -169,24 +169,7 @@
         </n-button-group>
        </div>
      </div>
-      <div class="setting-item">
-       
-        <n-text depth="3" style="margin-right: 8px;">知识库:</n-text>
-        <div>
-          <n-popover trigger="click" style="">
-                        <template #trigger>
-                            <n-button :type="activeKnowledgeForChat.length ? 'primary' : 'default'" ghost
-                                style="height: 34px;" icon-placement="left" :focusable="false">
-                                <template #icon>
-                                    <i class="i-tdesign:folder"></i>
-                                </template>
-                                {{ $t("知识库") }}
-                            </n-button>
-                        </template>
-                        <KnowledgeChoosePanel />
-      </n-popover>
-        </div>
-      </div>
+
 
       <div class="setting-item">
         <n-text depth="3" style="margin-right: 8px;">模型选择</n-text>

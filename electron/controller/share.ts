@@ -2,7 +2,7 @@ import { pub } from '../class/public';
 import { logger } from 'ee-core/log';
 import path from 'path';
 
-const SHARE_URL = 'https://share.aingdesk.com';
+const SHARE_URL = 'https://share.无人直播.com';
 
 /**
  * share controller 类，处理与对话分享相关的各种操作

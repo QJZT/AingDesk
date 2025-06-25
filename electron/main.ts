@@ -96,7 +96,7 @@ function startPy7073Service() {
             fs.mkdirSync(dataPath, { recursive: true });
             console.log('已创建目录:', dataPath);
         }
-        // D:\\androidWork\\AingDesk\\build\\extraResources\\exe\\py7073-data\\wav\\task_voice\\59ce4dff-0a43-411d-8334-283e097a12ff_1747418025042.wav"
+        // D:\\androidWork\\无人直播\\build\\extraResources\\exe\\py7073-data\\wav\\task_voice\\59ce4dff-0a43-411d-8334-283e097a12ff_1747418025042.wav"
         py7073Process = spawn(pythonExePath, [pythonScriptPath, '-p', dataPath], {
             cwd: path.dirname(pythonExePath)
         });
@@ -140,7 +140,7 @@ function startPy7074Service() {
         // const dataPathS = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
         // const dataPathG = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
 //         [py7074 stderr]: Traceback (most recent call last):
-//   File "D:\androidWork\AingDesk\build\extraResources\exe\py7074-code\api.py", line 163, in <module>
+//   File "D:\androidWork\无人直播\build\extraResources\exe\py7074-code\api.py", line 163, in <module>
 //     from feature_extractor import cnhubert
 // ModuleNotFoundError: No module named 'feature_extractor'
         // 打印启动指令
@@ -193,7 +193,7 @@ function startPy9872Service() {
         // const dataPathS = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
         // const dataPathG = path.join(pub.get_resource_path(), 'exe/py7074-code/data/models/');
 //         [py7074 stderr]: Traceback (most recent call last):
-//   File "D:\androidWork\AingDesk\build\extraResources\exe\py7074-code\api.py", line 163, in <module>
+//   File "D:\androidWork\无人直播\build\extraResources\exe\py7074-code\api.py", line 163, in <module>
 //     from feature_extractor import cnhubert
 // ModuleNotFoundError: No module named 'feature_extractor'
         // 打印启动指令

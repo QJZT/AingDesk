@@ -1,19 +1,19 @@
-# AingDesk111
-![GitHub License](https://img.shields.io/github/license/aingdesk/aingdesk)
-![GitHub Release](https://img.shields.io/github/v/release/aingdesk/aingdesk)
-![GitHub stars](https://img.shields.io/github/stars/aingdesk/aingdesk?style=social)
-![GitHub forks](https://img.shields.io/github/forks/aingdesk/aingdesk?style=social)
-![GitHub issues](https://img.shields.io/github/issues/aingdesk/aingdesk)
-![GitHub last commit](https://img.shields.io/github/last-commit/aingdesk/aingdesk)
-![GitHub all releases](https://img.shields.io/github/downloads/aingdesk/aingdesk/total)
-![Docker Pulls](https://img.shields.io/docker/pulls/aingdesk/aingdesk)
+# 无人直播111
+![GitHub License](https://img.shields.io/github/license/无人直播/无人直播)
+![GitHub Release](https://img.shields.io/github/v/release/无人直播/无人直播)
+![GitHub stars](https://img.shields.io/github/stars/无人直播/无人直播?style=social)
+![GitHub forks](https://img.shields.io/github/forks/无人直播/无人直播?style=social)
+![GitHub issues](https://img.shields.io/github/issues/无人直播/无人直播)
+![GitHub last commit](https://img.shields.io/github/last-commit/无人直播/无人直播)
+![GitHub all releases](https://img.shields.io/github/downloads/无人直播/无人直播/total)
+![Docker Pulls](https://img.shields.io/docker/pulls/无人直播/无人直播)
 
 
-[简体中文](README.zh_cn.md) | [Official Website](https://www.aingdesk.com/) | [Documentation](https://docs.aingdesk.com/)
+[简体中文](README.zh_cn.md) | [Official Website](https://www.无人直播.com/) | [Documentation](https://docs.无人直播.com/)
 
-AingDesk是一款简单好用的AI助手，支持知识库、模型API、分享、联网搜索、智能体，它还在飞快成长中。
+无人直播是一款简单好用的AI助手，支持知识库、模型API、分享、联网搜索、智能体，它还在飞快成长中。
 
-AingDesk is an easy-to-use AI assistant that supports knowledge bases, model APIs, sharing, web search, and intelligent agents. It's rapidly growing and improving.
+无人直播 is an easy-to-use AI assistant that supports knowledge bases, model APIs, sharing, web search, and intelligent agents. It's rapidly growing and improving.
 
 ## 🚀 One-sentence Introduction  
 
@@ -48,9 +48,9 @@ A user-friendly AI assistant software that supports local AI models, APIs, and k
 
 ### Client Version（MacOS, Windows） 
 
-- [Download from official website](https://www.aingdesk.com/)   
-- [Download from CNB](https://cnb.cool/aingdesk/AingDesk/-/releases/)  
-- [Download from Github](https://github.com/aingdesk/AingDesk/releases)  
+- [Download from official website](https://www.无人直播.com/)   
+- [Download from CNB](https://cnb.cool/无人直播/无人直播/-/releases/)  
+- [Download from Github](https://github.com/无人直播/无人直播/releases)  
 
 ### Server Version
 
@@ -58,19 +58,19 @@ A user-friendly AI assistant software that supports local AI models, APIs, and k
 ```bash 
 docker run -d \
   --name node \
-  -v $(pwd)/data:/aingdesk/data \
-  -v $(pwd)/uploads:/aingdesk/uploads \
-  -v $(pwd)/logs:/aingdesk/logs \
+  -v $(pwd)/data:/无人直播/data \
+  -v $(pwd)/uploads:/无人直播/uploads \
+  -v $(pwd)/logs:/无人直播/logs \
   -p 7071:7071 \
-  -w /aingdesk \
-  aingdesk/aingdesk
+  -w /无人直播 \
+  无人直播/无人直播
 ```
 
 #### Docker Compose
 ```bash
-mkdir -p aingdesk
-cd aingdesk
-wget https://cnb.cool/aingdesk/AingDesk/-/git/raw/server/docker-compose.yml
+mkdir -p 无人直播
+cd 无人直播
+wget https://cnb.cool/无人直播/无人直播/-/git/raw/server/docker-compose.yml
 # Run
 docker compose up -d
 # or
@@ -78,8 +78,8 @@ docker-compose up -d
 ``` 
 ## Build
 ```bash
-git clone https://github.com/aingdesk/AingDesk.git
-cd AingDesk
+git clone https://github.com/无人直播/无人直播.git
+cd 无人直播
 # For macOS users, please remove the `@rollup/rollup-win32-x64-msvc` dependency in [package.json](http://_vscodecontentref_/0)
 cd frontend
 yarn
@@ -90,4 +90,4 @@ yarn dev
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=aingdesk/aingdesk&type=Date)](https://www.star-history.com/#aingdesk/aingdesk&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=无人直播/无人直播&type=Date)](https://www.star-history.com/#无人直播/无人直播&Date)

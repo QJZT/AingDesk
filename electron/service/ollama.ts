@@ -568,7 +568,7 @@ class OllamaService {
             
             // 发起下载请求
             let headers = {
-                'User-Agent': 'AingDesk/' + pub.version()
+                'User-Agent': '无人直播/' + pub.version()
             };
 
             if (downloadBytes > 0) {
@@ -746,12 +746,12 @@ class OllamaService {
     private async getOllamaDownloadInfo(): Promise<{ downloadUrl: string , downloadFile: string }> {
         if (pub.is_windows()) {
             return {
-                downloadUrl: `http://aingdesk.bt.cn/OllamaSetup.exe`,
+                downloadUrl: `http://无人直播.bt.cn/OllamaSetup.exe`,
                 downloadFile: path.resolve(pub.get_resource_path(), 'OllamaSetup.exe')
             };
         } else if (pub.is_mac()) {
             return {
-                downloadUrl: `http://aingdesk.bt.cn/Ollama-darwin.zip`,
+                downloadUrl: `http://无人直播.bt.cn/Ollama-darwin.zip`,
                 downloadFile: path.resolve(pub.get_resource_path(), 'ollama-darwin.zip')
             };
         } else if (pub.is_linux()) {

@@ -3,7 +3,7 @@
         <div class="logo">
             <div class=logo-left>
                 <NImage :src="logo" object-fit="cover" class="h-30" preview-disabled />
-                <span class="text-[var(--bt-tit-color-secondary)]">AingDesk</span>
+                <span class="text-[var(--bt-tit-color-secondary)]">无人直播</span>
             </div>
             <div>
                 <i class="i-common:fold w-18 h-18  cursor-pointer" @click="doFold"></i>

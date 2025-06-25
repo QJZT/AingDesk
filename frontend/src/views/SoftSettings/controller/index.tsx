@@ -142,21 +142,21 @@ export async function get_languages() {
  * @descriiption github相关跳转——星星
  */
 export function toStar() {
-	window.open('https://github.com/aingdesk/AingDesk');
+	window.open('https://github.com/无人直播/无人直播');
 }
 
 /**
  * @descriiption github相关跳转——issue
  */
 export function toIssue() {
-	window.open('https://github.com/aingdesk/AingDesk/issues');
+	window.open('https://github.com/无人直播/无人直播/issues');
 }
 
 /**
  * @description 跳转教程
  */
 export function jumpToTutorial() {
-	window.open('https://docs.aingdesk.com/zh-Hans/');
+	window.open('https://docs.无人直播.com/zh-Hans/');
 }
 
 // 新手指引切换

@@ -140,7 +140,7 @@ class McpService {
 
         // 发起下载请求
         let headers = {
-            'User-Agent': 'AingDesk/' + pub.version()
+            'User-Agent': '无人直播/' + pub.version()
         };
         let downloadBytes = 0;
         if (pub.file_exists(saveFile)) {
@@ -212,7 +212,7 @@ class McpService {
         let binPath = this.get_bin_path();
         let os_path = this.get_os_path();
 
-        let downloadUrl = `https://aingdesk.bt.cn/bin/${os_path}/bun.zip`
+        let downloadUrl = `https://无人直播.bt.cn/bin/${os_path}/bun.zip`
         let bunzipFile = path.resolve(binPath, 'bun.zip');
 
         this.download_file(downloadUrl, bunzipFile).then(async() =>{
@@ -304,7 +304,7 @@ class McpService {
      * @returns {Promise<any>} - 返回同步结果
      */
     async sync_cloud_mcp(){
-        let downloadUrl = `https://aingdesk.bt.cn/config/common-mcp-server.json`;
+        let downloadUrl = `https://无人直播.bt.cn/config/common-mcp-server.json`;
         let res = await pub.httpRequest(downloadUrl)
         
         if(res.statusCode !== 200){
