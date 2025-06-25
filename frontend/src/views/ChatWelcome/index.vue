@@ -3,7 +3,7 @@
     <div class="answer" style="margin-bottom: 20px;"
         v-else-if="(chatHistory.size == 0 && !guideActive) || currentChatAgent">
         <div v-if="currentChatAgent" class="w-30 h-30 text-24px">{{ currentChatAgent.icon ? currentChatAgent.icon :"😀" }}</div>
-        <NImage :src="AingDesk" width="30" height="30" preview-disabled v-else />
+        <NImage :src="无人直播" width="30" height="30" preview-disabled v-else />
         <div class="answer-token">
             <p style="line-height: 30px;">{{ currentChatAgent ? currentChatAgent.prompt : $t("让我们开启一段新的对话吧") }}</p>
         </div>
@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { NImage } from "naive-ui";
-import AingDesk from "@/assets/images/logo.png";
+import 无人直播 from "@/assets/images/logo.png";
 import WelcomeContent from "./components/WelcomeContent.vue";
 import { getChatContentStoreData } from "../ChatContent/store";
 import { getAgentStoreData } from "../Agent/store";

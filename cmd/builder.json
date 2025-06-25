@@ -1,6 +1,6 @@
 {
-  "productName": "AingDesk",
-  "appId": "com.bt.AingDesk",
+  "productName": "无人直播",
+  "appId": "com.bt.无人直播",
   "copyright": "Guangdong Baota Safety Technology Co., Ltd.",
   "directories": {
     "output": "out"
@@ -30,7 +30,7 @@
     "installerHeaderIcon": "build/icons/icon.ico",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "AingDesk"
+    "shortcutName": "无人直播"
   },
   "publish": [
     {

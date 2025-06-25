@@ -20,7 +20,7 @@ class TrayService {
   constructor() {
     this.tray = null;
     this.config = {
-      title: 'AingDesk',
+      title: '无人直播',
       icon: '/public/images/tray.png',
     }
   }

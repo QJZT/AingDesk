@@ -11,7 +11,7 @@ import { Rag } from '../rag/rag';
 import { ModelService,GetSupplierModels,getModelContextLength } from '../service/model';
 import { ToChatService } from './tochat';
 // 常量定义
-const CLOUD_SERVER_HOST = 'share.aingdesk.com';
+const CLOUD_SERVER_HOST = 'share.无人直播.com';
 const CLOUD_SERVER_PORT = 9999;
 const HEADER_SIZE = 4;
 

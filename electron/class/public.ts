@@ -217,7 +217,7 @@ class Public {
             const requestOptions:any = {
                 method: method,
                 url: url,
-                headers: options.headers || { 'User-Agent': 'AingDesk/'+this.version() },
+                headers: options.headers || { 'User-Agent': '无人直播/'+this.version() },
                 timeout: timeout,
                 responseType: shouldParseJson ? 'json' : 'text',
                 responseEncoding: options.encoding || 'utf8',

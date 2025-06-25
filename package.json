@@ -1,8 +1,8 @@
 {
-  "name": "aingdesk",
+  "name": "AingDesk",
   "version": "1.2.3",
   "description": "Simple and easy-to-use AI big model deployment and usage software",
-  "productName": "AingDesk",
+  "productName": "无人直播",
   "main": "./public/electron/main.js",
   "type": "commonjs",
   "scripts": {
@@ -34,9 +34,9 @@
     "debug-electron": "cross-env DEBUG=ee-* ee-bin dev --serve=electron",
     "debug-move": "ee-bin move --flag=frontend_dist"
   },
-  "repository": "https://github.com/aingdesk/aingdesk",
+  "repository": "https://github.com/无人直播/无人直播",
   "keywords": [
-    "AingDesk",
+    "无人直播",
     "baota",
     "Aing-Desk"
   ],

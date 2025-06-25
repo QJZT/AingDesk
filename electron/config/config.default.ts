@@ -7,7 +7,7 @@ const config: () => AppConfig = () => {
     openDevTools: false,
     singleLock: true,
     windowsOption: {
-      title: 'AingDesk',
+      title: '无人直播',
       width: 1440,
       height: 900,
       minWidth: 500,
@@ -23,9 +23,9 @@ const config: () => AppConfig = () => {
     logger: {
       level: 'INFO',
       outputJSON: false,
-      appLogName: 'ee.log',
-      coreLogName: 'ee-core.log',
-      errorLogName: 'ee-error.log',
+      appLogName: 'el.log',
+      coreLogName: 'el-core.log',
+      errorLogName: 'el-error.log',
     },
     remote: {
       enable: false,
