@@ -2893,7 +2893,7 @@ const generate_wav_api = async (_text:string,
         resolve(response.ok);
       } catch (err) {
         // 处理超时错误
-        if (err.name === 'AbortError') {
+        // if (err.name === 'AbortError') {
           await stopPy9872Service()
           await startPy9872Service()
           await ipcRenderer.invoke('stop-py7074-service');
@@ -2901,9 +2901,9 @@ const generate_wav_api = async (_text:string,
           await initializeSpeechModel();
           resolve(false);
           // reject(new Error('请求超时，请稍后重试'));
-        } else {
-          resolve(false);
-        }
+        // } else {
+        //   resolve(false);
+        // }
       }
     });
     execute();
