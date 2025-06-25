@@ -238,7 +238,7 @@
           <n-button 
             v-if="start"
             type="error" 
-            @click="start = false"
+            @click="stopSystem"
             :loading="loading"
             style="width: 220px;"
           >
@@ -924,9 +924,7 @@ const handleLanguageChange = async (value) => {
        })
     })
     const data = await response.json()
-    console.log('语言设置成功:', data)
   } catch (error) {
-    console.error('语言设置失败:', error)
   }
 }
 
@@ -951,8 +949,6 @@ const initializeSpeechModel = async () => {
        })
     })
     const data = await response.json()
-    console.log('语音模型初始化成功:', data)
-    message.success("模型初始化成功")
    }
    catch (error) {
     console.error('语音模型初始化失败:', error) 
@@ -1069,8 +1065,6 @@ const getMessageColor = (type) => {
 }
 
 const handleVolumeChange = (block) => {
-  // console.log("block----------------------------");
-  // console.log(block);
   setModulesKv(String(block.id),block)
 }
 
@@ -1260,11 +1254,9 @@ const loadingModules = ref(false)
 const fetchModules = async () => {
   loadingModules.value = true
   try {
-    console.log('正在获取模块数据...')
     let  newList   =[]
     const response = await fetch('http://127.0.0.1:7072/base-modules')
     let list = await response.json()
-    console.log("模块列表:",list);
     for (const  [index, module] of list.entries()) {
       let  kv = await getModulesKv(module.id)
       module.volume = kv.volume || 50
@@ -1318,11 +1310,9 @@ onMounted(() => {
   // WebSocket 连接事件处理
     socket.value.on('connect', () => {
       reconnectAttempts = 0
-      console.log('Socket.IO连接成功')
     })
     socket.value.on('reconnect_attempt', (attemptNumber) => {
     reconnectAttempts = attemptNumber
-    console.log(`正在尝试第${attemptNumber}次重连...`)
     })
     socket.value.on('connect_error', (err) => {
       console.error('Socket.IO连接错误:', err)
@@ -1331,7 +1321,6 @@ onMounted(() => {
       if (!selectedFilters.value.includes("ConnectEvent")){
         return;
       }
-              console.log("ConnectEvent:",message);
               addMessage({content: message.s ,data_types: "ConnectEvent"})
     });
     //弹幕回答题
@@ -1343,7 +1332,6 @@ onMounted(() => {
       if (!selectedFilters.value.includes("CommentEvent")){
         return;
       }
-              console.log("CommentEvent:",message);
               addMessage({content: message.s,data_types: "CommentEvent"})
     });
 
@@ -1356,7 +1344,7 @@ onMounted(() => {
       if (!selectedFilters.value.includes("GiftEvent")){
         return;
       }
-              console.log("GiftEvent:",message);
+
               addMessage({content: message.s,data_types: "GiftEvent"})
     });
     
@@ -1368,7 +1356,7 @@ onMounted(() => {
       if (!selectedFilters.value.includes("JoinEvent")){
         return;
       }
-              console.log("JoinEvent:",message);
+
               addMessage({content: message.s,data_types: "JoinEvent"})
     });
     socket.value.on('ShareEvent', function(message) { //分享
@@ -1377,7 +1365,7 @@ onMounted(() => {
       if (!selectedFilters.value.includes("ShareEvent")){
         return;
       }
-              console.log("ShareEvent:",message);
+
               addMessage({content: message.s,data_types: "ShareEvent"})
     });
     socket.value.on('FollowEvent', function(message) { //关注
@@ -1386,7 +1374,7 @@ onMounted(() => {
       if (!selectedFilters.value.includes("FollowEvent")){
         return;
       }
-              console.log("FollowEvent:",message);
+
               addMessage({content: message.s,data_types: "FollowEvent"})
     });
     socket.value.on('LikeEvent', function(message) { //点赞
@@ -1396,7 +1384,7 @@ onMounted(() => {
       if (!selectedFilters.value.includes("LikeEvent")){
         return;
       }
-              console.log("LikeEvent:",message);
+
               addMessage({content: message.s,data_types: "LikeEvent"})
     });
 
@@ -1405,7 +1393,7 @@ onMounted(() => {
       if (!selectedFilters.value.includes("ShareEvent")) {
           return;
       }
-      console.log("ShareEvent:", message);
+
       addMessage({ content: message.s, data_types: "ShareEvent" });
     });
 
@@ -1414,7 +1402,7 @@ onMounted(() => {
         if (!selectedFilters.value.includes("FollowEvent")) {
             return;
         }
-        console.log("FollowEvent:", message);
+
         addMessage({ content: message.s, data_types: "FollowEvent" });
     });
     // 模拟 ShareEvent
@@ -1442,11 +1430,32 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    // 停止所有循环任务
+    start.value = false;
+    
+    // 清理定时器
+    if (syncStatsInterval.value) {
+      clearInterval(syncStatsInterval.value);
+      syncStatsInterval.value = null;
+    }
+    
+    // 清理事件监听器
     document.removeEventListener('keydown', handleKeyDown);
+    
+    // 清理socket连接
     if (socket.value) {
       socket.value.disconnect();
       socket.value = null;
     }
+    
+    // 清空播放队列，释放内存
+    playList.value = [];
+    uesPlayList.value = [];
+    
+    // 重置UUID，确保所有循环任务退出
+    startUUID.value = "";
+    
+
   });
 
 const toggleFilter = (value) => {
@@ -1508,6 +1517,28 @@ const py9872ServiceLoading = ref(false) // 服务操作加载状态
 const py9872ServiceStatus = ref('未知状态') // 服务状态文本
 //注册模块，
 
+// 停止系统函数
+const stopSystem = () => {
+  // 停止所有循环任务
+  start.value = false;
+  
+  // 清理定时器
+  if (syncStatsInterval.value) {
+    clearInterval(syncStatsInterval.value);
+    syncStatsInterval.value = null;
+  }
+  
+  // 清空播放队列，释放内存
+  playList.value = [];
+  uesPlayList.value = [];
+  
+  // 重置UUID，确保所有循环任务退出
+  startUUID.value = "";
+  
+
+  message.success('系统已停止');
+};
+
 const registerModules = async () => {
     //启动之前检查变量做友好提示
     if (selectedModel.value == "") {
@@ -1523,6 +1554,10 @@ const registerModules = async () => {
 
     start.value = true
     startUUID.value = newuuid;
+    
+    // 启动播放队列消费
+    playListConsumption();
+    
     for (const module of modules.value) {
 //     TriggerSceneLoop     = "SceneLoop"     // 控场循环
 //     TriggerIntervalLoop  = "IntervalLoop"  // 间隔循环：按照指定间隔时间循环执行
@@ -1598,7 +1633,7 @@ const registerModules = async () => {
         //     TriggerShareRoom     = "ShareRoom"     // 分享直播间
 //     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
     }
-    playListConsumption()
+    // playListConsumption()
 }
 
 /**
@@ -1637,20 +1672,20 @@ const registerModules = async () => {
 
     if (module.interval_time_start != 0 && module.interval_time_end != 0) { // 设置随机间隔
       const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
-      console.log("随机间隔时间（秒）：", randomTime);
+
       await new Promise(resolve => setTimeout(resolve, randomTime * 1000)); // 等待随机时间（转换为毫秒）
     }
 
     const currentAudioPath = audioPaths[index]; // 获取当前音频路径（单文件时不变）
     while (playList.value.length >= 5) { // 限制播放队列长度
-      console.log("播放队列已满，等待消费...");
+
       await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
     }
 
     // 调用 API 音乐频
     const ok = await playAudioModuleBackgroundMusic(module);
     if (!ok) {
-      console.log("播放失败，暂停 1 秒后重试...");
+
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
@@ -1706,20 +1741,17 @@ const registerModules = async () => {
 
     if (module.interval_time_start != 0 && module.interval_time_end != 0) { // 设置随机间隔
       const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
-      console.log("随机间隔时间（秒）：", randomTime);
       await new Promise(resolve => setTimeout(resolve, randomTime * 1000)); // 等待随机时间（转换为毫秒）
     }
 
     const currentAudioPath = audioPaths[index]; // 获取当前音频路径（单文件时不变）
     while (playList.value.length >= 5) { // 限制播放队列长度
-      console.log("播放队列已满，等待消费...");
       await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
     }
 
     // 调用 API 播放背景音乐
     const ok = await playAudioModuleBackgroundMusic(module);
     if (!ok) {
-      console.log("播放失败，暂停 1 秒后重试...");
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
@@ -1768,30 +1800,27 @@ const registerModules = async () => {
   const audioPathLen = audioPaths.length; // 音频路径长度（当前为 1）
 
   do {
-    console.log("音频弹幕评论模块：", module); // 打印模块信息，便于调试
-
     if (!module.isActive) {
-      console.log("模块未激活，暂停 1 秒...");
       await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
       continue;
     }
 
     if (module.interval_time_start != 0 && module.interval_time_end != 0) { // 设置随机间隔
       const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
-      console.log("随机间隔时间（秒）：", randomTime);
+
       await new Promise(resolve => setTimeout(resolve, randomTime * 1000)); // 等待随机时间（转换为毫秒）
     }
 
     const currentAudioPath = audioPaths[index]; // 获取当前音频路径（单文件时不变）
     while (playList.value.length >= 5) { // 限制播放队列长度
-      console.log("播放队列已满，等待消费...");
+
       await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
     }
 
     // 调用 API 播放背景音乐
     const ok = await playAudioModuleBackgroundMusic(module);
     if (!ok) {
-      console.log("播放失败，暂停 1 秒后重试...");
+
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
@@ -1840,29 +1869,26 @@ const AudioSendGift = async (module, uuid) => {
   const audioPathLen = audioPaths.length;
 
   do {
-    console.log("音频送礼物模块：", module);
-
     if (!module.isActive) {
-      console.log("模块未激活，暂停 1 秒...");
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
 
     if (module.interval_time_start != 0 && module.interval_time_end != 0) {
       const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
-      console.log("随机间隔时间（秒）：", randomTime);
+
       await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
     }
 
     const currentAudioPath = audioPaths[index];
     while (playList.value.length >= 5) {
-      console.log("播放队列已满，等待消费...");
+
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     const ok = await playAudioModuleBackgroundMusic(module);
     if (!ok) {
-      console.log("播放失败，暂停 1 秒后重试...");
+
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
@@ -1910,29 +1936,26 @@ const AudioLike = async (module, uuid) => {
   const audioPathLen = audioPaths.length;
 
   do {
-    console.log("音频点赞模块：", module);
-
     if (!module.isActive) {
-      console.log("模块未激活，暂停 1 秒...");
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
 
     if (module.interval_time_start != 0 && module.interval_time_end != 0) {
       const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
-      console.log("随机间隔时间（秒）：", randomTime);
+      
       await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
     }
 
     const currentAudioPath = audioPaths[index];
     while (playList.value.length >= 5) {
-      console.log("播放队列已满，等待消费...");
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     const ok = await playAudioModuleBackgroundMusic(module);
     if (!ok) {
-      console.log("播放失败，暂停 1 秒后重试...");
+
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
@@ -1980,29 +2003,26 @@ const AudioEnterLiveRoom = async (module, uuid) => {
   const audioPathLen = audioPaths.length;
 
   do {
-    console.log("音频进入直播间模块：", module);
-
     if (!module.isActive) {
-      console.log("模块未激活，暂停 1 秒...");
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
 
     if (module.interval_time_start != 0 && module.interval_time_end != 0) {
       const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
-      console.log("随机间隔时间（秒）：", randomTime);
+      
       await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
     }
 
     const currentAudioPath = audioPaths[index];
     while (playList.value.length >= 5) {
-      console.log("播放队列已满，等待消费...");
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     const ok = await playAudioModuleBackgroundMusic(module);
     if (!ok) {
-      console.log("播放失败，暂停 1 秒后重试...");
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
@@ -2050,29 +2070,26 @@ const AudioShareRoom = async (module, uuid) => {
   const audioPathLen = audioPaths.length;
 
   do {
-    console.log("音频分享直播间模块：", module);
-
     if (!module.isActive) {
-      console.log("模块未激活，暂停 1 秒...");
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
 
     if (module.interval_time_start != 0 && module.interval_time_end != 0) {
       const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
-      console.log("随机间隔时间（秒）：", randomTime);
+      
       await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
     }
 
     const currentAudioPath = audioPaths[index];
     while (playList.value.length >= 5) {
-      console.log("播放队列已满，等待消费...");
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     const ok = await playAudioModuleBackgroundMusic(module);
     if (!ok) {
-      console.log("播放失败，暂停 1 秒后重试...");
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
@@ -2120,29 +2137,26 @@ const AudioFollowRoom = async (module, uuid) => {
   const audioPathLen = audioPaths.length;
 
   do {
-    console.log("音频关注直播间模块：", module);
-
     if (!module.isActive) {
-      console.log("模块未激活，暂停 1 秒...");
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
 
     if (module.interval_time_start != 0 && module.interval_time_end != 0) {
       const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start;
-      console.log("随机间隔时间（秒）：", randomTime);
+      
       await new Promise(resolve => setTimeout(resolve, randomTime * 1000));
     }
 
     const currentAudioPath = audioPaths[index];
     while (playList.value.length >= 5) {
-      console.log("播放队列已满，等待...");
+
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     const ok = await playAudioModuleBackgroundMusic(module);
     if (!ok) {
-      console.log("播放失败，暂停 1 秒后重试...");
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       continue;
     }
@@ -2197,7 +2211,7 @@ const AudioFollowRoom = async (module, uuid) => {
       throw new Error('播放请求失败'); // 检查 HTTP 状态码，非 200 抛出错误
     }
 
-    console.log(`[播放成功] 模块 ${module.module_name}，文件: ${module.audio_path}, 音量: ${volume}`);
+
     return true; // 成功返回 true
   } catch (error) {
     console.error(`[播放失败] 模块 ${module.module_name}:`, error); // 记录错误信息
@@ -2211,22 +2225,32 @@ const intervalTime = ref(0) // 默认1000毫秒 1秒=1000毫秒
 //定时播报
 const playListConsumption= async () => {
     do {
+        // 检查退出条件
+        if (!start.value) {
+
+            break;
+        }
+        
         if (playList.value.length > 0) { //队列消费
           await new Promise(resolve => setTimeout(resolve, intervalTime.value))   // 等待1000毫秒
-          console.log("kai:",playList.value);
-            const item = playList.value.shift() //出队
-            console.log("jie:",playList.value);
-            if (item) {
+          
+          // 再次检查退出条件
+          if (!start.value) break;
+          
+          const item = playList.value.shift() //出队
+            if (item && start.value) { // 确保在处理项目时仍然处于运行状态
                 // uesPlayList.value.push(item) //已播放列表
                 // if (uesPlayList.value.length > 100) {
                 //     uesPlayList.value.shift() //删除第一条
                 // }
-                let data = await play_task_voice_api(item.filename, item.play_mode); //播放
+                await play_task_voice_api(item.filename, item.play_mode); //播放
                 // await new Promise(resolve => setTimeout(resolve, data.duration * 1000)) //等待
             }
         }
         await new Promise(resolve => setTimeout(resolve, 100))   
     } while (start.value);
+    
+
 }
 
 //循环模块处理
@@ -2246,7 +2270,7 @@ const SceneLoop= async (module,newuuil) => {
         }
         if (module.interval_time_start != 0 && module.interval_time_end!= 0) { //间隔时间
             const randomTime = Math.floor(Math.random() * (module.interval_time_end - module.interval_time_start + 1)) + module.interval_time_start; //随机时间
-            console.log("randomTime:",randomTime);
+
             
             await new Promise(resolve => setTimeout(resolve, randomTime * 1000)) //等待
         }
@@ -2258,7 +2282,7 @@ const SceneLoop= async (module,newuuil) => {
         // 是否改写
         if (module.retAi) { //是否改写
           if (model_api.value == "") { //是否改写
-            console.log("请选择模型");
+
             await new Promise(resolve => setTimeout(resolve, 4000))
             continue
           }
@@ -2271,7 +2295,7 @@ const SceneLoop= async (module,newuuil) => {
             prompt, //提示词
             supplierName_api.value, //供应商名称
           )
-          console.log("apidata:",apidata);
+
           content = apidata
         }
 
@@ -2285,7 +2309,7 @@ const SceneLoop= async (module,newuuil) => {
             module.volume / 100 //生成音量
           ) //生成音量
 
-          console.log("ok:",ok);
+
           
         if (!ok) { //生成失败
             await new Promise(resolve => setTimeout(resolve, 1000))
@@ -2339,7 +2363,7 @@ const includesLike= async (module,newuuil) => {
         // 添加 AI 改写逻辑
         if (module.retAi) { // 是否启用 AI 改写
               if (model_api.value == "") { // 检查是否选择了模型
-                console.log("请选择模型");
+
                 await new Promise(resolve => setTimeout(resolve, 4000));
                 continue;
               }
@@ -2351,7 +2375,7 @@ const includesLike= async (module,newuuil) => {
                 prompt, // 提示词
                 supplierName_api.value // 供应商名称
               );
-              console.log("apidata:", apidata);
+
               content = apidata; // 替换为 AI 改写后的内容
             }
 
@@ -2410,7 +2434,7 @@ const SendGift= async (module,newuuil) => {
         let content = module.script_content[index] 
         if (module.retAi) { //是否改写
             if (model_api.value == "") { //是否改写
-              console.log("请选择模型");
+
               await new Promise(resolve => setTimeout(resolve, 4000))
               continue
             }
@@ -2423,7 +2447,7 @@ const SendGift= async (module,newuuil) => {
             prompt, //提示词
             supplierName_api.value, //供应商名称
           )
-          console.log("apidata:",apidata);
+
           content = apidata  //替换
         }
 
@@ -2497,7 +2521,7 @@ const includesEnterLiveRoom = async (module, newuuil) => {
         if (module.retAi) { // 如果启用了AI改写
             if (model_api.value == "") { 
                 // 如果未选择模型，记录日志并等待4秒后继续，避免无效操作
-                console.log("请选择模型");
+
                 await new Promise(resolve => setTimeout(resolve, 4000));
                 continue;
             }
@@ -2509,7 +2533,7 @@ const includesEnterLiveRoom = async (module, newuuil) => {
                 prompt, // 替换后的提示词
                 supplierName_api.value, // 供应商名称
             );
-            console.log("apidata:", apidata); // 记录AI返回的数据
+
             content = apidata; // 用AI处理后的内容替换原始内容
         }
 
@@ -2587,7 +2611,7 @@ const ShareRoom = async (module, newuuid) => {
         if (module.retAi) { // 如果启用了AI改写
             if (model_api.value == "") { 
                 // 如果未选择模型，记录日志并等待4秒后继续，避免无效操作
-                console.log("请选择模型");
+
                 await new Promise(resolve => setTimeout(resolve, 4000));
                 continue;
             }
@@ -2599,7 +2623,7 @@ const ShareRoom = async (module, newuuid) => {
                 prompt, // 替换后的提示词
                 supplierName_api.value, // 供应商名称
             );
-            console.log("apidata:", apidata); // 记录AI返回的数据
+
             content = apidata; // 用AI处理后的内容替换原始内容
         }
 
@@ -2677,7 +2701,7 @@ const FollowRoom = async (module, newuuid) => {
         if (module.retAi) { // 如果启用了AI改写
             if (model_api.value == "") { 
                 // 如果未选择模型，记录日志并等待4秒后继续，避免无效操作
-                console.log("请选择模型");
+
                 await new Promise(resolve => setTimeout(resolve, 4000));
                 continue;
             }
@@ -2689,7 +2713,7 @@ const FollowRoom = async (module, newuuid) => {
                 prompt, // 替换后的提示词
                 supplierName_api.value, // 供应商名称
             );
-            console.log("apidata:", apidata); // 记录AI返回的数据
+
             content = apidata; // 用AI处理后的内容替换原始内容
         }
 
@@ -2749,7 +2773,7 @@ const BarrageComment= async (module,newuuil) => {
             await new Promise(resolve => setTimeout(resolve, 2000))
         }
         if (model_api.value == "") { //是否改写
-            console.log("请选择模型");
+
             await new Promise(resolve => setTimeout(resolve, 4000))
             continue
         }
@@ -2763,11 +2787,11 @@ const BarrageComment= async (module,newuuil) => {
               prompt, //提示词
               supplierName_api.value, //供应商名称
             )
-            console.log("apidata:",apidata2);
+
             content = apidata2
         if (module.retAi) { //是否改写
             if (model_api.value == "") { //是否改写
-              console.log("请选择模型");
+
               await new Promise(resolve => setTimeout(resolve, 4000))
               continue
             }
@@ -2780,7 +2804,7 @@ const BarrageComment= async (module,newuuil) => {
             prompt, //提示词
             supplierName_api.value, //供应商名称
           )
-          console.log("apidata:",apidata);
+
           content = apidata  //替换
         }
 
@@ -2940,7 +2964,7 @@ const generate_wav_api = async (_text:string,
 
 // 播放任务
 const play_task_voice_api = async (_filename:string,play_mode:string) => {
-  console.log(`请求参数: filename=${_filename}, play_mode=${play_mode}`);
+
     const response = await fetch('http://127.0.0.1:7073/play_task_voice', {
         method: 'POST',
         headers: {
@@ -3015,7 +3039,7 @@ const sendUserMessage = async () => {
     })
     message.success("消息已发送")
   } catch (error) {
-    console.error("发送用户消息失败:", error)
+
     message.error("发送失败，请重试")
   }
   announcementMessage.value = ''
@@ -3052,11 +3076,11 @@ const isRecording = ref(false);
   
       // 解析响应数据
       const data = await response.json();
-      console.log('Start recording response:', data);
+
     } catch (error) {
       // 如果发生错误，提示用户开始录音失败
       message.error('开始录音失败');
-      console.error('Start recording error:', error);
+
   
       // 提示用户检查网络连接和链接的合法性
       message.warning('请检查网络连接和链接的合法性，适当重试。');
@@ -3089,7 +3113,7 @@ const isRecording = ref(false);
 
     // 解析响应数据
     const data = await response.json();
-    console.log('Stop recording response:', data);
+
 
     // 检查返回的 message 字段是否表示成功
     if (data.message === "Recording stopped and processed") {
@@ -3111,7 +3135,7 @@ const isRecording = ref(false);
   } catch (error) {
     // 如果发生错误，提示用户停止录音失败
     message.error('停止录音失败');
-    console.error('Stop recording error:', error);
+
 
     // 提示用户检查网络连接和链接的合法性
     message.warning('请检查网络连接和链接的合法性，适当重试。');
@@ -3156,7 +3180,7 @@ const getHumanVoiceFiles = async () => {
       value: name
     }))
   } catch (error) {
-    console.error('获取人声音色文件失败:', error)
+
   }
 }
 
@@ -3193,14 +3217,7 @@ const getHumanVoiceFiles = async () => {
 const DisposableSendApi = async (model, parameters, user_content, system_prompt, supplier_name) => {
     try {
         // 记录请求参数
-        console.log('请求参数:', {
-            model,
-            parameters,
-            user_content,
-            system_prompt,
-            supplier_name,
-            trigger_conditions: ['BarrageComment'], // 确保触发弹幕
-        });
+
 
         // 设置 60 秒超时
         const controller = new AbortController();
@@ -3225,7 +3242,7 @@ const DisposableSendApi = async (model, parameters, user_content, system_prompt,
         clearTimeout(timeoutId); // 清除超时定时器
 
         // 记录响应状态
-        console.log('响应状态:', response.status, 'OK:', response.ok);
+
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -3247,7 +3264,7 @@ const DisposableSendApi = async (model, parameters, user_content, system_prompt,
 
         return data;
     } catch (error) {
-        console.error('请求失败:', error);
+
         throw error; // 抛出错误供测试捕获
     }
 };
@@ -3401,9 +3418,6 @@ const DisposableSendApi = async (model, parameters, user_content, system_prompt,
 
 // 替换文本 替换变量
 const ReplaceText= async (text) => {
-  console.log("原始文本：", text);
-    console.log("当前进入直播间用户名：", EnterLiveRoomUserName.value); // 添加日志
-
   let newText = text
   if (text.includes('{语种}')){ //是否包含
     newText = newText.replace('{语种}', selectedLanguageLabel.value) //替换
@@ -3450,7 +3464,6 @@ const ReplaceText= async (text) => {
     }
   } catch (error) {
   }
-  console.log("替换后的文本：", newText); // 打印替换后的文本
   return newText;
 } 
 
@@ -3472,7 +3485,7 @@ const startPy9872Service = async () => {
       message.error(result.message);
     }
   } catch (error) {
-    console.error('启动py9872服务失败:', error);
+
     py9872ServiceStatus.value = '启动失败';
     message.error(`启动py9872服务失败: ${error.message}`);
   } finally {
@@ -3495,7 +3508,7 @@ const stopPy9872Service = async () => {
       message.error(result.message);
     }
   } catch (error) {
-    console.error('停止py9872服务失败:', error);
+
     py9872ServiceStatus.value = '停止失败';
     message.error(`停止py9872服务失败: ${error.message}`);
   } finally {
@@ -3513,7 +3526,7 @@ const checkPy9872ServiceStatus = async () => {
     py9872ServiceStatus.value = result.message;
     message.info(result.message);
   } catch (error) {
-    console.error('检查py9872服务状态失败:', error);
+
     py9872ServiceStatus.value = '状态检查失败';
     message.error(`检查py9872服务状态失败: ${error.message}`);
   } finally {
