@@ -2896,6 +2896,8 @@ const generate_wav_api = async (_text:string,
         if (err.name === 'AbortError') {
           await stopPy9872Service()
           await startPy9872Service()
+          await ipcRenderer.invoke('stop-py7074-service');
+          await ipcRenderer.invoke('start-py7074-service');
           await initializeSpeechModel();
           resolve(false);
           // reject(new Error('请求超时，请稍后重试'));

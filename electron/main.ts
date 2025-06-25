@@ -285,6 +285,34 @@ ipcMain.handle('stop-py9872-service', async () => {
   }
 });
 
+ipcMain.handle('start-py7074-service', async () => {
+  try {
+    if (py7074Process && !py7074Process.killed) {
+      return { success: false, message: 'py7074服务已在运行中' };
+    }
+    await startPy7074Service();
+    return { success: true, message: 'py7074服务启动成功' };
+  } catch (error) {
+    console.error('启动py7074服务失败:', error);
+    return { success: false, message: `启动py7074服务失败: ${error.message}` };
+  }
+});
+
+ipcMain.handle('stop-py7074-service', async () => {
+  try {
+    if (!py7074Process || py7074Process.killed) {
+      return { success: false, message: 'py7074服务未运行' };
+    }
+    py7074Process.kill();
+    py7074Process = null;
+    return { success: true, message: 'py7074服务已停止' };
+  } catch (error) {
+    console.error('停止py7074服务失败:', error);
+    return { success: false, message: `停止py7074服务失败: ${error.message}` };
+  }
+});
+
+
 ipcMain.handle('get-py9872-service-status', async () => {
   const isRunning = py9872Process && !py9872Process.killed;
   return { 
