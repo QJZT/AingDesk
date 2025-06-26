@@ -10,6 +10,64 @@ import { ipcMain } from 'electron';
 // New app
 const app = new ElectronEgg();
 
+// 在文件顶部添加定时器变量
+let activationCheckTimer: NodeJS.Timeout | null = null;
+
+// 添加定时验证函数
+async function startPeriodicActivationCheck() {
+  console.log('启动定时激活码验证，每小时检查一次');
+  
+  // 清除可能存在的旧定时器
+  if (activationCheckTimer) {
+    clearInterval(activationCheckTimer);
+  }
+  
+  // 设置每小时检查一次（3600000毫秒 = 1小时）
+  activationCheckTimer = setInterval(async () => {
+    console.log('执行定时激活码验证检查...');
+    
+    try {
+      const isValid = await checkExistingActivationCode();
+      
+      if (!isValid) {
+        console.log('定时检查发现激活码已过期，需要重新验证');
+        
+        // 停止定时器，避免重复弹窗
+        if (activationCheckTimer) {
+          clearInterval(activationCheckTimer);
+          activationCheckTimer = null;
+        }
+        
+        // 显示重新验证窗口
+        const reactivated = await showActivationWindow();
+        
+        if (reactivated) {
+          console.log('重新激活成功，恢复定时检查');
+          // 重新启动定时器
+          startPeriodicActivationCheck();
+        } else {
+          console.log('重新激活失败，退出应用');
+          require('electron').app.quit();
+        }
+      } else {
+        console.log('定时检查：激活码仍然有效');
+      }
+    } catch (error) {
+      console.error('定时激活码检查失败:', error);
+      // 检查失败时不退出应用，继续下次检查
+    }
+  }, 3600000); // 1小时 = 3600000毫秒
+}
+
+// 停止定时验证
+function stopPeriodicActivationCheck() {
+  if (activationCheckTimer) {
+    clearInterval(activationCheckTimer);
+    activationCheckTimer = null;
+    console.log('已停止定时激活码验证');
+  }
+}
+
 // // Register lifecycle
 const life = new Lifecycle();
 // app.register("ready", life.ready);
@@ -449,6 +507,10 @@ async function initializeApp() {
     // 注册进程退出时的清理逻辑
     app.register("before-close", () => {
       life.beforeClose();
+      
+      // 停止定时验证
+      stopPeriodicActivationCheck();
+      
       if (goProcess && !goProcess.killed) {
         goProcess.kill();
       }
@@ -530,6 +592,9 @@ async function initializeApp() {
     app.run();
     
     console.log('应用启动完成!');
+    
+    // 启动定时激活码验证
+    startPeriodicActivationCheck();
     
   } catch (error) {
     console.error('应用初始化失败:', error);

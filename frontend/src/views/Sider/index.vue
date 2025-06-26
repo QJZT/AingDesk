@@ -6,11 +6,14 @@
                 <!-- <n-image :src="logo" object-fit="cover" class="h-30" preview-disabled /> -->
                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 font-bold text-xl drop-shadow-lg">AI 无人直播</span>
             </div>
-            <!-- <div>
-                <i class="i-common:fold w-18 h-18  cursor-pointer" @click="doFold"></i>
-            </div> -->
         </div>
-
+        
+        <!-- 激活码有效期显示 -->
+        <div class="flex justify-center items-center mt-2" style="margin-top: 8px;">
+            <span class="text-sm text-gray-600">有效期：</span>
+            <span class="text-sm ml-2" :class="expiryTextClass">{{ expiryText }}</span>
+            
+        </div>
         <!-- 新建对话按钮 -->
         <div class="flex justify-center items-center">
             <n-button type="primary" ghost style="width:100%"  @click="setCurrentView('LiveConsole')">
@@ -158,6 +161,9 @@ import { getSiderStoreData } from "../Sider/store/index.ts";
 import { useI18n } from "vue-i18n";
 import { set } from "@vueuse/core";
 import { knowledgeIsClose } from "@/views/KnowleadgeStore/controller"
+import { useDialog } from "@/utils/naive-tools"
+import { onMounted, onUnmounted, ref, computed } from 'vue'
+
 const { t: $t } = useI18n()
 
 const { siderBg } = getGlobalStore()
@@ -165,9 +171,159 @@ const {
     themeMode,
 } = getSoftSettingsStoreData()
 const { currentView } = getSiderStoreData()
+
+// 激活码有效期相关状态
+const expiryText = ref('检查中...')
+const expiryDays = ref(0)
+const checkTimer = ref<NodeJS.Timeout | null>(null)
+
+// 计算有效期文本样式
+const expiryTextClass = computed(() => {
+    if (expiryDays.value <= 0) {
+        return 'text-red-500 font-bold'
+    } else if (expiryDays.value <= 7) {
+        return 'text-orange-500 font-bold'
+    } else {
+        return 'text-green-600'
+    }
+})
+
 /**
- * @description 计算不同模式下logo的图片
+ * 检查激活码有效期
  */
+/**
+ * 检查激活码有效期
+ */
+/**
+ * 检查激活码有效期
+ */
+/**
+ * 检查激活码有效期
+ */
+async function checkActivationExpiry() {
+    try {
+        const response = await fetch('http://127.0.0.1:7072/get_kv', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ key: 'client_config' })
+        })
+        
+        if (response.ok) {
+            const data = await response.json()
+            console.log('API返回完整数据:', data)
+            
+            // 根据实际返回的数据结构处理
+            if (data.kv && data.kv.expires_at) {
+                const expiresAt = data.kv.expires_at
+                console.log('解析的expires_at:', expiresAt)
+                
+                const expiryDate = new Date(expiresAt)
+                const now = new Date()
+                const diffTime = expiryDate.getTime() - now.getTime()
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                
+                expiryDays.value = diffDays
+                console.log('计算的剩余天数:', diffDays)
+                
+                if (diffDays <= 0) {
+                    expiryText.value = '已过期'
+                    showExpiredWarning()
+                } else if (diffDays <= 7) {
+                    expiryText.value = `${diffDays}天后过期`
+                    showExpiryWarning(diffDays)
+                } else {
+                    expiryText.value = `${diffDays}天后过期`
+                }
+            } else {
+                console.log('未找到kv.expires_at字段')
+                expiryText.value = '无法获取有效期'
+            }
+        } else {
+            console.log('HTTP请求失败:', response.status, response.statusText)
+            expiryText.value = '检查失败'
+        }
+    } catch (error) {
+        console.error('检查激活码有效期失败:', error)
+        expiryText.value = '检查失败'
+    }
+}
+
+/**
+ * 显示即将过期警告
+ */
+function showExpiryWarning(days: number) {
+    const dialogInstance = useDialog({
+        title: '激活码即将过期',
+        content: `您的激活码将在 ${days} 天后过期，请及时续费以免影响使用。`,
+        positiveText: '我知道了',
+        style: {
+            width: '400px',
+            maxWidth: '90vw'
+        },
+        closable: true,
+        maskClosable: true,
+        onOk: () => {
+            // 关闭弹窗
+            dialogInstance.destroy()
+        }
+    })
+}
+
+/**
+ * 显示已过期警告
+ */
+function showExpiredWarning() {
+    const dialogInstance = useDialog({
+        title: '激活码已过期',
+        content: '您的激活码已过期，请联系管理员续费。',
+        positiveText: '我知道了',
+        style: {
+            width: '400px',
+            maxWidth: '90vw'
+        },
+        closable: true,
+        maskClosable: true,
+        onOk: () => {
+            // 关闭弹窗
+            dialogInstance.destroy()
+        }
+    })
+}
+
+/**
+ * 启动定时检查
+ */
+function startPeriodicCheck() {
+    // 立即检查一次
+    checkActivationExpiry()
+    
+    // 每小时检查一次
+    checkTimer.value = setInterval(() => {
+        checkActivationExpiry()
+    }, 60 * 60 * 1000)
+}
+
+/**
+ * 停止定时检查
+ */
+function stopPeriodicCheck() {
+    if (checkTimer.value) {
+        clearInterval(checkTimer.value)
+        checkTimer.value = null
+    }
+}
+
+// 组件挂载时启动检查
+onMounted(() => {
+    startPeriodicCheck()
+})
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+    stopPeriodicCheck()
+})
 
 const setCurrentView = (viewName: string) => {
     set(currentView, viewName)
