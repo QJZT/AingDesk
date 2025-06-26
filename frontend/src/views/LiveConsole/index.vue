@@ -32,7 +32,16 @@
       </div>
       
       <div class="setting-item"  @click="getAudioDevices">
-        <n-text depth="3" style="margin-right: 8px;">音频驱动</n-text>
+        <n-text depth="3" style="margin-right: 8px;">音频输出</n-text>
+        <n-button 
+          size="tiny" 
+          type="primary" 
+          ghost 
+          style="margin-right:8px; font-size: 12px; padding: 2px 8px;"
+          @click.stop="installAudioDriver"
+        >
+          安装音频驱动
+        </n-button>
         <n-select 
           v-model:value="selectedAudioDriver"
           :options="audioDeviceOptions"
@@ -939,6 +948,17 @@ const initializeSpeechModel = async () => {
     loading2.value = false
   }
 }
+
+// 安装音频驱动方法
+const installAudioDriver = async () => {
+  try {
+    await ipcRenderer.invoke('install-audio-driver');
+    message.success('音频驱动安装程序已启动');
+  } catch (error) {
+    message.error('启动安装程序失败');
+    console.error('安装音频驱动错误:', error);
+  }
+};
 
 
 const timezoneOptions = [

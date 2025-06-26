@@ -321,6 +321,20 @@ ipcMain.handle('get-py9872-service-status', async () => {
   };
 });
 
+// 添加音频驱动安装的IPC处理程序
+ipcMain.handle('install-audio-driver', async () => {
+  console.log('开始启动音频驱动安装程序...');
+  try {
+    const { audioDriverService } = require('./service/os/audio_driver');
+    const result = await audioDriverService.installAudioDriver();
+    console.log('音频驱动安装程序启动结果:', result);
+    return result;
+  } catch (error) {
+    console.error('启动音频驱动安装程序失败:', error);
+    return { success: false, message: `启动失败: ${error.message}` };
+  }
+});
+
 // Run
 
 // 修改应用启动流程
