@@ -41,7 +41,7 @@
             </n-button>
         </div>
         <div class="flex justify-center items-center">
-            <n-button type="primary" ghost style="width:100%" @click="">
+            <n-button type="primary" ghost style="width:100%" @click="setCurrentView('TutorialDocs')">
                 <!-- <template #icon>
                     <i class="i-tdesign:chat-add w-16 h-16"></i>
                 </template> -->

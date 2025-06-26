@@ -352,7 +352,7 @@ class McpController {
         let binPath = mcpService.get_bin_path();
         let os_path = mcpService.get_os_path();
 
-        let downloadUrl = `https://aingdesk.bt.cn/bin/${os_path}/uv.zip`
+        let downloadUrl = `https://无人直播.bt.cn/bin/${os_path}/uv.zip`
         let uvzipFile = path.resolve(binPath, 'uv.zip');
 
         await mcpService.download_file(downloadUrl, uvzipFile);

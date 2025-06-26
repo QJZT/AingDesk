@@ -76,7 +76,7 @@
             </NListItem>
             <NListItem>
                 <div class="flex justify-center flex-col items-center gap-2.5">
-                    <span>{{ $t("加入AingDesk交流群") }}</span>
+                    <span>{{ $t("加入无人直播交流群") }}</span>
                     <NImage :src="wechat" width="100px" />
                 </div>
             </NListItem>
@@ -168,18 +168,18 @@ const currentLnaguageLabel = computed(() => {
  * @descriiption github相关跳转
  */
 function toStar() {
-    window.open("https://github.com/aingdesk/AingDesk")
+    window.open("https://github.com/无人直播/无人直播")
 }
 
 function toIssue() {
-    window.open("https://github.com/aingdesk/AingDesk/issues")
+    window.open("https://github.com/无人直播/无人直播/issues")
 }
 
 /**
  * @description 跳转教程
  */
 function jumpToTutorial() {
-    window.open("https://docs.aingdesk.com/zh-Hans/")
+    window.open("https://docs.无人直播.com/zh-Hans/")
 }
 
 // 新手指引切换

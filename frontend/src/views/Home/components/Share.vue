@@ -1,6 +1,6 @@
 <template>
     <NModal v-model:show="shareShow" :close-on-esc="false" :closable="false" :mask-closable="false">
-        <NCard :title="$t('将AingDesk分享给好友一起使用')" style="width: 760px;">
+        <NCard :title="$t('将无人直播分享给好友一起使用')" style="width: 760px;">
             <template #header-extra>
                 <i class="i-common:close w-24 h-24 cursor-pointer" @click="closeShare"></i>
             </template>
@@ -27,7 +27,7 @@
                     </NForm>
                 </div>
                 <span style="position: absolute;margin-top: -25px;">{{
-                    $t("提示：如果分享列表为空，分享连接服务将自动停止，此时外网无法通过AingDesk访问到任何模型")
+                    $t("提示：如果分享列表为空，分享连接服务将自动停止，此时外网无法通过无人直播访问到任何模型")
                     }}</span>
             </div>
             <NDataTable :columns="labelColumns" :data="shareHistory" />

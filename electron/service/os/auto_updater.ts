@@ -23,7 +23,7 @@ class AutoUpdaterService {
             linux: true,
             options: {
                 provider: 'generic',
-                url: 'https://aingdesk.bt.cn/'
+                url: 'https://无人直播.bt.cn/'
             },
             force: true,
         }

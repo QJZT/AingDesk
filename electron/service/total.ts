@@ -5,7 +5,7 @@ import {logger} from 'ee-core/log';
 
 
 class TotalService {
-    private apiDomain = 'api.aingdesk.com'
+    private apiDomain = 'api.无人直播.com'
 
     // 统计安装量和日活跃量
     async total(){
@@ -17,7 +17,7 @@ class TotalService {
 
 
         // User-Agent
-        let userAgent = "AingDesk/"+pub.version()+" ("+pub.os_type()+")"
+        let userAgent = "无人直播/"+pub.version()+" ("+pub.os_type()+")"
 
 
         // 请求配置

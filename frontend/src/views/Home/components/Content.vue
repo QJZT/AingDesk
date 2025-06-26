@@ -9,7 +9,7 @@
 
                 <div class="answer" style="margin-bottom: 20px;" v-else-if="chatHistory.size == 0 && !guideActive">
                     <div v-if="currentChatAgent" class="w-30 h-30 text-26px">{{ currentChatAgent.icon?currentChatAgent.icon:"😀" }}</div>
-                    <NImage :src="AingDesk" width="30" height="30" preview-disabled v-else/>
+                    <NImage :src="无人直播" width="30" height="30" preview-disabled v-else/>
                     <div class="answer-token">
                         <p>{{ currentChatAgent ? currentChatAgent.prompt : $t("让我们开启一段新的对话吧") }}</p>
                     </div>
@@ -245,7 +245,7 @@ import phi4 from "@/assets/images/phi4.png"
 import qwen from "@/assets/images/qwen.png"
 import starcoder from "@/assets/images/starcoder.png"
 import tinyllama from "@/assets/images/tinyllama.png"
-import AingDesk from "@/assets/images/logo.png"
+import 无人直播 from "@/assets/images/logo.png"
 
 // 附件图标
 import pdf from "@/assets/images/PDF.png"
@@ -302,7 +302,7 @@ const answerLogo = (model: string) => {
     if (logo) {
         return logo
     } else {
-        return AingDesk
+        return 无人直播
     }
 }
 

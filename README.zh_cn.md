@@ -1,8 +1,8 @@
-# AingDesk
+# 无人直播
 
 [English](README.md)
 
-AingDesk是一款简单好用的AI助手，支持知识库、模型API、分享、联网搜索、智能体，它还在飞快成长中。
+无人直播是一款简单好用的AI助手，支持知识库、模型API、分享、联网搜索、智能体，它还在飞快成长中。
 
 ## 🚀一句话简介
 
@@ -36,28 +36,28 @@ AingDesk是一款简单好用的AI助手，支持知识库、模型API、分享�
 ## 📥快速安装
 
 ### 客户端版本（MacOS, Windows）
-- [官网下载](https://www.aingdesk.com/)   
-- [从 CNB 下载](https://cnb.cool/aingdesk/AingDesk/-/releases/) 
-- [从 Github 下载](https://github.com/aingdesk/AingDesk/releases)  
+- [官网下载](https://www.无人直播.com/)   
+- [从 CNB 下载](https://cnb.cool/无人直播/无人直播/-/releases/) 
+- [从 Github 下载](https://github.com/无人直播/无人直播/releases)  
 
 ### 服务器端版本
 #### Docker Run
 ```bash 
 docker run -d \
   --name node \
-  -v $(pwd)/data:/aingdesk/data \
-  -v $(pwd)/uploads:/aingdesk/uploads \
-  -v $(pwd)/logs:/aingdesk/logs \
+  -v $(pwd)/data:/无人直播/data \
+  -v $(pwd)/uploads:/无人直播/uploads \
+  -v $(pwd)/logs:/无人直播/logs \
   -p 7071:7071 \
-  -w /aingdesk \
-  aingdesk/aingdesk
+  -w /无人直播 \
+  无人直播/无人直播
 ```
 
 #### Docker Compose
 ```bash
-mkdir -p aingdesk
-cd aingdesk
-wget https://cnb.cool/aingdesk/AingDesk/-/git/raw/server/docker-compose.yml
+mkdir -p 无人直播
+cd 无人直播
+wget https://cnb.cool/无人直播/无人直播/-/git/raw/server/docker-compose.yml
 # Run
 docker compose up -d
 # or
@@ -66,8 +66,8 @@ docker-compose up -d
 
 ## 编译
 ```bash
-git clone https://github.com/aingdesk/AingDesk.git
-cd AingDesk
+git clone https://github.com/无人直播/无人直播.git
+cd 无人直播
 # macOS用户请删除frontend/package.json中的`@rollup/rollup-win32-x64-msvc`依赖
 cd frontend
 yarn

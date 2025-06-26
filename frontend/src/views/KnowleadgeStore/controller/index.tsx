@@ -119,7 +119,7 @@ export async function createNewKnowledgeStore() {
 	}
 	// 跳转知识库使用文档
 	function jumpToHelp() {
-		window.open('https://docs.aingdesk.com/zh-Hans/Practical-tutorials/knowledgebase');
+		window.open('https://docs.无人直播.com/zh-Hans/Practical-tutorials/knowledgebase');
 	}
 	createKnowledgeDialogIns.value = useDialog({
 		title: '新建知识库',
@@ -245,7 +245,7 @@ export function installBge() {
 	 * @description 知识库：本地模型教程
 	 */
 	function localModelTutorial() {
-		window.open('https://docs.aingdesk.com/zh-Hans/guide/knowledgebase');
+		window.open('https://docs.无人直播.com/zh-Hans/guide/knowledgebase');
 	}
 
 	/**

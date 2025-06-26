@@ -560,6 +560,7 @@ const handleModuleNameBlur = () => {
       display: block;
       margin-bottom: 8px;
       font-weight: bold;
+      color: var(--n-text-color);
     }
 
     .time-range {
@@ -590,9 +591,15 @@ const handleModuleNameBlur = () => {
       .speech-tag {
         cursor: pointer;
         border-radius: 15px;
-        background-color: #f0f0f5;
+        background-color: var(--n-color);
+        color: var(--n-text-color);
+        border: 1px solid var(--n-border-color);
+        transition: all 0.3s ease;
+        
         &:hover {
-          background-color: #e0e0e5;
+          background-color: var(--n-color-hover);
+          border-color: var(--n-border-color-hover);
+          transform: translateY(-1px);
         }
       }
     }
@@ -628,7 +635,7 @@ const handleModuleNameBlur = () => {
 
         .word-count {
           text-align: right;
-          color: #999;
+          color: var(--n-text-color-disabled);
           font-size: 12px;
           margin-top: 2px;
         }

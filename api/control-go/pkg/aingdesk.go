@@ -237,7 +237,7 @@ func CreateChatApi(model, parameters, title string) (string, error) {
 	}
 	defer resp.Body.Close()
 	retBytes, _ := ioutil.ReadAll(resp.Body)
-	// {"status":0,"code":200,"msg":"对话创建成功","error_msg":"","message":{"model":"0.6b","title":"test0032132101","parameters":"qwen3","contextPath":"C:\\Users\\qjzt\\Desktop\\AingDesk\\data\\context\\3c163cd0-27f0-11f0-a60e-2739721944a6","context_id":"3c163cd0-27f0-11f0-a60e-2739721944a6","agent_name":"","create_time":1746257320}}
+	// {"status":0,"code":200,"msg":"对话创建成功","error_msg":"","message":{"model":"0.6b","title":"test0032132101","parameters":"qwen3","contextPath":"C:\\Users\\qjzt\\Desktop\\无人直播\\data\\context\\3c163cd0-27f0-11f0-a60e-2739721944a6","context_id":"3c163cd0-27f0-11f0-a60e-2739721944a6","agent_name":"","create_time":1746257320}}
 	context_id := gjson.Get(string(retBytes), "message.context_id").String()
 	if context_id == "" {
 		return "", fmt.Errorf("context_id is empty")

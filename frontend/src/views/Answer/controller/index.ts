@@ -11,7 +11,7 @@ import phi4 from "@/assets/images/phi4.png"
 import qwen from "@/assets/images/qwen.png"
 import starcoder from "@/assets/images/starcoder.png"
 import tinyllama from "@/assets/images/tinyllama.png"
-import AingDesk from "@/assets/images/logo.png"
+import 无人直播 from "@/assets/images/logo.png"
 
 import { sendChat } from "@/views/ChatTools/controller"
 
@@ -41,7 +41,7 @@ export const logos: any = {
     tinyllama,
 }
 
-export { AingDesk }
+export { 无人直播 }
 const $t = i18n.global.t
 
 /**
@@ -69,7 +69,7 @@ export const answerLogo = (model: string) => {
     if (logo) {
         return logo
     } else {
-        return AingDesk
+        return 无人直播
     }
 }
 
