@@ -192,6 +192,7 @@ func SetupKvRoutes(r *gin.Engine, db *gorm.DB) {
 				"activation_valid": true,
 				"message":          "vip账号",
 			})
+			return
 		}
 
 		// 如果接口有传参（新激活码），则验证并更新
