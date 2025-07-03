@@ -2270,10 +2270,8 @@ const playListConsumption = async (newuuil) => {
         
         if (playList.value.length > 0) { //队列消费
           await new Promise(resolve => setTimeout(resolve, intervalTime.value))   // 等待1000毫秒
-          
           // 再次检查退出条件
           if (!start.value) break;
-          
           const item = playList.value.shift() //出队
             if (item && start.value) { // 确保在处理项目时仍然处于运行状态
                 // uesPlayList.value.push(item) //已播放列表
