@@ -32,7 +32,16 @@
       </div>
       
       <div class="setting-item"  @click="getAudioDevices">
-        <n-text depth="3" style="margin-right: 8px;">音频驱动</n-text>
+        <n-text depth="3" style="margin-right: 8px;">音频输出</n-text>
+        <n-button 
+          size="tiny" 
+          type="primary" 
+          ghost 
+          style="margin-right:8px; font-size: 12px; padding: 2px 8px;"
+          @click.stop="installAudioDriver"
+        >
+          安装音频驱动
+        </n-button>
         <n-select 
           v-model:value="selectedAudioDriver"
           :options="audioDeviceOptions"
@@ -137,6 +146,41 @@
           :max="100"
           :step="1"
           style="width: 100px;"
+        />
+      </div>
+      
+      <div class="setting-item">
+        <div style="display: flex; align-items: center;">
+          <n-text depth="3" style="margin-right: 8px;">采样步数 ({{ sample_steps }})<n-popover trigger="click">
+            <template #trigger>
+              <i class="i-tdesign:help-circle mt-5 cursor-pointer text-[var(--n-text-color)]"></i>
+            </template>
+            <span>控制音频生成的采样步数(4-128)，值越高质量越好但速度越慢</span>
+          </n-popover></n-text>
+        </div>
+        <n-input-number
+          v-model:value="sample_steps"
+          :min="4"
+          :max="128"
+          :step="1"
+          style="width: 100px;"
+        />
+      </div>
+      
+      <div class="setting-item">
+        <n-text depth="3" style="margin-right: 8px;">分段间隔(秒) ({{ fragment_interval }})<n-popover trigger="click">
+          <template #trigger>
+            <i class="i-tdesign:help-circle w-16 h-16 ml-2 cursor-pointer"></i>
+          </template>
+          <span>控制音频片段之间的间隔时间(0.1-0.5秒)</span>
+        </n-popover></n-text>
+        <n-slider
+          v-model:value="fragment_interval"
+          :min="0.1"
+          :max="0.4"
+          :step="0.01"
+          style="width: 150px;"
+          :format-tooltip="(value) => `间隔: ${value}s`"
         />
       </div>
       <div class="mic-select" style="display: flex; flex-direction: column; gap: 6px; min-width: 200px; padding-left: 0; align-items: flex-start;">
@@ -939,6 +983,17 @@ const initializeSpeechModel = async () => {
     loading2.value = false
   }
 }
+
+// 安装音频驱动方法
+const installAudioDriver = async () => {
+  try {
+    await ipcRenderer.invoke('install-audio-driver');
+    message.success('音频驱动安装程序已启动');
+  } catch (error) {
+    message.error('启动安装程序失败');
+    console.error('安装音频驱动错误:', error);
+  }
+};
 
 
 const timezoneOptions = [
@@ -2831,6 +2886,8 @@ let generateLock = Promise.resolve(); // 初始化为已解决的Promise
 const temperature = ref(0.6)
 const top_p = ref(0.8)
 const top_k = ref(50)
+const sample_steps = ref(32)
+const fragment_interval = ref(0.3)
 
 const MAX_CONCURRENT = ref(1); // 最大并发数设为1，即串行执行
 let activeRequests = 0;
@@ -2873,7 +2930,7 @@ const generate_wav_api = async (_text:string,
             body: JSON.stringify({ 
                 "refer_wav_path": _speaker_wav,
                 "prompt_text": get_human_voice_files_text_map.value[_speaker_wav],
-                "prompt_language": "zh",
+                "prompt_language": detectLanguage(get_human_voice_files_text_map.value[_speaker_wav]), // 自动检测语言
                 "text": _text,
                 "text_language": _language,//目标音频
                 "cut_punc": "",
@@ -2883,7 +2940,9 @@ const generate_wav_api = async (_text:string,
                 "speed": _speed,
                 "filename": _filename,
                 "volume" : _volume,//
-                "sample_rate" : 22050//
+                "sample_rate" : 22050,//
+                "sample_steps": sample_steps.value,// 采样步数
+                "fragment_interval": fragment_interval.value// 分段间隔
             }),
             signal: controller.signal // 添加信号用于取消请求
         });
@@ -3402,6 +3461,61 @@ const DisposableSendApi = async (model, parameters, user_content, system_prompt,
 // }
 
 // 替换文本 替换变量
+// 语言检测函数
+const detectLanguage = (text) => {
+  if (!text || typeof text !== 'string') {
+    return 'zh'; // 默认返回中文
+  }
+  
+  // 移除空格和标点符号进行检测
+  const cleanText = text.replace(/[\s\p{P}]/gu, '');
+  
+  // 中文字符范围（包括中日韩统一表意文字）
+  const chineseRegex = /[\u4e00-\u9fff\u3400-\u4dbf\u20000-\u2a6df\u2a700-\u2b73f\u2b740-\u2b81f\u2b820-\u2ceaf]/;
+  
+  // 日文字符（平假名、片假名）
+  const japaneseRegex = /[\u3040-\u309f\u30a0-\u30ff]/;
+  
+  // 韩文字符
+  const koreanRegex = /[\uac00-\ud7af\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\ud7b0-\ud7ff]/;
+  
+  // 英文字符（基本拉丁字母）
+  const englishRegex = /[a-zA-Z]/;
+  
+  // 统计各种字符的数量
+  const chineseCount = (cleanText.match(chineseRegex) || []).length;
+  const japaneseCount = (cleanText.match(japaneseRegex) || []).length;
+  const koreanCount = (cleanText.match(koreanRegex) || []).length;
+  const englishCount = (cleanText.match(englishRegex) || []).length;
+  
+  // 计算总字符数
+  const totalChars = cleanText.length;
+  
+  if (totalChars === 0) {
+    return 'zh'; // 默认中文
+  }
+  
+  // 计算各语言字符占比
+  const chineseRatio = chineseCount / totalChars;
+  const japaneseRatio = japaneseCount / totalChars;
+  const koreanRatio = koreanCount / totalChars;
+  const englishRatio = englishCount / totalChars;
+  
+  // 根据占比判断语言（阈值可以调整）
+  if (chineseRatio > 0.3) {
+    return 'zh';
+  } else if (japaneseRatio > 0.3) {
+    return 'ja';
+  } else if (koreanRatio > 0.3) {
+    return 'ko';
+  } else if (englishRatio > 0.5) {
+    return 'en';
+  }
+  
+  // 如果没有明显的语言特征，默认返回中文
+  return 'zh';
+};
+
 const ReplaceText= async (text) => {
   let newText = text
   if (text.includes('{语种}')){ //是否包含
