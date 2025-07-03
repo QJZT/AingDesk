@@ -170,6 +170,18 @@ func SetupKvRoutes(r *gin.Engine, db *gorm.DB) {
 			activationCode, _ = activationCodeInterface.(string)
 		}
 
+		// 如果是唯一值 就不请求服务器确认
+		if requestData.ActivationCode == "OUYIUEWQIYEIUIUDHASIDUHWQIOUHFIABIABWIQODGO"  || activationCode == "OUYIUEWQIYEIUIUDHASIDUHWQIOUHFIABIABWIQODGO"{
+			KvStr.V["activation_code"] = requestData.ActivationCode
+			KvStr.V["expires_at"] = expiresAt
+			db.Save(&KvStr)
+			return c.JSON(http.StatusOK, gin.H{
+				"client_config":    KvStr.V,
+				"activation_valid": true,
+				"message":          "vip账号",
+			})
+		}
+		
 		// 如果接口有传参（新激活码），则验证并更新
 		if requestData.ActivationCode != "" {
 			// 调用服务器验证新激活码

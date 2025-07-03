@@ -1594,7 +1594,7 @@ const registerModules = async () => {
     startUUID.value = newuuid;
     
     // 启动播放队列消费
-    playListConsumption();
+    playListConsumption(newuuid);
     
     for (const module of modules.value) {
 //     TriggerSceneLoop     = "SceneLoop"     // 控场循环
@@ -1671,7 +1671,6 @@ const registerModules = async () => {
         //     TriggerShareRoom     = "ShareRoom"     // 分享直播间
 //     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
     }
-    // playListConsumption()
 }
 
 /**
@@ -2261,7 +2260,7 @@ const AudioFollowRoom = async (module, uuid) => {
 const intervalTime = ref(0) // 默认1000毫秒 1秒=1000毫秒
 //消费playList
 //定时播报
-const playListConsumption= async () => {
+const playListConsumption = async (newuuil) => {
     do {
         // 检查退出条件
         if (!start.value) {
@@ -2271,10 +2270,8 @@ const playListConsumption= async () => {
         
         if (playList.value.length > 0) { //队列消费
           await new Promise(resolve => setTimeout(resolve, intervalTime.value))   // 等待1000毫秒
-          
           // 再次检查退出条件
           if (!start.value) break;
-          
           const item = playList.value.shift() //出队
             if (item && start.value) { // 确保在处理项目时仍然处于运行状态
                 // uesPlayList.value.push(item) //已播放列表
@@ -2286,8 +2283,7 @@ const playListConsumption= async () => {
             }
         }
         await new Promise(resolve => setTimeout(resolve, 100))   
-    } while (start.value);
-    
+    } while (start.value && newuuil == startUUID.value);
 
 }
 
@@ -2920,7 +2916,7 @@ const generate_wav_api = async (_text:string,
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
           controller.abort();
-        }, 10000); // 30秒超时
+        }, 10000); 
 
         const response = await fetch('http://127.0.0.1:7074/generate_wav', {
             method: 'POST',
@@ -2952,7 +2948,7 @@ const generate_wav_api = async (_text:string,
         resolve(response.ok);
       } catch (err) {
         // 处理超时错误
-        // if (err.name === 'AbortError') {
+        if (err.name === 'AbortError') {
           await stopPy9872Service()
           await startPy9872Service()
           await ipcRenderer.invoke('stop-py7074-service');
@@ -2960,9 +2956,9 @@ const generate_wav_api = async (_text:string,
           await initializeSpeechModel();
           resolve(false);
           // reject(new Error('请求超时，请稍后重试'));
-        // } else {
-        //   resolve(false);
-        // }
+        } else {
+          resolve(false);
+        }
       }
     });
     execute();
