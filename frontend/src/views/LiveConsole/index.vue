@@ -3464,7 +3464,7 @@ const DisposableSendApi = async (model, parameters, user_content, system_prompt,
 // 语言检测函数
 const detectLanguage = (text) => {
   if (!text || typeof text !== 'string') {
-    return 'zh'; // 默认返回中文
+    return '中文'; // 默认返回中文
   }
   
   // 移除空格和标点符号进行检测
@@ -3492,7 +3492,7 @@ const detectLanguage = (text) => {
   const totalChars = cleanText.length;
   
   if (totalChars === 0) {
-    return 'zh'; // 默认中文
+    return '中文'; // 默认中文
   }
   
   // 计算各语言字符占比
@@ -3503,17 +3503,17 @@ const detectLanguage = (text) => {
   
   // 根据占比判断语言（阈值可以调整）
   if (chineseRatio > 0.3) {
-    return 'zh';
+    return '中文';
   } else if (japaneseRatio > 0.3) {
-    return 'ja';
+    return '日文';
   } else if (koreanRatio > 0.3) {
-    return 'ko';
+    return '韩文';
   } else if (englishRatio > 0.5) {
-    return 'en';
+    return '英文';
   }
   
   // 如果没有明显的语言特征，默认返回中文
-  return 'zh';
+  return '中文';
 };
 
 const ReplaceText= async (text) => {
