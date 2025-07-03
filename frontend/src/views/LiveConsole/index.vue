@@ -3467,22 +3467,27 @@ const detectLanguage = (text) => {
   const cleanText = text.replace(/[\s\p{P}]/gu, '');
   
   // 中文字符范围（包括中日韩统一表意文字）
-  const chineseRegex = /[\u4e00-\u9fff\u3400-\u4dbf\u20000-\u2a6df\u2a700-\u2b73f\u2b740-\u2b81f\u2b820-\u2ceaf]/;
+  const chineseRegex = /[\u4e00-\u9fff\u3400-\u4dbf\u20000-\u2a6df\u2a700-\u2b73f\u2b740-\u2b81f\u2b820-\u2ceaf]/g;
   
   // 日文字符（平假名、片假名）
-  const japaneseRegex = /[\u3040-\u309f\u30a0-\u30ff]/;
+  const japaneseRegex = /[\u3040-\u309f\u30a0-\u30ff]/g;
   
   // 韩文字符
-  const koreanRegex = /[\uac00-\ud7af\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\ud7b0-\ud7ff]/;
+  const koreanRegex = /[\uac00-\ud7af\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\ud7b0-\ud7ff]/g;
   
   // 英文字符（基本拉丁字母）
-  const englishRegex = /[a-zA-Z]/;
+  const englishRegex = /[a-zA-Z]/g;
   
   // 统计各种字符的数量
-  const chineseCount = (cleanText.match(chineseRegex) || []).length;
-  const japaneseCount = (cleanText.match(japaneseRegex) || []).length;
-  const koreanCount = (cleanText.match(koreanRegex) || []).length;
-  const englishCount = (cleanText.match(englishRegex) || []).length;
+  const chineseMatches = cleanText.match(chineseRegex);
+  const japaneseMatches = cleanText.match(japaneseRegex);
+  const koreanMatches = cleanText.match(koreanRegex);
+  const englishMatches = cleanText.match(englishRegex);
+  
+  const chineseCount = chineseMatches ? chineseMatches.length : 0;
+  const japaneseCount = japaneseMatches ? japaneseMatches.length : 0;
+  const koreanCount = koreanMatches ? koreanMatches.length : 0;
+  const englishCount = englishMatches ? englishMatches.length : 0;
   
   // 计算总字符数
   const totalChars = cleanText.length;
@@ -3497,18 +3502,43 @@ const detectLanguage = (text) => {
   const koreanRatio = koreanCount / totalChars;
   const englishRatio = englishCount / totalChars;
   
-  // 根据占比判断语言（阈值可以调整）
-  if (chineseRatio > 0.3) {
+  console.log('语言检测统计:', {
+    text: cleanText,
+    totalChars,
+    chineseCount,
+    japaneseCount,
+    koreanCount,
+    englishCount,
+    chineseRatio,
+    japaneseRatio,
+    koreanRatio,
+    englishRatio
+  });
+  
+  // 调整阈值，优先检测英文
+  if (englishRatio > 0.3) {
+    return '英文';
+  } else if (chineseRatio > 0.3) {
     return '中文';
   } else if (japaneseRatio > 0.3) {
     return '日文';
   } else if (koreanRatio > 0.3) {
     return '韩文';
-  } else if (englishRatio > 0.5) {
-    return '英文';
   }
   
-  // 如果没有明显的语言特征，默认返回中文
+  // 如果没有明显的语言特征，根据最高占比判断
+  const maxRatio = Math.max(chineseRatio, japaneseRatio, koreanRatio, englishRatio);
+  if (maxRatio === englishRatio && englishRatio > 0) {
+    return '英文';
+  } else if (maxRatio === chineseRatio && chineseRatio > 0) {
+    return '中文';
+  } else if (maxRatio === japaneseRatio && japaneseRatio > 0) {
+    return '日文';
+  } else if (maxRatio === koreanRatio && koreanRatio > 0) {
+    return '韩文';
+  }
+  
+  // 最后默认返回中文
   return '中文';
 };
 
