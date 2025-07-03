@@ -1671,7 +1671,6 @@ const registerModules = async () => {
         //     TriggerShareRoom     = "ShareRoom"     // 分享直播间
 //     TriggerFollowRoom    = "FollowRoom"    // 关注直播间
     }
-    // playListConsumption()
 }
 
 /**
@@ -2287,7 +2286,6 @@ const playListConsumption = async (newuuil) => {
         }
         await new Promise(resolve => setTimeout(resolve, 100))   
     } while (start.value && newuuil == startUUID.value);
-    
 
 }
 
