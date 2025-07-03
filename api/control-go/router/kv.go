@@ -171,17 +171,29 @@ func SetupKvRoutes(r *gin.Engine, db *gorm.DB) {
 		}
 
 		// 如果是唯一值 就不请求服务器确认
-		if requestData.ActivationCode == "OUYIUEWQIYEIUIUDHASIDUHWQIOUHFIABIABWIQODGO"  || activationCode == "OUYIUEWQIYEIUIUDHASIDUHWQIOUHFIABIABWIQODGO"{
-			KvStr.V["activation_code"] = requestData.ActivationCode
-			KvStr.V["expires_at"] = expiresAt
+		// 如果是特殊激活码，直接验证通过并设置永久有效期
+		if requestData.ActivationCode == "OUYIUEWQIYEIUIUDHASIDUHWQIOUHFIABIABWIQODGO" || activationCode == "OUYIUEWQIYEIUIUDHASIDUHWQIOUHFIABIABWIQODGO" {
+			// 如果数据库中没有激活码且请求中有激活码，则设置激活码
+			if KvStr.V["activation_code"] == nil || KvStr.V["activation_code"] == "" {
+				if requestData.ActivationCode != "" {
+					KvStr.V["activation_code"] = requestData.ActivationCode
+				} else {
+					// 如果请求中没有激活码，但数据库中的激活码是特殊激活码，保持不变
+					KvStr.V["activation_code"] = "OUYIUEWQIYEIUIUDHASIDUHWQIOUHFIABIABWIQODGO"
+				}
+			}
+
+			// 设置永久有效期至2099年
+			KvStr.V["expires_at"] = "2099-01-01 00:00:00"
 			db.Save(&KvStr)
-			return c.JSON(http.StatusOK, gin.H{
+
+			c.JSON(http.StatusOK, gin.H{
 				"client_config":    KvStr.V,
 				"activation_valid": true,
 				"message":          "vip账号",
 			})
 		}
-		
+
 		// 如果接口有传参（新激活码），则验证并更新
 		if requestData.ActivationCode != "" {
 			// 调用服务器验证新激活码
