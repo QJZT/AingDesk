@@ -9,10 +9,11 @@
         </div>
         
         <!-- 激活码有效期显示 -->
-        <div class="flex justify-center items-center mt-2" style="margin-top: 8px;">
-            <span class="text-sm text-gray-600">有效期：</span>
-            <span class="text-sm ml-2" :class="expiryTextClass">{{ expiryText }}</span>
-            
+        <div class="expiry-display-container">
+            <div class="expiry-content">
+                <span class="expiry-label">有效期：</span>
+                <span class="expiry-text" :class="expiryTextClass">{{ expiryText }}</span>
+            </div>
         </div>
         <!-- 新建对话按钮 -->
         <div class="flex justify-center items-center">
@@ -176,6 +177,9 @@ const { currentView } = getSiderStoreData()
 const expiryText = ref('检查中...')
 const expiryDays = ref(0)
 const checkTimer = ref<NodeJS.Timeout | null>(null)
+const countdownTimer = ref<NodeJS.Timeout | null>(null)
+const expiryTimestamp = ref<number>(0)
+const isCountdownMode = ref(false)
 
 // 计算有效期文本样式
 const expiryTextClass = computed(() => {
@@ -189,17 +193,62 @@ const expiryTextClass = computed(() => {
 })
 
 /**
- * 检查激活码有效期
+ * 启动倒计时
  */
+function startCountdown() {
+    if (countdownTimer.value) {
+        clearInterval(countdownTimer.value)
+    }
+    
+    countdownTimer.value = setInterval(() => {
+        updateCountdown()
+    }, 1000) // 每秒更新一次
+}
+
 /**
- * 检查激活码有效期
+ * 停止倒计时
  */
+function stopCountdown() {
+    if (countdownTimer.value) {
+        clearInterval(countdownTimer.value)
+        countdownTimer.value = null
+    }
+    isCountdownMode.value = false
+}
+
 /**
- * 检查激活码有效期
+ * 更新倒计时显示
  */
-/**
- * 检查激活码有效期
- */
+function updateCountdown() {
+    if (expiryTimestamp.value <= 0) {
+        stopCountdown()
+        return
+    }
+    
+    const now = new Date().getTime()
+    const diffTime = expiryTimestamp.value - now
+    
+    if (diffTime <= 0) {
+        expiryText.value = '已过期'
+        stopCountdown()
+        showExpiredWarning()
+        return
+    }
+    
+    // 计算剩余时间
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
+    const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60))
+    const diffSeconds = Math.floor((diffTime % (1000 * 60)) / 1000)
+    
+    if (diffHours > 0) {
+        expiryText.value = `${diffHours}小时${diffMinutes}分${diffSeconds}秒后过期`
+    } else if (diffMinutes > 0) {
+        expiryText.value = `${diffMinutes}分${diffSeconds}秒后过期`
+    } else {
+        expiryText.value = `${diffSeconds}秒后过期`
+    }
+}
+
 /**
  * 检查激活码有效期
  */
@@ -228,39 +277,42 @@ async function checkActivationExpiry() {
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
                 
                 expiryDays.value = diffDays
+                expiryTimestamp.value = expiryDate.getTime()
                 console.log('计算的剩余天数:', diffDays)
                 
                 if (diffTime <= 0) {
                     expiryText.value = '已过期'
+                    stopCountdown()
                     showExpiredWarning()
                 } else if (diffTime < 24 * 60 * 60 * 1000) {
-                    // 不足一天时显示详细时间
-                    const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
-                    const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60))
-                    
-                    if (diffHours > 0) {
-                        expiryText.value = `${diffHours}小时${diffMinutes}分钟后过期`
-                    } else {
-                        expiryText.value = `${diffMinutes}分钟后过期`
-                    }
-                    showExpiryWarning(diffDays)
-                } else if (diffDays <= 7) {
-                    expiryText.value = `${diffDays}天后过期`
+                    // 不足一天时启动倒计时
+                    isCountdownMode.value = true
+                    startCountdown()
                     showExpiryWarning(diffDays)
                 } else {
-                    expiryText.value = `${diffDays}天后过期`
+                    // 超过一天时停止倒计时，显示天数
+                    stopCountdown()
+                    if (diffDays <= 7) {
+                        expiryText.value = `${diffDays}天后过期`
+                        showExpiryWarning(diffDays)
+                    } else {
+                        expiryText.value = `${diffDays}天后过期`
+                    }
                 }
             } else {
                 console.log('未找到kv.expires_at字段')
                 expiryText.value = '无法获取有效期'
+                stopCountdown()
             }
         } else {
             console.log('HTTP请求失败:', response.status, response.statusText)
             expiryText.value = '检查失败'
+            stopCountdown()
         }
     } catch (error) {
         console.error('检查激活码有效期失败:', error)
         expiryText.value = '检查失败'
+        stopCountdown()
     }
 }
 
@@ -327,6 +379,7 @@ function stopPeriodicCheck() {
         clearInterval(checkTimer.value)
         checkTimer.value = null
     }
+    stopCountdown()
 }
 
 // 组件挂载时启动检查
@@ -391,6 +444,38 @@ const handleUpdateValue =  (value: string) => {
             span {
                 font-size: 18px;
                 font-weight: bold;
+            }
+        }
+    }
+
+    // 新增有效期显示样式
+    .expiry-display-container {
+        width: 100%;
+        padding: 4px 8px;
+        margin: 4px 0;
+        
+        .expiry-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            
+            .expiry-label {
+                font-size: 16px;
+                color: #666;
+                white-space: nowrap;
+            }
+            
+            .expiry-text {
+                font-size: 14px;
+                font-weight: 500;
+                text-align: center;
+                line-height: 1.2;
+                word-break: keep-all;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
             }
         }
     }
