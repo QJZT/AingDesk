@@ -63,25 +63,45 @@ func validateActivationCode(activationCode string) (bool, string, string) {
 
 	jsonData, err := json.Marshal(requestData)
 	if err != nil {
+		fmt.Printf("请求数据格式错误: %v\n", err)
 		return false, "请求数据格式错误", ""
 	}
 
 	// 创建HTTP客户端，设置超时
 	client := &http.Client{
-		Timeout: 15 * time.Second,
+		Timeout: 10 * time.Second,
 	}
+
+	fmt.Printf("正在验证激活码: %s\n", activationCode)
 
 	// 发送POST请求
 	resp, err := client.Post(serverURL, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
+		fmt.Printf("网络请求失败: %v\n", err)
 		return false, fmt.Sprintf("网络请求失败: %v", err), ""
 	}
 	defer resp.Body.Close()
 
+	fmt.Printf("服务器响应状态码: %d\n", resp.StatusCode)
+
 	// 读取响应
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Printf("读取服务器响应失败: %v\n", err)
 		return false, "读取服务器响应失败", ""
+	}
+
+	fmt.Printf("服务器响应内容: %s\n", string(body))
+
+	// 检查HTTP状态码
+	if resp.StatusCode == 403 {
+		fmt.Println("服务器返回403：激活码无效或已过期")
+		return false, "激活码无效或已过期", ""
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("服务器返回错误状态码: %d\n", resp.StatusCode)
+		return false, fmt.Sprintf("服务器返回错误状态码: %d", resp.StatusCode), ""
 	}
 
 	// 解析响应
@@ -92,6 +112,11 @@ func validateActivationCode(activationCode string) (bool, string, string) {
 	}
 
 	if err := json.Unmarshal(body, &response); err != nil {
+		fmt.Printf("解析服务器响应失败: %v\n", err)
+		// 如果是403状态码但解析失败，仍然认为是验证失败
+		if resp.StatusCode == 403 {
+			return false, "激活码验证失败", ""
+		}
 		return false, "解析服务器响应失败", ""
 	}
 
@@ -248,4 +273,105 @@ func SetupKvRoutes(r *gin.Engine, db *gorm.DB) {
 			"message":          message,
 		})
 	})
+}
+
+// StartPeriodicActivationCheck 启动定期激活码验证
+func StartPeriodicActivationCheck(db *gorm.DB) {
+	go func() {
+		// 创建定时器，每小时执行一次
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				// 执行激活码验证
+				if !performActivationCheck(db) {
+					fmt.Println("激活码验证失败，程序即将退出...")
+					os.Exit(1)
+				}
+			}
+		}
+	}()
+}
+
+// performActivationCheck 执行激活码验证检查
+func performActivationCheck(db *gorm.DB) bool {
+	fmt.Printf("[%s] 开始定期激活码验证...\n", time.Now().Format("2006-01-02 15:04:05"))
+
+	// 获取客户端配置
+	KvStr := model.KvStr{}
+	db.Where("key = ?", "client_config").Find(&KvStr)
+
+	// 如果没有配置数据，认为验证失败
+	if KvStr.Key == "" || KvStr.V == nil {
+		fmt.Println("未找到客户端配置，验证失败")
+		return false
+	}
+
+	// 安全地获取激活码
+	activationCodeInterface, exists := KvStr.V["activation_code"]
+	if !exists {
+		fmt.Println("未找到激活码，验证失败")
+		return false
+	}
+
+	activationCode, ok := activationCodeInterface.(string)
+	if !ok || activationCode == "" {
+		fmt.Println("激活码格式错误，验证失败")
+		return false
+	}
+
+	fmt.Printf("当前激活码: %s\n", activationCode)
+
+	// 如果是特殊激活码，直接通过验证
+	if activationCode == "OUYIUEWQIYEIUIUDHASIDUHWQIOUHFIABIABWIQODGO" {
+		fmt.Println("特殊激活码验证通过")
+		return true
+	}
+
+	// 首先检查本地存储的过期时间
+	expiresAtInterface, exists := KvStr.V["expires_at"]
+	if exists {
+		expiresAtStr, ok := expiresAtInterface.(string)
+		if ok && expiresAtStr != "" {
+			fmt.Printf("检查本地过期时间: %s\n", expiresAtStr)
+			// 解析过期时间
+			expiresAt, err := time.Parse("2006-01-02 15:04:05", expiresAtStr)
+			if err == nil {
+				currentTime := time.Now()
+				if currentTime.After(expiresAt) {
+					fmt.Printf("激活码已过期！过期时间: %s，当前时间: %s\n",
+						expiresAtStr, currentTime.Format("2006-01-02 15:04:05"))
+					fmt.Println("程序将立即退出...")
+					return false
+				}
+				fmt.Printf("激活码仍在有效期内，过期时间: %s，当前时间: %s\n",
+					expiresAtStr, currentTime.Format("2006-01-02 15:04:05"))
+			} else {
+				fmt.Printf("解析过期时间失败: %v\n", err)
+			}
+		}
+	} else {
+		fmt.Println("未找到本地过期时间，将进行服务器验证")
+	}
+
+	// 调用服务器验证激活码
+	fmt.Println("正在进行服务器验证...")
+	isValid, message, newExpiresAt := validateActivationCode(activationCode)
+
+	if isValid {
+		fmt.Printf("服务器验证成功: %s\n", message)
+		// 如果验证成功且有新的有效期，更新数据库
+		if newExpiresAt != "" {
+			KvStr.V["expires_at"] = newExpiresAt
+			db.Save(&KvStr)
+			fmt.Printf("更新有效期: %s\n", newExpiresAt)
+		}
+		return true
+	} else {
+		fmt.Printf("服务器验证失败: %s\n", message)
+		fmt.Println("激活码验证失败，程序即将退出...")
+		return false
+	}
 }

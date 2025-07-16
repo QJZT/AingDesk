@@ -200,6 +200,9 @@ const expiryTextClass = computed(() => {
 /**
  * 检查激活码有效期
  */
+/**
+ * 检查激活码有效期
+ */
 async function checkActivationExpiry() {
     try {
         const response = await fetch('http://127.0.0.1:7072/get_kv', {
@@ -227,9 +230,20 @@ async function checkActivationExpiry() {
                 expiryDays.value = diffDays
                 console.log('计算的剩余天数:', diffDays)
                 
-                if (diffDays <= 0) {
+                if (diffTime <= 0) {
                     expiryText.value = '已过期'
                     showExpiredWarning()
+                } else if (diffTime < 24 * 60 * 60 * 1000) {
+                    // 不足一天时显示详细时间
+                    const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
+                    const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60))
+                    
+                    if (diffHours > 0) {
+                        expiryText.value = `${diffHours}小时${diffMinutes}分钟后过期`
+                    } else {
+                        expiryText.value = `${diffMinutes}分钟后过期`
+                    }
+                    showExpiryWarning(diffDays)
                 } else if (diffDays <= 7) {
                     expiryText.value = `${diffDays}天后过期`
                     showExpiryWarning(diffDays)

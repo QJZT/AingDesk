@@ -12,8 +12,9 @@ const app = new ElectronEgg();
 
 // 在文件顶部添加定时器变量
 let activationCheckTimer: NodeJS.Timeout | null = null;
+let port7072MonitorTimer: NodeJS.Timeout | null = null;
 
-// 添加定时验证函数
+// 修改定时验证函数
 async function startPeriodicActivationCheck() {
   console.log('启动定时激活码验证，每小时检查一次');
   
@@ -27,45 +28,156 @@ async function startPeriodicActivationCheck() {
     console.log('执行定时激活码验证检查...');
     
     try {
-      const isValid = await checkExistingActivationCode();
+      // 如果7072端口不可用，说明Go服务已经因为验证码过期而关闭
+      const is7072Available = await check7072Status();
       
-      if (!isValid) {
-        console.log('定时检查发现激活码已过期，需要重新验证');
+      if (!is7072Available) {
+        console.log('检测到7072端口不可用，Go服务可能因为验证码过期自动关闭');
         
-        // 停止定时器，避免重复弹窗
-        if (activationCheckTimer) {
-          clearInterval(activationCheckTimer);
-          activationCheckTimer = null;
-        }
+        // 停止所有定时器
+        stopAllTimers();
         
-        // 显示重新验证窗口
-        const reactivated = await showActivationWindow();
+        // 关闭所有其他服务
+        await shutdownAllServices();
         
-        if (reactivated) {
-          console.log('重新激活成功，恢复定时检查');
-          // 重新启动定时器
-          startPeriodicActivationCheck();
-        } else {
-          console.log('重新激活失败，退出应用');
-          require('electron').app.quit();
-        }
-      } else {
-        console.log('定时检查：激活码仍然有效');
+        console.log('所有服务已关闭，退出应用');
+        require('electron').app.quit();
+        return;
       }
+      
+      console.log('7072端口正常，继续定时检查');
     } catch (error) {
       console.error('定时激活码检查失败:', error);
-      // 检查失败时不退出应用，继续下次检查
     }
-  }, 3600000); // 1小时 = 3600000毫秒
+  }, 300000); // 1小时
+  
+  // 启动7072端口监控（更频繁的检查）
+  startPort7072Monitor();
 }
 
-// 停止定时验证
-function stopPeriodicActivationCheck() {
+// 新增：专门监控7072端口的定时器
+function startPort7072Monitor() {
+  console.log('启动7072端口监控，每30秒检查一次');
+  
+  // 清除可能存在的旧定时器
+  if (port7072MonitorTimer) {
+    clearInterval(port7072MonitorTimer);
+  }
+  
+  port7072MonitorTimer = setInterval(async () => {
+    try {
+      const is7072Available = await check7072Status();
+      
+      if (!is7072Available) {
+        console.log('🚨 检测到7072端口不可用！Go服务可能因为验证码过期自动关闭');
+        
+        // 停止所有定时器
+        stopAllTimers();
+        
+        // 关闭所有其他服务
+        await shutdownAllServices();
+        
+        console.log('所有服务已关闭，退出应用');
+        require('electron').app.quit();
+        return;
+      }
+      
+      // 可以添加调试日志（可选）
+      // console.log('7072端口状态正常');
+    } catch (error) {
+      console.error('7072端口监控检查失败:', error);
+    }
+  }, 30000); // 30秒检查一次
+}
+
+// 检查7072端口状态
+function check7072Status(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const http = require('http');
+    const options = {
+      hostname: 'localhost',
+      port: 7072,
+      path: '/ping',
+      method: 'GET',
+      timeout: 3000 // 缩短超时时间
+    };
+    
+    const req = http.request(options, (res) => {
+      resolve(res.statusCode === 200);
+    });
+    
+    req.on('error', () => {
+      resolve(false);
+    });
+    
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(false);
+    });
+    
+    req.end();
+  });
+}
+
+// 关闭所有服务
+async function shutdownAllServices() {
+  console.log('🔄 开始关闭所有服务...');
+  
+  const services = [
+    { name: 'py7073', process: py7073Process },
+    { name: 'py7074', process: py7074Process },
+    { name: 'py9872', process: py9872Process },
+    { name: 'go7072', process: goProcess }
+  ];
+  
+  for (const service of services) {
+    if (service.process && !service.process.killed) {
+      console.log(`🛑 关闭${service.name}服务...`);
+      try {
+        service.process.kill('SIGTERM'); // 优雅关闭
+        
+        // 等待一段时间后强制关闭
+        setTimeout(() => {
+          if (service.process && !service.process.killed) {
+            console.log(`🔨 强制关闭${service.name}服务...`);
+            service.process.kill('SIGKILL');
+          }
+        }, 3000);
+      } catch (error) {
+        console.error(`关闭${service.name}服务失败:`, error);
+      }
+    }
+  }
+  
+  // 重置进程变量
+  py7073Process = null;
+  py7074Process = null;
+  py9872Process = null;
+  goProcess = null;
+  
+  console.log('✅ 所有服务关闭完成');
+}
+
+// 停止所有定时器
+function stopAllTimers() {
+  console.log('🛑 停止所有定时器...');
+  
   if (activationCheckTimer) {
     clearInterval(activationCheckTimer);
     activationCheckTimer = null;
-    console.log('已停止定时激活码验证');
+    console.log('已停止激活码验证定时器');
   }
+  
+  if (port7072MonitorTimer) {
+    clearInterval(port7072MonitorTimer);
+    port7072MonitorTimer = null;
+    console.log('已停止7072端口监控定时器');
+  }
+}
+
+// 修改原有的停止定时验证函数
+function stopPeriodicActivationCheck() {
+  stopAllTimers();
 }
 
 // // Register lifecycle
@@ -519,24 +631,19 @@ async function initializeApp() {
     console.log('开始启动Go服务...');
     
     // 注册进程退出时的清理逻辑
-    app.register("before-close", () => {
+    app.register("before-close", async () => {
+      console.log('应用即将关闭，开始清理资源...');
+      
+      // 调用生命周期清理
       life.beforeClose();
       
-      // 停止定时验证
-      stopPeriodicActivationCheck();
+      // 停止所有定时器
+      stopAllTimers();
       
-      if (goProcess && !goProcess.killed) {
-        goProcess.kill();
-      }
-      if (py7073Process && !py7073Process.killed) {
-        py7073Process.kill();
-      }
-      if (py7074Process && !py7074Process.killed) {
-        py7074Process.kill();
-      }
-      if (py9872Process && !py9872Process.killed) {
-        py9872Process.kill();
-      }
+      // 关闭所有服务
+      await shutdownAllServices();
+      
+      console.log('资源清理完成');
     });
     
     // 首先启动Go服务(7072端口)，这是激活码验证的前提

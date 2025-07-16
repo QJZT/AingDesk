@@ -83,5 +83,10 @@ func main() {
 	router.SetupKvRoutes(r, db)
 	router.ChatAiRoutes(r)
 	router.SetupBarrageStatRoutes(r, db)
+
+	// 启动定期激活码验证（项目启动后每小时执行一次）
+	router.StartPeriodicActivationCheck(db)
+	fmt.Println("已启动定期激活码验证，每小时执行一次")
+
 	r.Run(":7072")
 }
