@@ -219,9 +219,9 @@ let goProcess;
 function startGoService() {
     return new Promise<void>((resolve) => {
         const goExePath = path.resolve(pub.get_resource_path(), 'exe/control-go.exe');
-        const dbPath = path.join(pub.get_data_path(), 'sqlite-data.db');
-        const goDataPath = path.join(pub.get_data_path(), 'control-go-file');
-        const p2pPath = path.join(pub.get_data_path(), 'control-go-file-audio-modules');
+        const dbPath = path.join(pub.get_resource_path(), 'sqlite-data.db');
+        const goDataPath = path.join(pub.get_resource_path(), 'control-go-file');
+        const p2pPath = path.join(pub.get_resource_path(), 'control-go-file-audio-modules');
         goProcess = spawn(goExePath, ['-p', dbPath,'-p1', goDataPath ,"-p2" , p2pPath], {
             cwd: path.dirname(goExePath)
         });
