@@ -134,15 +134,15 @@ async function shutdownAllServices() {
     if (service.process && !service.process.killed) {
       console.log(`🛑 关闭${service.name}服务...`);
       try {
-        service.process.kill('SIGTERM'); // 优雅关闭
+        service.process.kill(); // 优雅关闭
         
         // 等待一段时间后强制关闭
-        setTimeout(() => {
+        // setTimeout(() => {
           if (service.process && !service.process.killed) {
             console.log(`🔨 强制关闭${service.name}服务...`);
             service.process.kill('SIGKILL');
           }
-        }, 3000);
+        // }, 3000);
       } catch (error) {
         console.error(`关闭${service.name}服务失败:`, error);
       }

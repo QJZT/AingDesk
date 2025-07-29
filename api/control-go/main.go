@@ -72,7 +72,7 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
@@ -85,7 +85,7 @@ func main() {
 	router.SetupBarrageStatRoutes(r, db)
 
 	// 启动定期激活码验证（项目启动后每小时执行一次）
-	router.StartPeriodicActivationCheck(db)
+	// router.StartPeriodicActivationCheck(db)
 	fmt.Println("已启动定期激活码验证，每小时执行一次")
 
 	r.Run(":7072")

@@ -13,7 +13,7 @@
         <n-input
           v-model:value="basicForm.moduleName"
           placeholder="请输入模块名称"
-          style="width: 120px; font-size: 16px; font-weight: bold;"
+          style="width: 320px; font-size: 16px; font-weight: bold;"
           @blur="handleModuleNameBlur"
         />
       </div>
@@ -142,6 +142,13 @@
                 </div>
               </template>
             </n-dynamic-input>
+            
+            <!-- 批量添加功能 -->
+            <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+              <n-button type="info" size="small" @click="showBatchAddDialog = true">
+                批量添加
+              </n-button>
+            </div>
           </div>
         </div>
       </div>
@@ -154,6 +161,32 @@
         <n-button type="primary" @click="handleSave" style="margin-left: 12px">保存</n-button>
       </div>
     </template>
+  </n-modal>
+
+  <!-- 批量添加对话框 -->
+  <n-modal
+    v-model:show="showBatchAddDialog"
+    preset="dialog"
+    title="批量添加文案"
+    positive-text="添加"
+    negative-text="取消"
+    @positive-click="handleBatchAdd"
+    @negative-click="handleBatchCancel"
+    style="width: 600px; max-width: 90vw;"
+  >
+    <div style="margin-top: 16px;">
+      <p style="margin-bottom: 8px; color: var(--n-text-color);">
+        请输入需要批量添加的文案，每行一条：
+      </p>
+      <n-input
+        v-model:value="batchInputText"
+        type="textarea"
+        placeholder="请输入文案内容，每行一条..."
+        :autosize="{ minRows: 1, maxRows: 99999999999999 }"
+        maxlength="10000"
+        show-count
+      />
+    </div>
   </n-modal>
 </template>
 
@@ -344,6 +377,10 @@ const activeInputIndex = ref<number | null>(null);
 const activeInputRef = ref<HTMLTextAreaElement | null>(null);
 const lastSelection = ref<{ start: number; end: number } | null>(null);
 let pendingTag: string | null = null;
+
+// 批量添加相关
+const showBatchAddDialog = ref(false);
+const batchInputText = ref('');
 
 const handleFocus = (index: number) => {
   activeInputIndex.value = index;
@@ -538,6 +575,39 @@ const handleModuleNameBlur = () => {
     basicForm.value.moduleName = '基础模块';
   }
   localStorage.setItem('basicModuleDraft', JSON.stringify(basicForm.value));
+};
+
+// 批量添加文案
+const handleBatchAdd = () => {
+  if (!batchInputText.value.trim()) {
+    window.$message?.warning('请输入需要批量添加的文案');
+    return;
+  }
+
+  // 按换行符分割并去除前后空格
+  const newContents = batchInputText.value
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  if (newContents.length === 0) {
+    window.$message?.warning('没有有效的文案内容');
+    return;
+  }
+
+  // 将新内容添加到现有数组中
+  basicForm.value.speechContents = [...basicForm.value.speechContents, ...newContents];
+  
+  // 清空批量输入框并关闭对话框
+  batchInputText.value = '';
+  showBatchAddDialog.value = false;
+  
+  window.$message?.success(`成功添加 ${newContents.length} 条文案`);
+};
+
+const handleBatchCancel = () => {
+  batchInputText.value = '';
+  showBatchAddDialog.value = false;
 };
 </script>
 

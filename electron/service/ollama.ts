@@ -568,7 +568,7 @@ class OllamaService {
             
             // 发起下载请求
             let headers = {
-                'User-Agent': '无人直播/' + pub.version()
+                'User-Agent': 'AingDesk/' + pub.version()
             };
 
             if (downloadBytes > 0) {

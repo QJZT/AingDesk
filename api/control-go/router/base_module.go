@@ -136,11 +136,11 @@ func SetupBaseModuleRoutes(r *gin.Engine, db *gorm.DB) {
 			}
 
 			response := dto.ToBaseModuleResponseSlice(baseModules)
-			log.Info().
-				Str("method", "GET").
-				Str("path", "/base-modules").
-				Interface("response", response).
-				Msg("返回基础模块列表")
+			// log.Info().
+			// 	Str("method", "GET").
+			// 	Str("path", "/base-modules").
+			// 	Interface("response", response).
+			// 	Msg("返回基础模块列表")
 			c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 			c.Header("Pragma", "no-cache")
 			c.Header("Expires", "0")
