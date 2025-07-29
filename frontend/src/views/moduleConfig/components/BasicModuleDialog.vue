@@ -176,14 +176,14 @@
   >
     <div style="margin-top: 16px;">
       <p style="margin-bottom: 8px; color: var(--n-text-color);">
-        请输入需要批量添加的文案，每行一条：
+        请输入需要批量添加的文案，每行一条，系统将自动去除前面的序号：
       </p>
       <n-input
         v-model:value="batchInputText"
         type="textarea"
         placeholder="请输入文案内容，每行一条..."
         :autosize="{ minRows: 1, maxRows: 99999999999999 }"
-        maxlength="10000"
+        maxlength="99999999999999999"
         show-count
       />
     </div>
@@ -584,10 +584,14 @@ const handleBatchAdd = () => {
     return;
   }
 
-  // 按换行符分割并去除前后空格
+  // 按换行符分割并去除前后空格，同时去除前面的序号和逗号
   const newContents = batchInputText.value
     .split('\n')
-    .map(line => line.trim())
+    .map(line => {
+      let trimmedLine = line.trim();
+      // 使用正则表达式去除前面的序号和逗号，例如 "72. " 或 "73," 或 "74."
+      return trimmedLine.replace(/^\s*\d+[.,]?\s*/, '').trim();
+    })
     .filter(line => line.length > 0);
 
   if (newContents.length === 0) {
